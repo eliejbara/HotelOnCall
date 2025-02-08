@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HotelOnCall Register</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Header (Blue) -->
+  <header>
+    <h1>HotelOnCall</h1>
+  </header>
+
+  <!-- Main content with background image -->
+  <main class="main-content">
+    <div class="login-container">
+      <h2>Register</h2>
+      <form id="registerForm">
+        <select id="userType" required>
+          <option value="">Select User Type</option>
+          <option value="guest">Guest</option>
+          <option value="staff">Staff</option>
+        </select>
+        <input type="email" id="email" placeholder="Email" required>
+        <input type="password" id="password" placeholder="Password" required>
+        <button type="submit">Register</button>
+      </form>
+      <p id="message"></p>
+      <p>Already have an account? <a href="index.html">Login</a></p>
+    </div>
+  </main>
+
+  <!-- Footer (Blue) -->
+  <footer>
+    <p>Contact Us: HotelOnCall Team</p>
+    <p>ehj00@mail.aub.edu | nwd06@mail.aub.edu | ahn25@mail.aub.edu</p>
+  </footer>
+
+  <script>
+    document.getElementById("registerForm").addEventListener("submit", async function(event) {
+      event.preventDefault();
+      const userType = document.getElementById("userType").value;
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      const response = await fetch("/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userType, email, password })
+      });
+
+      const result = await response.json();
+      document.getElementById("message").innerText = result.message;
+    });
+  </script>
+
+</body>
+</html>

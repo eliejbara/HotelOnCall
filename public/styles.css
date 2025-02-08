@@ -1,0 +1,83 @@
+/* Reset body margins and ensure full height */
+body {
+    margin: 0;
+    display: flex;
+    flex-direction: column;  /* Stack header, main, footer vertically */
+    min-height: 100vh;       /* Full viewport height */
+    font-family: Arial, sans-serif;
+  }
+  
+  /* Header (Blue) */
+  header {
+    background-color: blue;
+    color: white;
+    text-align: center;
+    padding: 20px;
+  }
+  
+  /* Footer (Blue) */
+  footer {
+    background-color: blue;
+    color: white;
+    text-align: center;
+    padding: 10px;
+    /* margin-top: auto;  <-- Optional if you want the footer to push to the bottom */
+  }
+  
+  /* The main area in which we want to show our background image */
+  .main-content {
+    /* Expand this area to take remaining vertical space */
+    flex: 1;
+    
+    /* Set the background image (the link you provided) */
+    background: url("https://bynder.onthebeach.co.uk/cdn-cgi/image/width=1400,quality=70,fit=cover,format=auto/m/564989147e7650b/original/Blue-Wave-Suite-Hotel.jpg")
+                no-repeat center center;
+    background-size: cover;
+    
+    /* If you want a subtle overlay effect (optional), you could do:
+    background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)),
+                url("IMAGE_LINK") no-repeat center center;
+    background-size: cover;
+    */
+    
+    display: flex;
+    justify-content: center;
+    align-items: center; 
+    padding: 40px 0; /* Add spacing top & bottom (optional) */
+  }
+  
+  /* The card holding the form */
+  .login-container {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 0px 10px 0px #0000001a;
+    text-align: center;
+    width: 300px;
+  }
+  
+  /* Form elements */
+  input, select {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+  }
+  
+  /* Buttons */
+  button {
+    width: 100%;
+    padding: 10px;
+    background: blue;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
+  button:hover {
+    background: darkblue;
+  }
+  
