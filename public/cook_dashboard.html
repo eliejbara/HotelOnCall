@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cook Dashboard</title>
+    <script defer src="cook.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        .order-box { border: 1px solid #ccc; padding: 10px; margin: 10px auto; width: 300px; background: white; }
+    </style>
+</head>
+<body>
+    <h1>Cook Dashboard</h1>
+    <div id="orders-container"></div>
+    <script>
+    src="cook.js"
+    app.get("/cook_dashboard.html", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "cook_dashboard.html"));
+});
+ </script>
+</body>
+</html>

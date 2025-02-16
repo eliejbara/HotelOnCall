@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <header>
+        <h1>HotelOnCall - Checkout</h1>
+    </header>
+
+    <main class="main-content">
+        <div class="checkout-container">
+            <h2>Checkout</h2>
+            <p>Room Number: <span id="roomNumber"></span></p>
+
+            <label for="feedback">Leave a feedback (optional):</label>
+            <textarea id="feedback" placeholder="Tell us about your stay..."></textarea>
+
+            <button id="checkoutBtn">Checkout</button>
+            <p id="message"></p>
+        </div>
+    </main>
+
+    <footer>
+        <p>HotelOnCall Team</p>
+    </footer>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+    let guestEmail = localStorage.getItem("loggedInGuestEmail"); // ✅ Ensure correct key
+
+    if (!guestEmail) {
+        alert("You must be logged in as a guest!");
+        window.location.href = "index.html";
+        return;
+    }
+
+    console.log("🔍 Guest Email:", guestEmail); // Debugging log
+
+    // ✅ Fetch guest's room number
+    try {
+        const response = await fetch(`/guest-room/${guestEmail}`);
+        const data = await response.json();
+        if (data.success && data.room_number) {
+            document.getElementById("roomNumber").innerText = data.room_number;
+        } else {
+            alert("No active check-in found!");
+            window.location.href = "guest_services.html";
+        }
+    } catch (error) {
+        console.error("❌ Error fetching room:", error);
+    }
+
+    // ✅ Checkout Process (Attach event listener inside DOMContentLoaded)
+    const checkoutButton = document.getElementById("checkoutBtn");
+    if (checkoutButton) {
+        checkoutButton.addEventListener("click", async () => {
+            const feedback = document.getElementById("feedback").value;
+
+            try {
+                const response = await fetch("/checkout", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ guestEmail, feedback }) // ✅ Send correct email
+                });
+
+                const result = await response.json();
+                document.getElementById("message").innerText = result.message;
+
+                if (result.success) {
+                    alert("✅ Checked out successfully!");
+                    localStorage.removeItem("loggedInGuestEmail"); // ✅ Fix: Use correct key
+                    window.location.href = "index.html"; // Redirect after checkout
+                } else {
+                    alert("⚠️ Error: " + result.message);
+                }
+            } catch (error) {
+                console.error("❌ Error during checkout:", error);
+            }
+        });
+    } else {
+        console.error("❌ Checkout button not found in DOM!");
+    }
+});
+    </script>
+    
+
+</body>
+</html>

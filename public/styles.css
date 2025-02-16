@@ -1,83 +1,316 @@
-/* Reset body margins and ensure full height */
 body {
-    margin: 0;
-    display: flex;
-    flex-direction: column;  /* Stack header, main, footer vertically */
-    min-height: 100vh;       /* Full viewport height */
-    font-family: Arial, sans-serif;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  font-family: Arial, sans-serif;
+  background-color: #f4f4f4;
+}
+
+/* ======== Header Styles ======== */
+header {
+  background-color: blue;
+  color: white;
+  text-align: center;
+  padding: 25px;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+/* ======== Footer Styles ======== */
+footer {
+  background-color: blue;
+  color: white;
+  text-align: center;
+  padding: 12px;
+  margin-top: auto;
+  font-size: 14px;
+}
+
+/* ======== Full Page Background ======== */
+.main-content {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 60px 0;
+  background: url("https://bynder.onthebeach.co.uk/cdn-cgi/image/width=1400,quality=70,fit=cover,format=auto/m/564989147e7650b/original/Blue-Wave-Suite-Hotel.jpg") 
+              no-repeat center center;
+  background-size: cover;
+  min-height: 100vh;
+}
+
+/* ======== Form Containers (Login, Register, Check-In) ======== */
+.login-container, .checkin-container {
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  width: 380px;
+}
+
+/* ======== Form Elements ======== */
+input, select {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  margin: 12px 0;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 16px;
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  background: blue;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  transition: background 0.3s ease;
+}
+
+button:hover {
+  background: darkblue;
+}
+
+/* ======== Message Styles ======== */
+p#message {
+  color: red;
+  font-size: 15px;
+  margin-top: 10px;
+}
+
+/* ======== Links ======== */
+a {
+  color: blue;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* ======== Responsive Design ======== */
+@media (max-width: 600px) {
+  .login-container, .checkin-container {
+      width: 90%;
   }
-  
-  /* Header (Blue) */
+
   header {
-    background-color: blue;
-    color: white;
-    text-align: center;
-    padding: 20px;
+      font-size: 22px;
   }
-  
-  /* Footer (Blue) */
-  footer {
-    background-color: blue;
-    color: white;
-    text-align: center;
-    padding: 10px;
-    /* margin-top: auto;  <-- Optional if you want the footer to push to the bottom */
-  }
-  
-  /* The main area in which we want to show our background image */
-  .main-content {
-    /* Expand this area to take remaining vertical space */
-    flex: 1;
-    
-    /* Set the background image (the link you provided) */
-    background: url("https://bynder.onthebeach.co.uk/cdn-cgi/image/width=1400,quality=70,fit=cover,format=auto/m/564989147e7650b/original/Blue-Wave-Suite-Hotel.jpg")
-                no-repeat center center;
-    background-size: cover;
-    
-    /* If you want a subtle overlay effect (optional), you could do:
-    background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)),
-                url("IMAGE_LINK") no-repeat center center;
-    background-size: cover;
-    */
-    
-    display: flex;
-    justify-content: center;
-    align-items: center; 
-    padding: 40px 0; /* Add spacing top & bottom (optional) */
-  }
-  
-  /* The card holding the form */
-  .login-container {
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0px 0px 10px 0px #0000001a;
-    text-align: center;
-    width: 300px;
-  }
-  
-  /* Form elements */
-  input, select {
-    display: block;
-    width: 100%;
-    padding: 10px;
-    margin: 10px 0;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-  }
-  
-  /* Buttons */
+
   button {
-    width: 100%;
-    padding: 10px;
-    background: blue;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
+      font-size: 14px;
   }
-  
-  button:hover {
-    background: darkblue;
+}
+
+/* ======== Guest Services Page ======== */
+.services-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 25px;
+  flex-wrap: wrap;
+  padding: 50px 0;
+}
+
+.service-box {
+  width: 270px;
+  height: 220px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  padding: 22px;
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.service-box h2 {
+  margin: 12px 0;
+  font-size: 22px;
+}
+
+.service-box p {
+  font-size: 15px;
+  color: #555;
+}
+
+/* Hover Effect */
+.service-box:hover {
+  transform: scale(1.05);
+  box-shadow: 0px 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* ======== Order Food Page Styles ======== */
+.order-container {
+  background: rgba(255, 255, 255, 0.95); /* Light transparency for readability */
+  padding: 35px;
+  border-radius: 15px;
+  box-shadow: 0px 6px 20px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  width: 850px; /* Wider Layout */
+  max-width: 95%;
+  margin: auto;
+}
+
+/* ======== Menu Items Styling ======== */
+.menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px;
+  border-bottom: 1px solid #ddd;
+  background: white;
+  border-radius: 10px;
+  margin-bottom: 15px;
+  transition: transform 0.2s ease-in-out;
+}
+
+/* Menu Hover Effect */
+.menu-item:hover {
+  transform: scale(1.02);
+}
+
+/* Image Styling */
+.menu-item img {
+  width: 120px;
+  height: 120px;
+  border-radius: 8px;
+  object-fit: cover;
+  margin-right: 20px;
+}
+
+/* Menu Text Formatting */
+.menu-item div {
+  flex-grow: 1;
+  text-align: left;
+  font-size: 18px;
+}
+
+/* ======== Button Styling ======== */
+button {
+  background: #007BFF;
+  color: white;
+  border: none;
+  padding: 12px 16px;
+  cursor: pointer;
+  font-weight: bold;
+  border-radius: 6px;
+  transition: background 0.3s ease, transform 0.1s ease;
+  font-size: 16px;
+}
+
+button:hover {
+  background: #0056b3;
+  transform: scale(1.05);
+}
+
+/* ======== Cart Section ======== */
+.cart {
+  border-top: 3px solid #007BFF;
+  padding-top: 15px;
+  margin-top: 25px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 20px;
+  border-radius: 12px;
+}
+
+/* Cart Items */
+.cart-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  font-size: 18px;
+}
+
+/* Total Price Styling */
+.total {
+  font-weight: bold;
+  font-size: 22px;
+  margin-top: 10px;
+}
+
+/* ======== Responsive Design for Order Page ======== */
+@media (max-width: 900px) {
+  .order-container {
+      width: 95%;
   }
-  
+
+  .menu-item {
+      flex-direction: column;
+      text-align: center;
+  }
+
+  .menu-item img {
+      width: 150px;
+      height: 150px;
+      margin-bottom: 10px;
+  }
+
+  button {
+      width: 100%;
+  }
+}
+
+
+
+
+#checkStatusBtn {
+  display: block;
+  margin-top: 15px;
+  padding: 10px 15px;
+  font-size: 16px;
+  font-weight: bold;
+  color: white;
+  background-color: blue;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+#checkStatusBtn:hover {
+  background-color: darkblue;
+}
+
+.request-box {
+  background: white;
+  padding: 20px;
+  margin: 10px 0;
+  border-radius: 8px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+}
+.pending { color: orange; font-weight: bold; }
+.in-progress { color: blue; font-weight: bold; }
+.resolved { color: green; font-weight: bold; }
+
+
+.checkout-container {
+  text-align: center; 
+  margin-top: 20px;
+  width: 40%; /* Ensure it spans the full width */
+}
+
+#checkoutRedirectBtn {
+  background-color: red;
+  color: white;
+  font-size: 18px;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-block;
+  margin: 20px auto;
+}
+
+#checkoutRedirectBtn:hover {
+  background-color: darkred;
+}
+

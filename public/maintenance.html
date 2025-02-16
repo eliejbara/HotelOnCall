@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Request Maintenance</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <header>
+        <h1>HotelOnCall - Request Maintenance</h1>
+    </header>
+
+    <main class="main-content">
+        <div class="request-container">
+            <h2>Submit a Maintenance Request</h2>
+            <form id="maintenanceForm">
+                <input type="hidden" id="roomNumber">
+
+                <label for="issueType">Select Issue:</label>
+                <select id="issueType" required onchange="toggleDescriptionBox()">
+                    <option value="">Choose an issue</option>
+                    <option value="AC Issue">AC Issue</option>
+                    <option value="Plumbing">Plumbing</option>
+                    <option value="Electricity">Electricity</option>
+                    <option value="Other">Other</option>
+                </select>
+
+                <!-- Description Box (Hidden by Default) -->
+                <div id="descriptionContainer" style="display: none;">
+                    <label for="details">Additional Details:</label>
+                    <textarea id="details" placeholder="Describe the issue..."></textarea>
+                </div>
+
+                <button type="submit">Submit Request</button>
+                <button type="button" id="checkStatusBtn">Check Request Status</button>
+                <div id="requestsList"></div> <!-- This will show the request status -->
+            </form>
+
+            <p id="message"></p>
+        </div>
+    </main>
+
+    <footer>
+        <p>HotelOnCall Team</p>
+    </footer>
+
+    <script>
+        let guestEmail; // Declare globally for accessibility
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            guestEmail = localStorage.getItem("guestEmail") || localStorage.getItem("loggedInGuestEmail"); // ✅ Ensure it fetches correctly
+
+            if (!guestEmail) {
+                alert("You must be logged in as a guest!");
+                window.location.href = "index.html";
+                return;
+            }
+
+            // Fetch the guest's room number
+            try {
+                const response = await fetch(`/guest-room/${guestEmail}`);
+                const data = await response.json();
+                if (data.room_number) {
+                    document.getElementById("roomNumber").value = data.room_number; // Hidden input
+                }
+            } catch (error) {
+                console.error("Error fetching room:", error);
+            }
+
+            // Handle maintenance request submission
+            document.getElementById("maintenanceForm").addEventListener("submit", async function(event) {
+                event.preventDefault();
+
+                const roomNumber = document.getElementById("roomNumber").value; // Hidden but still sent
+                const issueType = document.getElementById("issueType").value;
+                const details = document.getElementById("details").value;
+
+                try {
+                    const response = await fetch("/request-maintenance", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ guestEmail, roomNumber, issueType, details })
+                    });
+
+                    const result = await response.json();
+                    document.getElementById("message").innerText = result.message;
+
+                    if (result.success) {
+                        alert("Maintenance request submitted!");
+                    }
+                } catch (error) {
+                    console.error("Error submitting maintenance request:", error);
+                }
+            });
+
+            // Attach event listener for "Check Request Status" inside DOMContentLoaded
+            document.getElementById("checkStatusBtn").addEventListener("click", async () => {
+                console.log("Check Request Status button clicked!"); // Debugging log
+                console.log("Guest Email:", guestEmail); // Debugging log
+
+                try {
+                    const response = await fetch(`/guest-maintenance/${guestEmail}`);
+                    const data = await response.json();
+                    const requestsList = document.getElementById("requestsList");
+
+                    if (data.length === 0) {
+                        requestsList.innerHTML = "<p>No maintenance requests found.</p>";
+                        return;
+                    }
+
+                    requestsList.innerHTML = "";
+                    data.forEach(req => {
+                        const requestDiv = document.createElement("div");
+                        requestDiv.className = "request-box";
+                        requestDiv.innerHTML = `
+                            <p><b>Room:</b> ${req.room_number}</p>
+                            <p><b>Issue:</b> ${req.issue_type}</p>
+                            <p><b>Status:</b> <span class="${req.request_status.toLowerCase()}">${req.request_status}</span></p>
+                            ${req.details ? `<p><b>Details:</b> ${req.details}</p>` : ""}
+                        `;
+                        requestsList.appendChild(requestDiv);
+                    });
+
+                } catch (error) {
+                    console.error("Error fetching maintenance requests:", error);
+                }
+            });
+        });
+
+        function toggleDescriptionBox() {
+            console.log("Function triggered!"); // Debugging
+            const issueType = document.getElementById("issueType").value;
+            const descriptionContainer = document.getElementById("descriptionContainer");
+
+            if (issueType === "Other") {
+                console.log("Other selected - Showing text area");
+                descriptionContainer.style.display = "block"; // Show the textarea
+            } else {
+                console.log("Different option selected - Hiding text area");
+                descriptionContainer.style.display = "none"; // Hide the textarea
+                document.getElementById("details").value = ""; // Clear the text area
+            }
+        }
+    </script>
+
+</body>
+</html>

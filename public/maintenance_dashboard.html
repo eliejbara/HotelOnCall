@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maintenance Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: url("https://bynder.onthebeach.co.uk/cdn-cgi/image/width=1400,quality=70,fit=cover,format=auto/m/564989147e7650b/original/Blue-Wave-Suite-Hotel.jpg") no-repeat center center;
+            background-size: cover;
+            text-align: center;
+        }
+        .dashboard-container {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            width: 80%;
+            margin: auto;
+            margin-top: 30px;
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        .request-box {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+            text-align: left;
+        }
+        .request-box p {
+            margin: 5px 0;
+        }
+        .request-box select, .request-box button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 8px;
+            font-size: 16px;
+        }
+        .status-pending { color: red; font-weight: bold; }
+        .status-in-progress { color: orange; font-weight: bold; }
+        .status-resolved { color: green; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Maintenance Staff Dashboard</h1>
+    </header>
+
+    <main class="dashboard-container">
+        <h2>Pending Maintenance Requests</h2>
+        <div id="maintenanceRequests">Loading...</div>
+    </main>
+
+    <footer>
+        <p>HotelOnCall Team</p>
+    </footer>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            let staffEmail = localStorage.getItem("staffEmail");
+            if (!staffEmail) {
+                alert("You must be logged in as maintenance staff!");
+                window.location.href = "index.html";
+                return;
+            }
+
+            async function fetchMaintenanceRequests() {
+    try {
+        const response = await fetch("/maintenance-requests");
+        const data = await response.json();
+        const requestsContainer = document.getElementById("maintenanceRequests");
+
+        if (data.length === 0) {
+            requestsContainer.innerHTML = "<p>No maintenance requests found.</p>";
+            return;
+        }
+
+        requestsContainer.innerHTML = "";
+        data.forEach(request => {
+            const requestDiv = document.createElement("div");
+            requestDiv.className = "request-box";
+            requestDiv.innerHTML = `
+                <p><b>Room:</b> ${request.room_number}</p>
+                <p><b>Issue:</b> ${request.issue_type}</p>
+                <p><b>Status:</b> 
+                   <span class="status-${request.request_status.toLowerCase()}">
+                       ${request.request_status}
+                   </span>
+                </p>
+                <p><b>Details:</b> ${request.details || "No additional details provided."}</p>
+
+                <label for="status-${request.id}">Update Status:</label>
+                <select id="status-${request.id}">
+                    <option value="Pending" ${request.request_status === "Pending" ? "selected" : ""}>Pending</option>
+                    <option value="In Progress" ${request.request_status === "In Progress" ? "selected" : ""}>In Progress</option>
+                    <option value="Resolved" ${request.request_status === "Resolved" ? "selected" : ""}>Resolved</option>
+                </select>
+
+                <button onclick="updateRequestStatus(${request.id})">Update</button>
+            `;
+            requestsContainer.appendChild(requestDiv);
+        });
+    } catch (error) {
+        console.error("❌ Error fetching maintenance requests:", error);
+    }
+}
+
+
+            window.updateRequestStatus = async function(requestId) {
+    const status = document.getElementById(`status-${requestId}`).value;
+
+    try {
+        const response = await fetch("/update-maintenance-status", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ requestId, status })
+        });
+
+        const result = await response.json();
+        console.log("🔍 API Response:", result); // Debugging
+
+        if (result.success) {
+            alert("Status updated successfully!");
+            fetchMaintenanceRequests(); // Refresh requests after update
+        } else {
+            alert("Error updating status: " + result.message);
+        }
+    } catch (error) {
+        console.error("❌ Error updating maintenance request:", error);
+    }
+};
+
+
+            fetchMaintenanceRequests();
+            setInterval(fetchMaintenanceRequests, 5000); // Refresh every 5 seconds
+        });
+    </script>
+
+</body>
+</html>

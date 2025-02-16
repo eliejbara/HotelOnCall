@@ -8,12 +8,12 @@
 </head>
 <body>
 
-  <!-- Header (Blue) -->
+  <!-- Header -->
   <header>
     <h1>HotelOnCall</h1>
   </header>
 
-  <!-- Main content with background image -->
+  <!-- Registration Form -->
   <main class="main-content">
     <div class="login-container">
       <h2>Register</h2>
@@ -32,10 +32,9 @@
     </div>
   </main>
 
-  <!-- Footer (Blue) -->
+  <!-- Footer -->
   <footer>
     <p>Contact Us: HotelOnCall Team</p>
-    <p>ehj00@mail.aub.edu | nwd06@mail.aub.edu | ahn25@mail.aub.edu</p>
   </footer>
 
   <script>
@@ -53,6 +52,11 @@
 
       const result = await response.json();
       document.getElementById("message").innerText = result.message;
+
+      if (result.success) {
+        alert("Registration successful! Redirecting to login...");
+        window.location.href = "index.html";
+      }
     });
   </script>
 

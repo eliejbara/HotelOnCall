@@ -8,12 +8,12 @@
 </head>
 <body>
 
-  <!-- Header (Blue) -->
+  <!-- Header -->
   <header>
     <h1>HotelOnCall</h1>
   </header>
 
-  <!-- Main content with background image -->
+  <!-- Login Form -->
   <main class="main-content">
     <div class="login-container">
       <h2>Login</h2>
@@ -32,28 +32,50 @@
     </div>
   </main>
 
-  <!-- Footer (Blue) -->
+  <!-- Footer -->
   <footer>
     <p>Contact Us: HotelOnCall Team</p>
-    <p>ehj00@mail.aub.edu | nwd06@mail.aub.edu | ahn25@mail.aub.edu</p>
   </footer>
 
   <script>
     document.getElementById("loginForm").addEventListener("submit", async function(event) {
-      event.preventDefault();
-      const userType = document.getElementById("userType").value;
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
+    event.preventDefault();
+    
+    const userType = document.getElementById("userType").value;
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
 
-      const response = await fetch("/login", {
+    console.log("🔍 Attempting login with:", { email, userType });
+
+    const response = await fetch("/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userType, email, password })
-      });
-
-      const result = await response.json();
-      document.getElementById("message").innerText = result.message;
     });
+
+    const result = await response.json();
+    console.log("🔍 Server Response:", result); // Debugging log
+
+    document.getElementById("message").innerText = result.message;
+
+    if (result.success) {
+        alert("✅ Login successful! Redirecting...");
+        if (userType === "guest") {
+            // ✅ **Fix: Store guest email in localStorage**
+            localStorage.setItem("loggedInGuestEmail", email);
+        }
+        else if (userType === "staff") {
+            localStorage.setItem("staffEmail", email);
+        }
+        window.location.href = result.redirectTo;
+    } else {
+        console.log("❌ Login failed:", result.message);
+        if (result.redirectTo) {
+            alert("⚠️ User not registered! Redirecting to Registration Page...");
+            window.location.href = result.redirectTo;
+        }
+    }
+});
   </script>
 
 </body>

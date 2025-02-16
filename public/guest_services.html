@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guest Services</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <h1>HotelOnCall - Guest Services</h1>
+    </header>
+
+    <!-- Services Section -->
+    <main class="main-content">
+        <div class="services-container">
+            <div class="service-box" onclick="location.href='order_food.html'">
+                <h2>🍽️ Order Food</h2>
+                <p>Browse and order delicious meals from our menu.</p>
+            </div>
+            <div class="service-box" onclick="location.href='maintenance.html'">
+                <h2>🛠️ Request Maintenance</h2>
+                <p>Report any issues in your room that need fixing.</p>
+            </div>
+            <div class="service-box" onclick="location.href='housekeeping.html'">
+                <h2>🧹 Request Housekeeping</h2>
+                <p>Request a room cleaning service at your convenience.</p>
+            </div>
+            <div class="checkout-container">
+                <button id="checkoutRedirectBtn">🚪 Checkout</button>
+            </div>
+        </div>
+
+    </main>
+    
+
+    <!-- Footer -->
+    <footer>
+        <p>Contact Us: HotelOnCall Team</p>
+    </footer>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+    // ✅ Ensure the guest is logged in using localStorage
+    const guestEmail = localStorage.getItem("loggedInGuestEmail");
+
+    if (!guestEmail) {
+        alert("⚠️ You must be logged in to access guest services.");
+        window.location.href = "index.html"; // Redirect to login
+    } else {
+        console.log("✅ Logged in as:", guestEmail); // Debugging
+    }
+
+    // ✅ Ensure the checkout button redirects correctly
+    const checkoutBtn = document.getElementById("checkoutRedirectBtn");
+    if (checkoutBtn) {
+        checkoutBtn.addEventListener("click", () => {
+            console.log("🚀 Checkout button clicked!");
+            window.location.href = "checkout.html";  // Redirect to checkout page
+        });
+    } else {
+        console.error("❌ Checkout button not found!");
+    }
+});
+
+    
+    </script>
+
+</body>
+</html>
