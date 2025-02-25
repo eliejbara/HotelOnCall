@@ -1,9 +1,8 @@
+// hash.js
 const bcrypt = require('bcrypt');
-
-async function hashPassword() {
-    const password = "cleaner";  // The plain text password
-    const hashedPassword = await bcrypt.hash(password, 10);
-    console.log("Hashed Password:", hashedPassword);
-}
-
-hashPassword();
+const password = "123"; // Replace with your desired plain text password
+bcrypt.hash(password, 10)
+  .then(hash => {
+    console.log("Hashed Password:", hash);
+  })
+  .catch(err => console.error(err));
