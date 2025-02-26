@@ -11,7 +11,9 @@ const app = express();
 // Middleware
 app.use(express.json());
 app.use(cors());
-app.use(express.static("public"));
+
+// ✅ Serve static files from the absolute path of "public" (Only fix)
+app.use(express.static(path.join(__dirname, "public")));
 
 // PostgreSQL Connection (using Neon)
 const db = new Pool({
@@ -202,7 +204,6 @@ app.post("/select-role", async (req, res) => {
   }
 });
 
-
 // ** Update Order Status (Staff) **
 app.post("/update-order-status", async (req, res) => {
   const { orderId, status } = req.body;
@@ -376,6 +377,7 @@ app.post("/checkout", async (req, res) => {
     return res.status(500).json({ success: false, message: "Database error occurred." });
   }
 });
+
 app.get("/menu", async (req, res) => {
   try {
     const result = await db.query("SELECT * FROM menu");
@@ -385,7 +387,6 @@ app.get("/menu", async (req, res) => {
     res.status(500).json({ success: false, message: "Database error occurred." });
   }
 });
-
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
