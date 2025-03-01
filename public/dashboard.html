@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Hotel Management Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+    }
+    h1 {
+      color: #333;
+    }
+    form {
+      margin-bottom: 20px;
+    }
+    input, button {
+      padding: 8px;
+      font-size: 16px;
+    }
+    #result {
+      margin-top: 20px;
+      font-size: 18px;
+      color: #006600;
+    }
+  </style>
+</head>
+<body>
+  <h1>Guest Check-in Prediction</h1>
+  <form id="predictionForm">
+    <label for="date">Enter date (YYYY-MM-DD): </label>
+    <input type="text" id="date" name="date" placeholder="2025-03-15" required>
+    <button type="submit">Predict</button>
+  </form>
+  <div id="result"></div>
+  
+  <script>
+    // Listen for the form submission
+    document.getElementById('predictionForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const dateInput = document.getElementById('date').value;
+      
+      // Clear previous result
+      document.getElementById('result').innerText = 'Fetching prediction...';
+      
+      try {
+        // Fetch prediction from the Node.js endpoint
+        const response = await fetch(`/api/guest-prediction?date=${dateInput}`);
+        const data = await response.json();
+        if(data.predicted_check_in_count !== undefined) {
+          document.getElementById('result').innerText = 
+            `Predicted check-in count for ${dateInput}: ${data.predicted_check_in_count}`;
+        } else {
+          document.getElementById('result').innerText = 'No prediction available.';
+        }
+      } catch (error) {
+        console.error('Error fetching prediction:', error);
+        document.getElementById('result').innerText = 'Error fetching prediction.';
+      }
+    });
+  </script>
+</body>
+</html>
