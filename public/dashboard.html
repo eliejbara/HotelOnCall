@@ -35,19 +35,24 @@
   <div id="result"></div>
   
   <script>
-    // Listen for the form submission
     document.getElementById('predictionForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const dateInput = document.getElementById('date').value;
-      
-      // Clear previous result
       document.getElementById('result').innerText = 'Fetching prediction...';
-      
+
       try {
-        // Fetch prediction from the Node.js endpoint
-        const response = await fetch(`/api/guest-prediction?date=${dateInput}`);
+        // Use the correct API URL (Vercel or Railway)
+        const apiUrl = `https://hotel-on-call.vercel.app/api/guest-prediction?date=${dateInput}`;
+        
+        const response = await fetch(apiUrl);
+        
+        if (!response.ok) {
+          throw new Error(`Server error: ${response.status}`);
+        }
+        
         const data = await response.json();
-        if(data.predicted_check_in_count !== undefined) {
+        
+        if (data.predicted_check_in_count !== undefined) {
           document.getElementById('result').innerText = 
             `Predicted check-in count for ${dateInput}: ${data.predicted_check_in_count}`;
         } else {
@@ -55,7 +60,7 @@
         }
       } catch (error) {
         console.error('Error fetching prediction:', error);
-        document.getElementById('result').innerText = 'Error fetching prediction.';
+        document.getElementById('result').innerText = 'Error fetching prediction. Please try again.';
       }
     });
   </script>
