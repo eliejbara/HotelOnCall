@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cleaner Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <h1> Cleaner</h1>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="cleaner-container">
+      <!-- Title -->
+      <div class="cleaner-title">
+        <h2>Cleaning Requests</h2>
+      </div>
+
+      <!-- Requests List -->
+      <div class="requests-list">
+        <p id="no-requests-message">No requests yet.</p>
+        <ul id="requests">
+          <!-- Requests will be dynamically added here -->
+        </ul>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <p>Contact Us: HotelOnCall Team</p>
+    <p> rmt29@mail.aub.edu </p>
+  </footer>
+
+  <script>
+    // Fetch and display cleaning requests
+    async function fetchCleaningRequests() {
+      const response = await fetch("/cleaning-requests");
+      const requests = await response.json();
+
+      const requestsList = document.getElementById("requests");
+      const noRequestsMessage = document.getElementById("no-requests-message");
+
+      if (requests.length === 0) {
+        noRequestsMessage.style.display = "block";
+        requestsList.innerHTML = "";
+      } else {
+        noRequestsMessage.style.display = "none";
+        requestsList.innerHTML = requests
+          .map(
+            (request) => `
+              <li class="request-item">
+                <p><strong>Room:</strong> ${request.room_number}</p>
+                <p><strong>Guest Email:</strong> ${request.guest_email}</p>
+                <p><strong>Status:</strong> ${request.request_status}</p>
+                <select id="status-${request.id}">
+                  <option value="Pending">Pending</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Completed">Completed</option>
+                </select>
+                <button onclick="updateRequestStatus(${request.id})">Update</button>
+              </li>
+            `
+          )
+          .join("");
+      }
+    }
+
+    // Update request status
+    async function updateRequestStatus(requestId) {
+      const status = document.getElementById(`status-${requestId}`).value;
+
+      const response = await fetch("/update-cleaning-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requestId, status }),
+      });
+
+      const result = await response.json();
+      alert(result.message);
+      fetchCleaningRequests(); // Refresh the list
+    }
+
+    // Fetch requests when the page loads
+    fetchCleaningRequests();
+  </script>
+</body>
+</html>
