@@ -4,13 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Guest Check-In</title>
-    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
     <!-- Header -->
     <header>
-        <h1>HotelOnCall - Guest Check-In</h1>
     </header>
 
     <!-- Check-In Form -->
@@ -18,7 +17,8 @@
         <div class="checkin-container">
             <h2>Check-In</h2>
             <form id="checkinForm">
-                <input type="email" id="guestEmail" placeholder="Enter Your Email" required>
+                <!-- Removed Email Input, Email will be fetched from localStorage -->
+                <input type="hidden" id="guestEmail"> <!-- Hidden input for guestEmail -->
 
                 <!-- Dropdown for available rooms -->
                 <select id="roomNumber" required>
@@ -35,11 +35,23 @@
     <!-- Footer -->
     <footer>
         <p>Contact Us: HotelOnCall Team</p>
+        <p>ehj00@mail.aub.edu | nwd06@mail.aub.edu | ahn25@mail.aub.edu | kms36@mail.aub.edu | rmt29@mail.aub.edu</p>
     </footer>
 
     <script>
         document.addEventListener("DOMContentLoaded", async () => {
             const roomSelect = document.getElementById("roomNumber");
+            const guestEmail = localStorage.getItem("loggedInGuestEmail");
+
+            // If no guestEmail is found in localStorage, redirect to login page
+            if (!guestEmail) {
+                alert("You must be logged in to check in!");
+                window.location.href = "login.html"; // Redirect to login page if not logged in
+                return;
+            }
+
+            // Set the guestEmail to the hidden field
+            document.getElementById("guestEmail").value = guestEmail;
 
             try {
                 const response = await fetch("/available-rooms");
@@ -66,7 +78,7 @@
         document.getElementById("checkinForm").addEventListener("submit", async function(event) {
             event.preventDefault();
 
-            const guestEmail = document.getElementById("guestEmail").value;
+            const guestEmail = document.getElementById("guestEmail").value; // Fetch guest email from hidden field
             const roomNumber = document.getElementById("roomNumber").value;
             const nights = document.getElementById("nights").value;
 
