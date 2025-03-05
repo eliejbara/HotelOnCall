@@ -179,32 +179,24 @@
         });
     
         // Book the first available slot
-        document.getElementById("bookCleaningSlot").addEventListener("click", async function() {
-    const guestEmail = localStorage.getItem("guestEmail"); // Adjust as needed
-    const roomNumber = localStorage.getItem("roomNumber"); // Adjust as needed
-
-    if (!guestEmail || !roomNumber) {
-        alert("❌ Missing guest email or room number!");
-        return;
-    }
-
-    console.log("🔍 Booking first available cleaning slot...");
-
-    try {
-        const response = await fetch(`/first-available-cleaning?guestEmail=${guestEmail}&roomNumber=${roomNumber}`);
-        const data = await response.json();
-
-        if (data.success) {
-            alert(`✅ Cleaning slot booked at ${data.timeSlot}`);
-        } else {
-            alert(`⚠️ ${data.message}`);
-        }
-    } catch (error) {
-        console.error("❌ Error booking cleaning slot:", error);
-        alert("❌ Server error while booking cleaning slot.");
-    }
-});
-
+        document.getElementById("bookCleaning").addEventListener("click", () => {
+            fetch(`http://localhost:5000/first-available-cleaning?guestEmail=${encodeURIComponent(guestEmail)}&roomNumber=${encodeURIComponent(document.getElementById('roomNumber').value)}`, {
+                method: "GET",
+                headers: { "Content-Type": "application/json" }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`Booked cleaning slot at ${data.timeSlot}`);
+                } else {
+                    alert("No available slots found.");
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                alert("Error booking first available cleaning. Please try again.");
+            });
+        });
     });
 </script>
 
