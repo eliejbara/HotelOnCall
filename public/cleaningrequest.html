@@ -180,7 +180,7 @@
     
         // Book the first available slot
         document.getElementById("bookCleaning").addEventListener("click", () => {
-            fetch(`http://localhost:5000/first-available-cleaning?guestEmail=${encodeURIComponent(guestEmail)}&roomNumber=${encodeURIComponent(document.getElementById('roomNumber').value)}`, {
+            fetch(`https://hotel-on-call.vercel.app/first-available-cleaning?guestEmail=${encodeURIComponent(guestEmail)}&roomNumber=${encodeURIComponent(document.getElementById('roomNumber').value)}`, {
                 method: "GET",
                 headers: { "Content-Type": "application/json" }
             })
