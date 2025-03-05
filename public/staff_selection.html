@@ -1,59 +1,64 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Staff Role Selection</title>
-    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+
     <header>
-        <h1>Staff Role Selection</h1>
+        <h1></h1>
     </header>
+
     <main class="main-content">
-        <div class="container">
+        <div class="staff-container">
             <h2>Select Your Role</h2>
-            <!-- You might want to pre-fill the staff's email if it is stored in localStorage -->
-            <input type="email" id="staffEmail" placeholder="Enter your email" required />
-            <select id="role" required>
-                <option value="">Select Role</option>
-                <option value="cook">Cook</option>
-                <option value="maintenance">Maintenance</option>
-                <option value="cleaner">Cleaner</option>
-            </select>
-            <button id="submitRole">Submit Role</button>
+            <p>Choose your role to proceed.</p>
+
+            <button onclick="selectRole('cook')">Cook</button>
+            <button onclick="selectRole('maintenance')">Maintenance Staff</button>
+            <button onclick="selectRole('cleaner')">Cleaner</button>
+
             <p id="message"></p>
         </div>
     </main>
+
     <footer>
         <p>Contact Us: HotelOnCall Team</p>
+        <p>ehj00@mail.aub.edu | nwd06@mail.aub.edu | ahn25@mail.aub.edu | kms36@mail.aub.edu | rmt29@mail.aub.edu</p>
     </footer>
+
     <script>
-        document.getElementById("submitRole").addEventListener("click", async () => {
-            const staffEmail = document.getElementById("staffEmail").value;
-            const role = document.getElementById("role").value;
-            if (!staffEmail || !role) {
-                document.getElementById("message").innerText = "Please enter your email and select a role.";
+        let staffEmail = localStorage.getItem("staffEmail");
+
+        async function selectRole(role) {
+            if (!staffEmail) {
+                document.getElementById("message").innerText = "Error: You must be logged in.";
                 return;
             }
+
             try {
                 const response = await fetch("/select-role", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ email: staffEmail, role })
                 });
+
                 const result = await response.json();
                 document.getElementById("message").innerText = result.message;
-                if (result.success && result.redirectTo) {
+
+                if (result.success) {
                     setTimeout(() => {
-                        window.location.href = result.redirectTo;
+                        window.location.href = result.redirectTo; // Redirect based on role
                     }, 1500);
                 }
             } catch (error) {
                 console.error("Error selecting role:", error);
-                document.getElementById("message").innerText = "An error occurred.";
             }
-        });
+        }
     </script>
+
 </body>
 </html>
