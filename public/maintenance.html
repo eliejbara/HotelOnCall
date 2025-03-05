@@ -4,16 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Request Maintenance</title>
-    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
     <header>
-        <h1>HotelOnCall - Request Maintenance</h1>
     </header>
 
     <main class="main-content">
-        <div class="request-container">
+        <div class="maintenance-container">
             <h2>Submit a Maintenance Request</h2>
             <form id="maintenanceForm">
                 <input type="hidden" id="roomNumber">
@@ -37,20 +36,20 @@
                 <button type="button" id="checkStatusBtn">Check Request Status</button>
                 <div id="requestsList"></div> <!-- This will show the request status -->
             </form>
-
+            <button type="button" onclick="window.location.href='guest_services.html';">Return to Services</button>
             <p id="message"></p>
         </div>
     </main>
 
     <footer>
-        <p>HotelOnCall Team</p>
+        <p>Contact Us: HotelOnCall Team</p>
+        <p>ehj00@mail.aub.edu | nwd06@mail.aub.edu | ahn25@mail.aub.edu | kms36@mail.aub.edu | rmt29@mail.aub.edu</p>
     </footer>
 
     <script>
-        let guestEmail; // Declare globally for accessibility
+        let guestEmail = localStorage.getItem("loggedInGuestEmail");
 
         document.addEventListener("DOMContentLoaded", async () => {
-            guestEmail = localStorage.getItem("guestEmail") || localStorage.getItem("loggedInGuestEmail"); // ✅ Ensure it fetches correctly
 
             if (!guestEmail) {
                 alert("You must be logged in as a guest!");
