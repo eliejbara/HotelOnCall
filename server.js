@@ -216,7 +216,7 @@ app.post("/select-role", async (req, res) => {
     } else if (role === "maintenance") {
       redirectTo = "maintenance_dashboard.html";
     } else if (role === "cleaner") {
-      redirectTo = "cleaner_dashboard.html";
+      redirectTo = "cleaning_dashboard.html";
     }
 
     return res.json({
@@ -390,19 +390,101 @@ app.post("/update-maintenance-status", async (req, res) => {
   }
 });
 
-app.post("/checkout", async (req, res) => {
+// Checkout endpoint
+app.post("/checkout", (req, res) => {
   const { guestEmail } = req.body;
+
   if (!guestEmail) {
-    return res.status(400).json({ success: false, message: "Guest email is required for checkout." });
+      return res.status(400).json({ success: false, message: "Guest email is required for checkout." });
   }
-  try {
-    const result = await db.query("DELETE FROM check_ins WHERE guest_id = (SELECT id FROM users WHERE email = $1)", [guestEmail]);
-    res.json({ success: true, message: "Checkout successful!" });
-  } catch (error) {
-    console.error("Error during checkout:", error);
-    return res.status(500).json({ success: false, message: "Database error occurred." });
-  }
+
+  console.log(`🔍 Checking out guest: ${guestEmail}`);
+
+  // Find guest's check-in record
+  db.query(
+      `SELECT guest_id, room_number FROM check_ins 
+       INNER JOIN users ON check_ins.guest_id = users.id 
+       WHERE users.email = $1`,
+      [guestEmail],
+      (err, result) => {
+          if (err) {
+              console.error("❌ Error fetching check-in record:", err);
+              return res.status(500).json({ success: false, message: "Database error." });
+          }
+
+          if (result.rows.length === 0) {
+              return res.json({ success: false, message: "No active check-in found." });
+          }
+
+          const { guest_id, room_number } = result.rows[0];
+
+          console.log(`✅ Guest found. ID: ${guest_id}, Room: ${room_number}`);
+
+          // Delete the guest's orders before checkout
+          db.query(
+              `DELETE FROM orders WHERE guest_email = (SELECT email FROM users WHERE id = $1)`,
+              [guest_id],
+              (err) => {
+                  if (err) {
+                      console.error("❌ Error deleting guest orders:", err);
+                      return res.status(500).json({ success: false, message: "Database error while deleting orders." });
+                  }
+
+                  console.log("🗑️ Guest orders deleted successfully.");
+
+                  // Delete the guest's cleaning requests before checkout
+                  db.query(
+                      `DELETE FROM cleaning_requests WHERE guest_email = (SELECT email FROM users WHERE id = $1)`,
+                      [guest_id],
+                      (err) => {
+                          if (err) {
+                              console.error("❌ Error deleting cleaning requests:", err);
+                              return res.status(500).json({ success: false, message: "Database error while deleting cleaning requests." });
+                          }
+
+                          console.log("🗑️ Guest cleaning requests deleted successfully.");
+
+                          // ✅ **NEW: Delete maintenance requests before checkout**
+                          db.query(
+                              `DELETE FROM maintenance_requests WHERE guest_email = (SELECT email FROM users WHERE id = $1)`,
+                              [guest_id],
+                              (err) => {
+                                  if (err) {
+                                      console.error("❌ Error deleting maintenance requests:", err);
+                                      return res.status(500).json({ success: false, message: "Database error while deleting maintenance requests." });
+                                  }
+
+                                  console.log("🗑️ Guest maintenance requests deleted successfully.");
+
+                                  // Remove check-in record and make room available again
+                                  db.query(
+                                      `DELETE FROM check_ins WHERE guest_id = $1`,
+                                      [guest_id],
+                                      (err) => {
+                                          if (err) {
+                                              console.error("❌ Error during checkout:", err);
+                                              return res.status(500).json({ success: false, message: "Database error during checkout." });
+                                          }
+
+                                          console.log(`✅ Checkout successful! Room ${room_number} is now available.`);
+
+                                          res.json({
+                                              success: true,
+                                              message: `Checkout successful! Room ${room_number} is now available.`,
+                                              clearSession: true
+                                          });
+                                      }
+                                  );
+                              }
+                          );
+                      }
+                  );
+              }
+          );
+      }
+  );
 });
+
 
 app.get("/menu", async (req, res) => {
   try {
@@ -412,6 +494,180 @@ app.get("/menu", async (req, res) => {
     console.error("Error fetching menu:", error);
     res.status(500).json({ success: false, message: "Database error occurred." });
   }
+});
+
+// Route to get available cleaning slots
+app.get("/available-cleaning-slots", (req, res) => {
+    // SQL query to fetch available cleaning time slots
+    db.query("SELECT time_slot FROM cleaning_times WHERE available = TRUE", (err, result) => {
+        if (err) {
+            console.error("❌ Error fetching cleaning time slots:", err);
+            return res.status(500).json({ message: "Server error" });
+        }
+
+        console.log("Results from DB:", result.rows);
+
+        // Check if we have any available cleaning time slots
+        if (result.rows.length > 0) {
+            res.json(result.rows.map(row => row.time_slot));  // Map to just return the time_slot values
+        } else {
+            res.status(404).json({ message: "No available time slots." });
+        }
+    });
+});
+
+// Request cleaning route (POST)
+app.post("/request-cleaning", async (req, res) => {
+    const { guestEmail, roomNumber, timeSlot } = req.body;
+
+    if (!guestEmail || !roomNumber || !timeSlot) {
+        return res.status(400).json({ success: false, message: "Missing required parameters." });
+    }
+
+    try {
+        // Start a transaction to handle both operations (insert and update)
+        await db.query('BEGIN');  // Start the transaction
+
+        // Insert cleaning request into the database
+        await db.query(
+            "INSERT INTO cleaning_requests (guest_email, room_number, time_slot) VALUES ($1, $2, $3)",
+            [guestEmail, roomNumber, timeSlot]
+        );
+
+        // Update the availability of the time slot
+        await db.query(
+            "UPDATE cleaning_times SET available = FALSE WHERE time_slot = $1",
+            [timeSlot]
+        );
+
+        // Commit the transaction
+        await db.query('COMMIT');
+
+        // Respond once all operations are complete
+        res.json({ success: true, message: "Cleaning request submitted successfully." });
+    } catch (error) {
+        console.error("Error submitting cleaning request:", error);
+        await db.query('ROLLBACK');  // Rollback the transaction on error
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+});
+
+// Book the first available cleaning slot and mark it as unavailable
+app.get("/first-available-cleaning", async (req, res) => {
+  const { guestEmail, roomNumber } = req.query;
+
+  if (!guestEmail || !roomNumber) {
+      console.log("❌ Error: Missing guestEmail or roomNumber");
+      return res.status(400).json({ success: false, message: "Missing guestEmail or roomNumber" });
+  }
+
+  console.log("🔍 Fetching first available cleaning slot...");
+
+  try {
+      // Start transaction
+      await db.query('BEGIN');
+
+      // Fetch first available slot
+      const result = await db.query(
+          "SELECT time_slot FROM cleaning_times WHERE available = TRUE LIMIT 1"
+      );
+
+      if (result.rows.length === 0) {
+          console.log("⚠️ No available slots found.");
+          await db.query('ROLLBACK');
+          return res.json({ success: false, message: "No available slots found." });
+      }
+
+      let timeSlot = result.rows[0].time_slot.trim();
+      console.log("✅ Found available time slot:", timeSlot);
+
+      // Mark the slot as unavailable
+      const updateResult = await db.query(
+          "UPDATE cleaning_times SET available = FALSE WHERE time_slot = $1 RETURNING *",
+          [timeSlot]
+      );
+      console.log("🔄 Updated slot:", updateResult.rows);
+
+      // Insert cleaning request
+      const insertResult = await db.query(
+          "INSERT INTO cleaning_requests (guest_email, room_number, time_slot) VALUES ($1, $2, $3) RETURNING *",
+          [guestEmail, roomNumber, timeSlot]
+      );
+      console.log("📝 Inserted cleaning request:", insertResult.rows);
+
+      // Commit transaction
+      await db.query('COMMIT');
+
+      res.json({ success: true, timeSlot, guestEmail, roomNumber });
+  } catch (error) {
+      console.error("❌ Error processing request:", error);
+      await db.query('ROLLBACK');
+      res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+
+// Check cleaning request status
+app.get("/guest-cleaning/:guestEmail", async (req, res) => {
+    const { guestEmail } = req.params;
+    console.log("Results from DB3:", guestEmail);
+    
+    try {
+        // Query to get cleaning requests for the guest
+        const result = await db.query(
+            "SELECT room_number, time_slot, request_status FROM cleaning_requests WHERE guest_email = $1",
+            [guestEmail]
+        );
+        
+        console.log("Results from DB2:", result.rows);
+        return res.json(result.rows); // ✅ Send results from the database
+    } catch (err) {
+        console.error("❌ Error fetching cleaning requests:", err);
+        return res.status(500).json({ message: "Server error" });
+    }
+});
+
+// Update cleaning request status
+app.post("/update-cleaning-status", async (req, res) => {
+    const { requestId, status } = req.body;
+
+    if (!requestId || !status) {
+        return res.status(400).json({ success: false, message: "Missing request ID or status." });
+    }
+
+    try {
+        // Update the cleaning request status
+        const result = await db.query(
+            "UPDATE cleaning_requests SET request_status = $1 WHERE id = $2",
+            [status, requestId]
+        );
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({ success: false, message: "Cleaning request not found." });
+        }
+
+        console.log(`✅ Cleaning request ${requestId} updated to: ${status}`);
+        return res.json({ success: true, message: `Cleaning request updated to ${status}` });
+    } catch (err) {
+        console.error("❌ Error updating cleaning request:", err);
+        return res.status(500).json({ success: false, message: "Database error while updating request." });
+    }
+});
+
+// Get all cleaning requests that are not completed
+app.get("/cleaning-requests", async (req, res) => {
+    try {
+        // Query to get all cleaning requests with status other than 'Completed'
+        const result = await db.query(
+            "SELECT * FROM cleaning_requests WHERE request_status != 'Completed'"
+        );
+
+        console.log("🔍 Cleaning Requests:", result.rows); // Debugging
+        res.json(result.rows); // ✅ Send cleaning requests
+    } catch (err) {
+        console.error("❌ Error fetching cleaning requests:", err);
+        return res.status(500).json({ success: false, message: "Database error." });
+    }
 });
 
 const PORT = process.env.PORT || 5000;
