@@ -4,29 +4,40 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Guest Services</title>
+    <link rel="stylesheet" href="/styles.css">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
     <!-- Header -->
     <header>
+        <h1>HotelOnCall - Guest Services</h1>
     </header>
 
     <!-- Services Section -->
     <main class="main-content">
         <div class="services-container">
             <div class="service-box" onclick="location.href='order_food.html'">
+                <h2>🍽️ Order Food</h2>
+                <p>Browse and order delicious meals from our menu.</p>
                 <h2>Order Food</h2>
                 <p>Indulge in exquisite dining by exploring our curated menu and placing your order for a gourmet experience delivered to your room.</p>
             </div>
             <div class="service-box" onclick="location.href='maintenance.html'">
+                <h2>🛠️ Request Maintenance</h2>
+                <p>Report any issues in your room that need fixing.</p>
                 <h2>Request Maintenance</h2>
                 <p>Experience uninterrupted luxury—report any issue, and our dedicated team will swiftly restore perfection to your stay.</p>
             </div>
+            <div class="service-box" onclick="location.href='housekeeping.html'">
+                <h2>🧹 Request Housekeeping</h2>
+                <p>Request a room cleaning service at your convenience.</p>
             <div class="service-box" onclick="location.href='cleaningrequest.html'">
                 <h2>Request Room Cleaning</h2>
                 <p>Elevate your stay with our impeccable room cleaning service—request a room refresh at your convenience for a pristine and indulgent experience.</p>
             </div>
+            <div class="checkout-container">
+                <button id="checkoutRedirectBtn">🚪 Checkout</button>
             <div class="checkout-container" onclick="location.href='checkout.html'">
                 <h2>Checkout</h2>
                 <p>Thank you for choosing elegance and comfort. We look forward to welcoming you again for another unforgettable experience.</p>
@@ -34,7 +45,7 @@
         </div>
 
     </main>
-    
+
 
     <!-- Footer -->
     <footer>
@@ -66,10 +77,8 @@
     }
 });
 
-    
+
     </script>
 
 </body>
 </html>
-
-
