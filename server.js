@@ -270,7 +270,8 @@ app.post("/cook/update-order", async (req, res) => {
     if (result.rowCount === 0) {
       return res.status(404).json({ success: false, message: "Order not found." });
     }
-    res.json({ success: true, message: Order #${orderId} updated to ${status} });
+  res.json({ success: true, message: `Order #${orderId} updated to ${status}` });
+
   } catch (error) {
     console.error("❌ Order Status Update Error:", error);
     return res.status(500).json({ success: false, message: "Database error while updating order status." });
