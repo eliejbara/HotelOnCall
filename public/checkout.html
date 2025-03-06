@@ -66,7 +66,7 @@
 
         document.addEventListener("DOMContentLoaded", async () => {
 
-    let guestEmail = localStorage.getItem("loggedInGuestEmail"); // âœ… Ensure correct key
+    let guestEmail = localStorage.getItem("loggedInGuestEmail"); // ✅ Ensure correct key
 
  
 
@@ -82,11 +82,11 @@
 
  
 
-    console.log("ðŸ” Guest Email:", guestEmail); // Debugging log
+    console.log("🔍 Guest Email:", guestEmail); // Debugging log
 
  
 
-    // âœ… Fetch guest's room number
+    // ✅ Fetch guest's room number
 
     try {
 
@@ -108,13 +108,13 @@
 
     } catch (error) {
 
-        console.error("âŒ Error fetching room:", error);
+        console.error("❌ Error fetching room:", error);
 
     }
 
  
 
-    // âœ… Checkout Process (Attach event listener inside DOMContentLoaded)
+    // ✅ Checkout Process (Attach event listener inside DOMContentLoaded)
 
     const checkoutButton = document.getElementById("checkoutBtn");
 
@@ -134,7 +134,7 @@
 
                     headers: { "Content-Type": "application/json" },
 
-                    body: JSON.stringify({ guestEmail, feedback }) // âœ… Send correct email
+                    body: JSON.stringify({ guestEmail, feedback }) // ✅ Send correct email
 
                 });
 
@@ -148,21 +148,21 @@
 
                 if (result.success) {
 
-                    alert("âœ… Checked out successfully!");
+                    alert("✅ Checked out successfully!");
 
-                    localStorage.removeItem("loggedInGuestEmail"); // âœ… Fix: Use correct key
+                    localStorage.removeItem("loggedInGuestEmail"); // ✅ Fix: Use correct key
 
                     window.location.href = "index.html"; // Redirect after checkout
 
                 } else {
 
-                    alert("âš ï¸ Error: " + result.message);
+                    alert("⚠️ Error: " + result.message);
 
                 }
 
             } catch (error) {
 
-                console.error("âŒ Error during checkout:", error);
+                console.error("❌ Error during checkout:", error);
 
             }
 
@@ -170,7 +170,7 @@
 
     } else {
 
-        console.error("âŒ Checkout button not found in DOM!");
+        console.error("❌ Checkout button not found in DOM!");
 
     }
 
