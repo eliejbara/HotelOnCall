@@ -1,328 +1,217 @@
-
 <!DOCTYPE html>
-
 <html lang="en">
 
 <head>
-
     <meta charset="UTF-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>Order Food</title>
-
     <link rel="stylesheet" href="styles.css">
-
 </head>
 
 <body>
-
- 
-
     <header>
-
+        <!-- Header content can go here if needed -->
     </header>
 
- 
-
     <main class="main-content">
-
         <div class="order-container">
-
             <h2>Menu</h2>
-
             <div id="menu">Loading menu...</div>
 
- 
-
             <h2>Cart</h2>
-
             <div id="cart"></div>
-
             <div class="total" id="total">Total: $0</div>
 
- 
-
             <button onclick="placeOrder()">Place Order</button>
-
             <button onclick="checkOrderStatus()">Check Order Status</button>
-
-            <div id="orderStatus"></div>
-
+            <div id="orderStatus">
+                <h3>Order Status</h3>
+                <div id="orderList" class="order-list">
+                    <!-- Orders will be populated here dynamically -->
+                </div>
+            </div>
             <button type="button" onclick="window.location.href='guest_services.html';">Return to Services</button>
-
         </div>
-
     </main>
 
- 
-
     <footer>
-
         <p>Contact Us: HotelOnCall Team</p>
-
         <p>ehj00@mail.aub.edu | nwd06@mail.aub.edu | ahn25@mail.aub.edu | kms36@mail.aub.edu | rmt29@mail.aub.edu</p>
-
     </footer>
 
- 
-
     <script>
-
         let cart = [];
 
- 
-
         // ✅ Store guest email from login
-
         let guestEmail = localStorage.getItem("loggedInGuestEmail");
 
- 
-
         // ✅ Fetch Menu Items
-
         async function fetchMenu() {
-
             try {
-
                 const response = await fetch("/menu");
-
                 if (!response.ok) throw new Error("Failed to fetch menu");
 
- 
-
                 const menuItems = await response.json();
-
                 const menuDiv = document.getElementById("menu");
-
                 menuDiv.innerHTML = "";
 
- 
-
                 menuItems.forEach((item, index) => {
-
                     const itemDiv = document.createElement("div");
-
                     itemDiv.classList.add("menu-item");
-
                     itemDiv.innerHTML = `
-
                         <img src="${item.image}" alt="${item.name}">
-
                         <div>
-
                             <strong>${item.name}</strong>
-
                             <p>${item.description}</p>
-
                             <span>$${item.price}</span>
-
                         </div>
-
                         <button onclick="addToCart(${index}, '${item.name}', ${item.price})">Add to Cart</button>
-
                     `;
-
                     menuDiv.appendChild(itemDiv);
-
                 });
-
             } catch (error) {
-
                 document.getElementById("menu").innerText = "Error loading menu.";
-
             }
-
         }
-
- 
 
         // ✅ Add Item to Cart
-
         function addToCart(index, name, price) {
-
             let existingItem = cart.find(item => item.name === name);
-
             if (existingItem) {
-
                 existingItem.quantity++;
-
             } else {
-
                 cart.push({ name, price, quantity: 1 });
-
             }
-
             renderCart();
-
         }
-
- 
 
         // ✅ Render Cart
-
         function renderCart() {
-
             const cartDiv = document.getElementById("cart");
-
             cartDiv.innerHTML = "";
-
             let total = 0;
 
- 
-
             cart.forEach((item, i) => {
-
                 total += item.price * item.quantity;
-
                 const cartItem = document.createElement("div");
-
                 cartItem.classList.add("cart-item");
-
                 cartItem.innerHTML = `
-
                     ${item.name} - $${(item.price * item.quantity).toFixed(2)}
-
                     (x${item.quantity})
-
                     <button onclick="removeFromCart(${i})">Remove</button>
-
                 `;
-
                 cartDiv.appendChild(cartItem);
-
             });
 
- 
-
             document.getElementById("total").innerText = `Total: $${total.toFixed(2)}`;
-
         }
-
- 
 
         // ✅ Remove Item from Cart
-
         function removeFromCart(index) {
-
             cart.splice(index, 1);
-
             renderCart();
-
         }
-
- 
 
         // ✅ Place Order (Now Uses Stored Email)
-
         async function placeOrder() {
-
             let guestEmail = localStorage.getItem("loggedInGuestEmail"); // ✅ Ensure correct key
 
- 
-
-    console.log("📦 Sending Order Request:", { guestEmail, cart }); // Debugging
-
+            console.log("📦 Sending Order Request:", { guestEmail, cart }); // Debugging
             if (!guestEmail) {
-
                 alert("Error: You must be logged in to place an order.");
-
                 return;
-
             }
-
             if (cart.length === 0) {
-
                 alert("Your cart is empty.");
-
                 return;
-
             }
-
- 
 
             try {
-
                 const response = await fetch("/place-order", {
-
                     method: "POST",
-
                     headers: { "Content-Type": "application/json" },
-
                     body: JSON.stringify({ guestEmail, orderItems: cart })
-
                 });
 
- 
-
                 const result = await response.json();
-
                 console.log("✅ Server Response:", result); // Debugging
-
                 alert(result.message);
 
- 
-
                 if (result.success) {
-
                     cart = [];
-
                     renderCart();
-
                 }
-
             } catch (error) {
-
                 console.error("Error placing order:", error);
-
             }
-
         }
-
- 
 
         // ✅ Check Order Status
+        // ✅ Check Order Status
+async function checkOrderStatus() {
+    if (!guestEmail) {
+        alert("Error: You must be logged in.");
+        return;
+    }
 
-        async function checkOrderStatus() {
+    try {
+        const response = await fetch(`/check-order/${guestEmail}`);
+        const data = await response.json();
 
-            if (!guestEmail) {
+        const orderListDiv = document.getElementById("orderList");
+        orderListDiv.innerHTML = ""; // Clear previous order statuses
 
-                alert("Error: You must be logged in.");
-
-                return;
-
-            }
-
- 
-
-            try {
-
-                const response = await fetch(`/check-order/${guestEmail}`);
-
-                const data = await response.json();
-
-                document.getElementById("orderStatus").innerText = JSON.stringify(data, null, 2);
-
-            } catch (error) {
-
-                console.error("Error checking order:", error);
-
-            }
-
+        if (data.length === 0) {
+            orderListDiv.innerHTML = "<p>No orders found.</p>";
+            return;
         }
 
- 
+        // Loop through each order and create a formatted entry
+        data.forEach(order => {
+            const orderDiv = document.createElement("div");
+
+            // Apply the request-box class for styling
+            orderDiv.classList.add("request-box");
+
+            // Dynamically apply the status class based on the order status
+            let statusClass = "";
+            switch (order.order_status.toLowerCase()) {
+                case "pending":
+                    statusClass = "pending";
+                    break;
+                case "in-progress":
+                    statusClass = "in-progress";
+                    break;
+                case "resolved":
+                    statusClass = "resolved";
+                    break;
+                default:
+                    statusClass = ""; // No status class if the status is unknown
+                    break;
+            }
+
+            orderDiv.innerHTML = `
+                <h4>Order #${order.id}</h4>
+                <p><strong>Status:</strong> <span class="${statusClass}">${order.order_status}</span></p>
+                <p><strong>Ordered Items:</strong></p>
+                <ul>
+                    ${order.menu_item.split(",").map(item => `<li>${item}</li>`).join("")}
+                </ul>
+                <p><strong>Total Price:</strong> $${order.total_price}</p>
+                <p><strong>Placed On:</strong> ${new Date(order.order_time).toLocaleString()}</p>
+            `;
+
+            orderListDiv.appendChild(orderDiv);
+        });
+    } catch (error) {
+        console.error("Error checking order:", error);
+    }
+}
+
 
         document.addEventListener("DOMContentLoaded", fetchMenu);
-
     </script>
-
- 
 
 </body>
 
 </html>
-
- 
-
- 
