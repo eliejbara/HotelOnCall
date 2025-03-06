@@ -42,10 +42,10 @@ const db = new Pool({
   ssl: { rejectUnauthorized: false } // Required for Neon
 });
 
-// Add this to handle unexpected errors from the PostgreSQL pool
-//db.on('error', (err) => {
-//  console.error('Unexpected error on idle PostgreSQL client', err);
-//});
+Add this to handle unexpected errors from the PostgreSQL pool
+db.on('error', (err) => {
+ console.error('Unexpected error on idle PostgreSQL client', err);
+});
 
 
 // Connect to PostgreSQL
