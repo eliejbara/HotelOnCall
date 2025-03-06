@@ -3,10 +3,7 @@ body {
   display: flex;
   flex-direction: column;  /* Stack header, main, footer vertically */
   min-height: 100vh;       /* Full viewport height */
-  font-family: 'Merriweather', serif;
-  background: url('image2.png') no-repeat center center fixed; 
-  background-size: cover; /* Ensures the image covers the full screen */
-  color: #3f2d22; /* Adjust text color for readability */
+font-family: 'Merriweather', serif;
 }
 
 /* Header (Blue) */
@@ -22,7 +19,7 @@ header {
   height: 150px; /* Adjust the height based on your image size */
 }
 
-/* Footer */
+
 footer {
   font-family: 'Playfair Display SC', serif;
   background-color: #4a120d;
@@ -148,6 +145,7 @@ a:hover {
   max-width:400px;
 }
 
+
 .service-box h2, .service-box p {
   margin: 0; /* Reset any margin */
 }
@@ -187,12 +185,11 @@ a:hover {
   align-items: center;
   justify-content: space-between;
   padding: 18px;
+  border-bottom: transparent;
   background: #d4c38f;
-  border-radius: 15px; /* Curved edges for the box */
+  border-radius: 10px;
   margin-bottom: 15px;
   transition: transform 0.2s ease-in-out;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); /* Optional shadow for the box */
-  max-width: 95%; /* Ensure the box isn't too wide */
 }
 
 /* Menu Hover Effect */
@@ -281,7 +278,8 @@ button:hover {
   }
 }
 
-/* Status Button */
+
+
 #checkStatusBtn {
   display: block;
   margin-top: 15px;
@@ -300,7 +298,6 @@ button:hover {
   background-color: #9e6612;
 }
 
-/* Request Box */
 .request-box {
   background: white;
   padding: 20px;
@@ -312,7 +309,6 @@ button:hover {
 .in-progress { color: blue; font-weight: bold; }
 .resolved { color: green; font-weight: bold; }
 
-/* Checkout */
 .checkout-container {
   background: rgba(236, 224, 174, 0.8); /* Same clarity as services */
   padding: 20px;
@@ -341,6 +337,7 @@ button:hover {
   box-shadow: 0px 6px 20px rgba(0, 0, 0, 0.3);
 }
 
+
 /* Adjust the button style */
 #checkoutRedirectBtn {
   background-color: transparent;
@@ -353,6 +350,7 @@ button:hover {
   display: inline-block;
   margin: 20px auto;
 }
+
 
 /* Maintenance Request Container (same color as service box) */
 .maintenance-container {
@@ -462,6 +460,12 @@ button:hover {
   transform: scale(1.05);
 }
 
+body {
+  background: url('image2.png') no-repeat center center fixed; 
+  background-size: cover; /* Ensures the image covers the full screen */
+  color: #3f2d22; /* Adjust text color for readability */
+}
+
 /* Optional: If you want to make content more readable */
 #orders-container {
   background: none; 
@@ -472,6 +476,13 @@ button:hover {
   width: 80%;
   text-align: center;
   min-height: 60vh; /* Adjust this to push the footer down */
+}
+
+.order-box {
+  background: rgba(255, 255, 255, 0.2); /* Light transparency */
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
 }
 
 /* ======== Cleaning Request Page ======== */
@@ -525,22 +536,23 @@ button:hover {
 }
 
 /* ======== Request Status Styling ======== */
-/* Request Status Styling */
-/* Order Item Styling */
-/* Request Box Styling */
 .request-box {
-  background: #ffffff; /* White background */
+  background: white;
   padding: 20px;
   margin: 10px 0;
-  border-radius: 15px; /* Curved edges for the box */
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); /* Optional shadow */
-  font-weight: bold; /* Bold text */
-  font-style: italic; /* Italic text */
-  color: #3f2d22; /* Optional: Adjust the text color */
+  border-radius: 8px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
 }
 
-/* Status-specific Styling */
 .pending { color: orange; font-weight: bold; }
 .in-progress { color: blue; font-weight: bold; }
 .resolved { color: green; font-weight: bold; }
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .cleaning-container {
+      width: 95%;
+  }
+}
+
 
