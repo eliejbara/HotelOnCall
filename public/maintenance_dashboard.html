@@ -1,16 +1,9 @@
 <!DOCTYPE html>
-
 <html lang="en">
-
 <head>
-
     <meta charset="UTF-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Maintenance Dashboard</title>
-
-    <title>Order Food</title>
-
     <link rel="stylesheet" href="styles.css">
     <style>
         body {
@@ -48,64 +41,22 @@
         .status-in-progress { color: orange; font-weight: bold; }
         .status-resolved { color: green; font-weight: bold; }
     </style>
-
 </head>
-
 <body>
-
- 
 
     <header>
         <h1></h1>
-
     </header>
 
     <main class="dashboard-container">
         <h2>Pending Maintenance Requests</h2>
         <div id="maintenanceRequests">Loading...</div>
- 
-
-    <main class="main-content">
-
-        <div class="order-container">
-
-            <h2>Menu</h2>
-
-            <div id="menu">Loading menu...</div>
-
- 
-
-            <h2>Cart</h2>
-
-            <div id="cart"></div>
-
-            <div class="total" id="total">Total: $0</div>
-
- 
-
-            <button onclick="placeOrder()">Place Order</button>
-
-            <button onclick="checkOrderStatus()">Check Order Status</button>
-
-            <div id="orderStatus"></div>
-
-            <button type="button" onclick="window.location.href='guest_services.html';">Return to Services</button>
-
-        </div>
-
     </main>
 
- 
-
     <footer>
-
         <p>Contact Us: HotelOnCall Team</p>
-
         <p>ehj00@mail.aub.edu | nwd06@mail.aub.edu | ahn25@mail.aub.edu | kms36@mail.aub.edu | rmt29@mail.aub.edu</p>
-
     </footer>
-
- 
 
     <script>
         document.addEventListener("DOMContentLoaded", async () => {
@@ -113,167 +64,7 @@
             if (!staffEmail) {
                 alert("You must be logged in as maintenance staff!");
                 window.location.href = "index.html";
-
-        let cart = [];
-
- 
-
-        // ✅ Store guest email from login
-
-        let guestEmail = localStorage.getItem("loggedInGuestEmail");
-
- 
-
-        // ✅ Fetch Menu Items
-
-        async function fetchMenu() {
-
-            try {
-
-                const response = await fetch("/menu");
-
-                if (!response.ok) throw new Error("Failed to fetch menu");
-
- 
-
-                const menuItems = await response.json();
-
-                const menuDiv = document.getElementById("menu");
-
-                menuDiv.innerHTML = "";
-
- 
-
-                menuItems.forEach((item, index) => {
-
-                    const itemDiv = document.createElement("div");
-
-                    itemDiv.classList.add("menu-item");
-
-                    itemDiv.innerHTML = `
-
-                        <img src="${item.image}" alt="${item.name}">
-
-                        <div>
-
-                            <strong>${item.name}</strong>
-
-                            <p>${item.description}</p>
-
-                            <span>$${item.price}</span>
-
-                        </div>
-
-                        <button onclick="addToCart(${index}, '${item.name}', ${item.price})">Add to Cart</button>
-
-                    `;
-
-                    menuDiv.appendChild(itemDiv);
-
-                });
-
-            } catch (error) {
-
-                document.getElementById("menu").innerText = "Error loading menu.";
-
-            }
-
-        }
-
- 
-
-        // ✅ Add Item to Cart
-
-        function addToCart(index, name, price) {
-
-            let existingItem = cart.find(item => item.name === name);
-
-            if (existingItem) {
-
-                existingItem.quantity++;
-
-            } else {
-
-                cart.push({ name, price, quantity: 1 });
-
-            }
-
-            renderCart();
-
-        }
-
- 
-
-        // ✅ Render Cart
-
-        function renderCart() {
-
-            const cartDiv = document.getElementById("cart");
-
-            cartDiv.innerHTML = "";
-
-            let total = 0;
-
- 
-
-            cart.forEach((item, i) => {
-
-                total += item.price * item.quantity;
-
-                const cartItem = document.createElement("div");
-
-                cartItem.classList.add("cart-item");
-
-                cartItem.innerHTML = `
-
-                    ${item.name} - $${(item.price * item.quantity).toFixed(2)}
-
-                    (x${item.quantity})
-
-                    <button onclick="removeFromCart(${i})">Remove</button>
-
-                `;
-
-                cartDiv.appendChild(cartItem);
-
-            });
-
- 
-
-            document.getElementById("total").innerText = `Total: $${total.toFixed(2)}`;
-
-        }
-
- 
-
-        // ✅ Remove Item from Cart
-
-        function removeFromCart(index) {
-
-            cart.splice(index, 1);
-
-            renderCart();
-
-        }
-
- 
-
-        // ✅ Place Order (Now Uses Stored Email)
-
-        async function placeOrder() {
-
-            let guestEmail = localStorage.getItem("loggedInGuestEmail"); // ✅ Ensure correct key
-
- 
-
-    console.log("📦 Sending Order Request:", { guestEmail, cart }); // Debugging
-
-            if (!guestEmail) {
-
-                alert("Error: You must be logged in to place an order.");
-
                 return;
-
             }
 
             // Object to hold cached status for each maintenance request
@@ -329,14 +120,8 @@
                         });
                     });
                 } catch (error) {
-                    console.error("❌ Error fetching maintenance requests:", error);
+                    console.error("âŒ Error fetching maintenance requests:", error);
                 }
-            if (cart.length === 0) {
-
-                alert("Your cart is empty.");
-
-                return;
-
             }
 
             // Function to update the status of a maintenance request
@@ -351,7 +136,7 @@
                     });
 
                     const result = await response.json();
-                    console.log("🔍 API Response:", result); // Debugging
+                    console.log("ðŸ” API Response:", result); // Debugging
 
                     if (result.success) {
                         alert("Status updated successfully!");
@@ -360,93 +145,17 @@
                         alert("Error updating status: " + result.message);
                     }
                 } catch (error) {
-                    console.error("❌ Error updating maintenance request:", error);
- 
-
-            try {
-
-                const response = await fetch("/place-order", {
-
-                    method: "POST",
-
-                    headers: { "Content-Type": "application/json" },
-
-                    body: JSON.stringify({ guestEmail, orderItems: cart })
-
-                });
-
- 
-
-                const result = await response.json();
-
-                console.log("✅ Server Response:", result); // Debugging
-
-                alert(result.message);
-
- 
-
-                if (result.success) {
-
-                    cart = [];
-
-                    renderCart();
-
+                    console.error("âŒ Error updating maintenance request:", error);
                 }
             };
 
             // Initial fetch to load maintenance requests
             fetchMaintenanceRequests();
-            } catch (error) {
-
-                console.error("Error placing order:", error);
-
-            }
-
-        }
-
- 
-
-        // ✅ Check Order Status
-
-        async function checkOrderStatus() {
-
-            if (!guestEmail) {
-
-                alert("Error: You must be logged in.");
-
-                return;
-
-            }
-
- 
-
-            try {
-
-                const response = await fetch(`/check-order/${guestEmail}`);
-
-                const data = await response.json();
-
-                document.getElementById("orderStatus").innerText = JSON.stringify(data, null, 2);
-
-            } catch (error) {
-
-                console.error("Error checking order:", error);
-
-            }
-
-        }
-
- 
-
-        document.addEventListener("DOMContentLoaded", fetchMenu);
 
             // Set interval to refresh maintenance requests every 5 seconds
             setInterval(fetchMaintenanceRequests, 5000); // Refresh every 5 seconds
         });
     </script>
 
- 
-
 </body>
-
 </html>
