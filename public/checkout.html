@@ -17,13 +17,13 @@
 
 <body>
 
- 
+
 
     <header>
 
     </header>
 
- 
+
 
     <main class="main-content">
 
@@ -33,15 +33,17 @@
 
             <p>Room Number: <span id="roomNumber"></span></p>
 
- 
+
 
             <label for="feedback">We Value Your Feedback - Share Your Thoughts (Optional):</label><br>
 
             <textarea id="feedback"></textarea> <!-- Removed the placeholder text -->
 
- 
+
 
             <button id="checkoutBtn">Checkout</button>
+
+            <p id="message"></p>
 
             <button type="button" onclick="window.location.href='guest_services.html';">Return to Services</button>
             <p id="message"></p>
@@ -50,7 +52,7 @@
 
     </main>
 
- 
+
 
     <footer>
 
@@ -60,7 +62,7 @@
 
     </footer>
 
- 
+
 
     <script>
 
@@ -68,7 +70,7 @@
 
     let guestEmail = localStorage.getItem("loggedInGuestEmail"); // ✅ Ensure correct key
 
- 
+
 
     if (!guestEmail) {
 
@@ -80,11 +82,11 @@
 
     }
 
- 
+
 
     console.log("🔍 Guest Email:", guestEmail); // Debugging log
 
- 
+
 
     // ✅ Fetch guest's room number
 
@@ -112,7 +114,7 @@
 
     }
 
- 
+
 
     // ✅ Checkout Process (Attach event listener inside DOMContentLoaded)
 
@@ -124,7 +126,7 @@
 
             const feedback = document.getElementById("feedback").value;
 
- 
+
 
             try {
 
@@ -138,13 +140,13 @@
 
                 });
 
- 
+
 
                 const result = await response.json();
 
                 document.getElementById("message").innerText = result.message;
 
- 
+
 
                 if (result.success) {
 
@@ -178,9 +180,9 @@
 
     </script>
 
-   
 
- 
+
+
 
 </body>
 
