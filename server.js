@@ -14,7 +14,7 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// ✅ Serve static files from the absolute path of "public" (Only fix)
+// âœ… Serve static files from the absolute path of "public" (Only fix)
 app.use(express.static(path.join(__dirname, "public")));
 
 // New route for guest prediction (Flask API integration)
@@ -50,10 +50,10 @@ const db = new Pool({
 // Connect to PostgreSQL
 db.connect((err) => {
   if (err) {
-    console.error("❌ PostgreSQL Connection Failed:", err);
+    console.error("âŒ PostgreSQL Connection Failed:", err);
     process.exit(1);
   } else {
-    console.log("✅ PostgreSQL Connected to Neon Database");
+    console.log("âœ… PostgreSQL Connected to Neon Database");
   }
 });
 
@@ -186,7 +186,7 @@ app.get("/check-order/:guestEmail", async (req, res) => {
     const result = await db.query("SELECT * FROM orders WHERE guest_email = $1 ORDER BY order_time DESC", [guestEmail]);
     res.json(result.rows);
   } catch (error) {
-    console.error("❌ Order Status Fetch Error:", error);
+    console.error("âŒ Order Status Fetch Error:", error);
     return res.status(500).json({ success: false, message: "Database error occurred." });
   }
 });
@@ -216,7 +216,6 @@ app.post("/select-role", async (req, res) => {
     } else if (role === "maintenance") {
       redirectTo = "maintenance_dashboard.html";
     } else if (role === "cleaner") {
-      redirectTo = "cleaner_dashboard.html";
       redirectTo = "cleaning_dashboard.html";
     }
 
@@ -239,10 +238,10 @@ app.post("/update-order-status", async (req, res) => {
   }
   try {
     const result = await db.query("UPDATE orders SET order_status = $1 WHERE id = $2", [status, orderId]);
-    console.log(`✅ Order ${orderId} updated to: ${status}`);
+    console.log(`âœ… Order ${orderId} updated to: ${status}`);
     res.json({ success: true, message: `Order updated to ${status}` });
   } catch (error) {
-    console.error("❌ Order Status Update Error:", error);
+    console.error("âŒ Order Status Update Error:", error);
     return res.status(500).json({ success: false, message: "Database error occurred while updating order status." });
   }
 });
@@ -251,10 +250,10 @@ app.post("/update-order-status", async (req, res) => {
 app.get("/cook/orders", async (req, res) => {
   try {
     const result = await db.query("SELECT id, guest_email, menu_item, quantity, order_status FROM orders WHERE order_status != 'Completed'");
-    console.log("🔍 Orders fetched for cook dashboard:", result.rows);
+    console.log("ðŸ” Orders fetched for cook dashboard:", result.rows);
     res.json(result.rows);
   } catch (error) {
-    console.error("❌ Error fetching orders:", error);
+    console.error("âŒ Error fetching orders:", error);
     return res.status(500).json({ success: false, message: "Database error occurred." });
   }
 });
@@ -272,7 +271,7 @@ app.post("/cook/update-order", async (req, res) => {
     }
     res.json({ success: true, message: `Order #${orderId} updated to ${status}` });
   } catch (error) {
-    console.error("❌ Order Status Update Error:", error);
+    console.error("âŒ Order Status Update Error:", error);
     return res.status(500).json({ success: false, message: "Database error while updating order status." });
   }
 });
@@ -337,13 +336,13 @@ app.post("/request-maintenance", async (req, res) => {
       [guestEmail]
     );
     if (result.rows.length === 0) {
-      return res.status(403).json({ success: false, message: "⚠️ You must be checked in to request maintenance!" });
+      return res.status(403).json({ success: false, message: "âš ï¸ You must be checked in to request maintenance!" });
     }
     const insertResult = await db.query(
       "INSERT INTO maintenance_requests (guest_email, room_number, issue_type, details) VALUES ($1, $2, $3, $4)",
       [guestEmail, roomNumber, issueType, details]
     );
-    console.log("✅ Maintenance request inserted successfully:", insertResult);
+    console.log("âœ… Maintenance request inserted successfully:", insertResult);
     res.json({ success: true, message: "Maintenance request submitted successfully!" });
   } catch (error) {
     console.error("Error during maintenance request:", error);
@@ -357,7 +356,7 @@ app.get("/guest-maintenance/:guestEmail", async (req, res) => {
     const result = await db.query("SELECT * FROM maintenance_requests WHERE guest_email = $1", [guestEmail]);
     res.json(result.rows);
   } catch (error) {
-    console.error("❌ Error fetching maintenance requests:", error);
+    console.error("âŒ Error fetching maintenance requests:", error);
     return res.status(500).json({ success: false, message: "Database error." });
   }
 });
@@ -365,10 +364,10 @@ app.get("/guest-maintenance/:guestEmail", async (req, res) => {
 app.get("/maintenance-requests", async (req, res) => {
   try {
     const result = await db.query("SELECT * FROM maintenance_requests WHERE request_status != 'Resolved'");
-    console.log("🔍 Maintenance Requests:", result.rows);
+    console.log("ðŸ” Maintenance Requests:", result.rows);
     res.json(result.rows);
   } catch (error) {
-    console.error("❌ Error fetching maintenance requests:", error);
+    console.error("âŒ Error fetching maintenance requests:", error);
     return res.status(500).json({ success: false, message: "Database error." });
   }
 });
@@ -383,118 +382,80 @@ app.post("/update-maintenance-status", async (req, res) => {
     if (result.rowCount === 0) {
       return res.status(404).json({ success: false, message: "Request not found." });
     }
-    console.log(`✅ Maintenance request ${requestId} updated to: ${status}`);
+    console.log(`âœ… Maintenance request ${requestId} updated to: ${status}`);
     res.json({ success: true, message: `Request updated to ${status}` });
   } catch (error) {
-    console.error("❌ Error updating maintenance request:", error);
+    console.error("âŒ Error updating maintenance request:", error);
     return res.status(500).json({ success: false, message: "Database error while updating request." });
   }
 });
 
-app.post("/checkout", async (req, res) => {
 // Checkout endpoint
 app.post("/checkout", (req, res) => {
-  const { guestEmail } = req.body;
+    const { guestEmail } = req.body;
 
-  if (!guestEmail) {
-    return res.status(400).json({ success: false, message: "Guest email is required for checkout." });
-  }
-  try {
-    const result = await db.query("DELETE FROM check_ins WHERE guest_id = (SELECT id FROM users WHERE email = $1)", [guestEmail]);
-    res.json({ success: true, message: "Checkout successful!" });
-  } catch (error) {
-    console.error("Error during checkout:", error);
-    return res.status(500).json({ success: false, message: "Database error occurred." });
-      return res.status(400).json({ success: false, message: "Guest email is required for checkout." });
-  }
+    if (!guestEmail) {
+        return res.status(400).json({ success: false, message: "Guest email is required for checkout." });
+    }
 
-  console.log(`🔍 Checking out guest: ${guestEmail}`);
+    // Find guest's check-in record
+    client.query(
+        `SELECT guest_id, room_number FROM check_ins 
+         INNER JOIN users ON check_ins.guest_id = users.id 
+         WHERE users.email = $1`,
+        [guestEmail],
+        (err, result) => {
+            if (err) {
+                console.error("âŒ Error fetching check-in record:", err);
+                return res.status(500).json({ success: false, message: "Database error." });
+            }
 
-  // Find guest's check-in record
-  db.query(
-      `SELECT guest_id, room_number FROM check_ins 
-       INNER JOIN users ON check_ins.guest_id = users.id 
-       WHERE users.email = $1`,
-      [guestEmail],
-      (err, result) => {
-          if (err) {
-              console.error("❌ Error fetching check-in record:", err);
-              return res.status(500).json({ success: false, message: "Database error." });
-          }
+            if (result.rows.length === 0) {
+                return res.json({ success: false, message: "No active check-in found." });
+            }
 
-          if (result.rows.length === 0) {
-              return res.json({ success: false, message: "No active check-in found." });
-          }
+            const { guest_id, room_number } = result.rows[0];
 
-          const { guest_id, room_number } = result.rows[0];
+            // Delete the guest's orders before checkout
+            client.query(
+                `DELETE FROM orders WHERE guest_email = (SELECT email FROM users WHERE id = $1)`,
+                [guest_id],
+                (err) => {
+                    if (err) {
+                        console.error("âŒ Error deleting guest orders:", err);
+                        return res.status(500).json({ success: false, message: "Database error while deleting orders." });
+                    }
 
-          console.log(`✅ Guest found. ID: ${guest_id}, Room: ${room_number}`);
+                    // Delete the guest's cleaning requests before checkout
+                    client.query(
+                        `DELETE FROM cleaning_requests WHERE guest_email = (SELECT email FROM users WHERE id = $1)`,
+                        [guest_id],
+                        (err) => {
+                            if (err) {
+                                console.error("âŒ Error deleting cleaning requests:", err);
+                                return res.status(500).json({ success: false, message: "Database error while deleting cleaning requests." });
+                            }
 
-          // Delete the guest's orders before checkout
-          db.query(
-              `DELETE FROM orders WHERE guest_email = (SELECT email FROM users WHERE id = $1)`,
-              [guest_id],
-              (err) => {
-                  if (err) {
-                      console.error("❌ Error deleting guest orders:", err);
-                      return res.status(500).json({ success: false, message: "Database error while deleting orders." });
-                  }
+                            // Remove check-in record and make room available again
+                            client.query(
+                                `DELETE FROM check_ins WHERE guest_id = $1`,
+                                [guest_id],
+                                (err) => {
+                                    if (err) {
+                                        console.error("âŒ Error during checkout:", err);
+                                        return res.status(500).json({ success: false, message: "Database error during checkout." });
+                                    }
 
-                  console.log("🗑️ Guest orders deleted successfully.");
-
-                  // Delete the guest's cleaning requests before checkout
-                  db.query(
-                      `DELETE FROM cleaning_requests WHERE guest_email = (SELECT email FROM users WHERE id = $1)`,
-                      [guest_id],
-                      (err) => {
-                          if (err) {
-                              console.error("❌ Error deleting cleaning requests:", err);
-                              return res.status(500).json({ success: false, message: "Database error while deleting cleaning requests." });
-                          }
-
-                          console.log("🗑️ Guest cleaning requests deleted successfully.");
-
-                          // ✅ **NEW: Delete maintenance requests before checkout**
-                          db.query(
-                              `DELETE FROM maintenance_requests WHERE guest_email = (SELECT email FROM users WHERE id = $1)`,
-                              [guest_id],
-                              (err) => {
-                                  if (err) {
-                                      console.error("❌ Error deleting maintenance requests:", err);
-                                      return res.status(500).json({ success: false, message: "Database error while deleting maintenance requests." });
-                                  }
-
-                                  console.log("🗑️ Guest maintenance requests deleted successfully.");
-
-                                  // Remove check-in record and make room available again
-                                  db.query(
-                                      `DELETE FROM check_ins WHERE guest_id = $1`,
-                                      [guest_id],
-                                      (err) => {
-                                          if (err) {
-                                              console.error("❌ Error during checkout:", err);
-                                              return res.status(500).json({ success: false, message: "Database error during checkout." });
-                                          }
-
-                                          console.log(`✅ Checkout successful! Room ${room_number} is now available.`);
-
-                                          res.json({
-                                              success: true,
-                                              message: `Checkout successful! Room ${room_number} is now available.`,
-                                              clearSession: true
-                                          });
-                                      }
-                                  );
-                              }
-                          );
-                      }
-                  );
-              }
-          );
-      }
-  );
+                                    res.json({ success: true, message: `Checkout successful! Room ${room_number} is now available.`, clearSession: true });
+                                }
+                            );
+                        }
+                    );
+                }
+            );
+        }
+    );
 });
-
 
 app.get("/menu", async (req, res) => {
   try {
@@ -509,9 +470,9 @@ app.get("/menu", async (req, res) => {
 // Route to get available cleaning slots
 app.get("/available-cleaning-slots", (req, res) => {
     // SQL query to fetch available cleaning time slots
-    db.query("SELECT time_slot FROM cleaning_times WHERE available = TRUE", (err, result) => {
+    client.query("SELECT time_slot FROM cleaning_times WHERE available = TRUE", (err, result) => {
         if (err) {
-            console.error("❌ Error fetching cleaning time slots:", err);
+            console.error("âŒ Error fetching cleaning time slots:", err);
             return res.status(500).json({ message: "Server error" });
         }
 
@@ -536,86 +497,85 @@ app.post("/request-cleaning", async (req, res) => {
 
     try {
         // Start a transaction to handle both operations (insert and update)
-        await db.query('BEGIN');  // Start the transaction
+        await client.query('BEGIN');  // Start the transaction
 
         // Insert cleaning request into the database
-        await db.query(
+        await client.query(
             "INSERT INTO cleaning_requests (guest_email, room_number, time_slot) VALUES ($1, $2, $3)",
             [guestEmail, roomNumber, timeSlot]
         );
 
         // Update the availability of the time slot
-        await db.query(
+        await client.query(
             "UPDATE cleaning_times SET available = FALSE WHERE time_slot = $1",
             [timeSlot]
         );
 
         // Commit the transaction
-        await db.query('COMMIT');
+        await client.query('COMMIT');
 
         // Respond once all operations are complete
         res.json({ success: true, message: "Cleaning request submitted successfully." });
     } catch (error) {
         console.error("Error submitting cleaning request:", error);
-        await db.query('ROLLBACK');  // Rollback the transaction on error
+        await client.query('ROLLBACK');  // Rollback the transaction on error
         res.status(500).json({ success: false, message: "Server error" });
     }
 });
 
 // Book the first available cleaning slot and mark it as unavailable
 app.get("/first-available-cleaning", async (req, res) => {
-  const { guestEmail, roomNumber } = req.query;
+    const { guestEmail, roomNumber } = req.query;
 
-  if (!guestEmail || !roomNumber) {
-      console.log("❌ Error: Missing guestEmail or roomNumber");
-      return res.status(400).json({ success: false, message: "Missing guestEmail or roomNumber" });
-  }
+    if (!guestEmail || !roomNumber) {
+        console.log("Error: Missing guestEmail or roomNumber");
+        return res.status(400).json({ success: false, message: "Missing guestEmail or roomNumber" });
+    }
 
-  console.log("🔍 Fetching first available cleaning slot...");
+    console.log("Fetching first available cleaning slot...");
 
-  try {
-      // Start transaction
-      await db.query('BEGIN');
+    try {
+        // Start a transaction to handle both operations (select and update)
+        await client.query('BEGIN');
 
-      // Fetch first available slot
-      const result = await db.query(
-          "SELECT time_slot FROM cleaning_times WHERE available = TRUE LIMIT 1"
-      );
+        // Query to get the first available cleaning slot
+        const result = await client.query(
+            "SELECT time_slot FROM cleaning_times WHERE available = TRUE LIMIT 1"
+        );
 
-      if (result.rows.length === 0) {
-          console.log("⚠️ No available slots found.");
-          await db.query('ROLLBACK');
-          return res.json({ success: false, message: "No available slots found." });
-      }
+        const timeSlot = result.rows.length > 0 ? result.rows[0].time_slot : null;
 
-      let timeSlot = result.rows[0].time_slot.trim();
-      console.log("✅ Found available time slot:", timeSlot);
+        if (!timeSlot) {
+            console.log("Condition triggered: No available slots found.");
+            await client.query('ROLLBACK');  // Rollback if no available slots
+            return res.json({ success: false, message: "No available slots found." });
+        }
 
-      // Mark the slot as unavailable
-      const updateResult = await db.query(
-          "UPDATE cleaning_times SET available = FALSE WHERE time_slot = $1 RETURNING *",
-          [timeSlot]
-      );
-      console.log("🔄 Updated slot:", updateResult.rows);
+        console.log("Available time slot:", timeSlot);
 
-      // Insert cleaning request
-      const insertResult = await db.query(
-          "INSERT INTO cleaning_requests (guest_email, room_number, time_slot) VALUES ($1, $2, $3) RETURNING *",
-          [guestEmail, roomNumber, timeSlot]
-      );
-      console.log("📝 Inserted cleaning request:", insertResult.rows);
+        // Update the availability of the selected time slot
+        await client.query(
+            "UPDATE cleaning_times SET available = FALSE WHERE time_slot = $1",
+            [timeSlot]
+        );
 
-      // Commit transaction
-      await db.query('COMMIT');
+        // Insert the cleaning request
+        await client.query(
+            "INSERT INTO cleaning_requests (guest_email, room_number, time_slot) VALUES ($1, $2, $3)",
+            [guestEmail, roomNumber, timeSlot]
+        );
 
-      res.json({ success: true, timeSlot, guestEmail, roomNumber });
-  } catch (error) {
-      console.error("❌ Error processing request:", error);
-      await db.query('ROLLBACK');
-      res.status(500).json({ success: false, message: "Server error" });
-  }
+        // Commit the transaction
+        await client.query('COMMIT');
+
+        // Send response after both operations are complete
+        res.json({ success: true, timeSlot, guestEmail, roomNumber });
+    } catch (error) {
+        console.error("Error processing request:", error);
+        await client.query('ROLLBACK');  // Rollback the transaction on error
+        res.status(500).json({ success: false, message: "Server error" });
+    }
 });
-
 
 // Check cleaning request status
 app.get("/guest-cleaning/:guestEmail", async (req, res) => {
@@ -624,15 +584,15 @@ app.get("/guest-cleaning/:guestEmail", async (req, res) => {
     
     try {
         // Query to get cleaning requests for the guest
-        const result = await db.query(
+        const result = await client.query(
             "SELECT room_number, time_slot, request_status FROM cleaning_requests WHERE guest_email = $1",
             [guestEmail]
         );
         
         console.log("Results from DB2:", result.rows);
-        return res.json(result.rows); // ✅ Send results from the database
+        return res.json(result.rows); // âœ… Send results from the database
     } catch (err) {
-        console.error("❌ Error fetching cleaning requests:", err);
+        console.error("âŒ Error fetching cleaning requests:", err);
         return res.status(500).json({ message: "Server error" });
     }
 });
@@ -647,7 +607,7 @@ app.post("/update-cleaning-status", async (req, res) => {
 
     try {
         // Update the cleaning request status
-        const result = await db.query(
+        const result = await client.query(
             "UPDATE cleaning_requests SET request_status = $1 WHERE id = $2",
             [status, requestId]
         );
@@ -656,10 +616,10 @@ app.post("/update-cleaning-status", async (req, res) => {
             return res.status(404).json({ success: false, message: "Cleaning request not found." });
         }
 
-        console.log(`✅ Cleaning request ${requestId} updated to: ${status}`);
+        console.log(`âœ… Cleaning request ${requestId} updated to: ${status}`);
         return res.json({ success: true, message: `Cleaning request updated to ${status}` });
     } catch (err) {
-        console.error("❌ Error updating cleaning request:", err);
+        console.error("âŒ Error updating cleaning request:", err);
         return res.status(500).json({ success: false, message: "Database error while updating request." });
     }
 });
@@ -668,19 +628,19 @@ app.post("/update-cleaning-status", async (req, res) => {
 app.get("/cleaning-requests", async (req, res) => {
     try {
         // Query to get all cleaning requests with status other than 'Completed'
-        const result = await db.query(
+        const result = await client.query(
             "SELECT * FROM cleaning_requests WHERE request_status != 'Completed'"
         );
 
-        console.log("🔍 Cleaning Requests:", result.rows); // Debugging
-        res.json(result.rows); // ✅ Send cleaning requests
+        console.log("ðŸ” Cleaning Requests:", result.rows); // Debugging
+        res.json(result.rows); // âœ… Send cleaning requests
     } catch (err) {
-        console.error("❌ Error fetching cleaning requests:", err);
+        console.error("âŒ Error fetching cleaning requests:", err);
         return res.status(500).json({ success: false, message: "Database error." });
     }
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 50001;
 app.listen(PORT, () => {
-  console.log(`✅ Server running on port ${PORT}`);
+  console.log(`âœ… Server running on port ${PORT}`);
 });
