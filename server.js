@@ -172,6 +172,8 @@ app.post("/place-order", async (req, res) => {
         "INSERT INTO orders (guest_email, menu_item, quantity, total_price, order_status) VALUES ($1, $2, $3, $4, 'Pending')",
         [guestEmail, item.name, item.quantity, item.price * item.quantity]
       );
+      console.log("Order inserted for:", guestEmail, "Item:", item.name);
+
     }
     res.json({ success: true, message: "Order placed successfully!", totalAmount });
   } catch (error) {
