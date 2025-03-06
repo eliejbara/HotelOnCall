@@ -73,13 +73,13 @@
 
  
 
-        // âœ… Store guest email from login
+        // ✅ Store guest email from login
 
         let guestEmail = localStorage.getItem("loggedInGuestEmail");
 
  
 
-        // âœ… Fetch Menu Items
+        // ✅ Fetch Menu Items
 
         async function fetchMenu() {
 
@@ -137,7 +137,7 @@
 
  
 
-        // âœ… Add Item to Cart
+        // ✅ Add Item to Cart
 
         function addToCart(index, name, price) {
 
@@ -159,7 +159,7 @@
 
  
 
-        // âœ… Render Cart
+        // ✅ Render Cart
 
         function renderCart() {
 
@@ -201,7 +201,7 @@
 
  
 
-        // âœ… Remove Item from Cart
+        // ✅ Remove Item from Cart
 
         function removeFromCart(index) {
 
@@ -213,15 +213,15 @@
 
  
 
-        // âœ… Place Order (Now Uses Stored Email)
+        // ✅ Place Order (Now Uses Stored Email)
 
         async function placeOrder() {
 
-            let guestEmail = localStorage.getItem("loggedInGuestEmail"); // âœ… Ensure correct key
+            let guestEmail = localStorage.getItem("loggedInGuestEmail"); // ✅ Ensure correct key
 
  
 
-    console.log("ðŸ“¦ Sending Order Request:", { guestEmail, cart }); // Debugging
+    console.log("📦 Sending Order Request:", { guestEmail, cart }); // Debugging
 
             if (!guestEmail) {
 
@@ -257,7 +257,7 @@
 
                 const result = await response.json();
 
-                console.log("âœ… Server Response:", result); // Debugging
+                console.log("✅ Server Response:", result); // Debugging
 
                 alert(result.message);
 
@@ -281,7 +281,7 @@
 
  
 
-        // âœ… Check Order Status
+        // ✅ Check Order Status
 
         async function checkOrderStatus() {
 
