@@ -21,11 +21,11 @@
             </div>
             <div class="service-box" onclick="location.href='maintenance.html'">
                 <h2>Request Maintenance</h2>
-                <p>Experience uninterrupted luxuryâ€”report any issue, and our dedicated team will swiftly restore perfection to your stay.</p>
+                <p>Experience uninterrupted luxury—report any issue, and our dedicated team will swiftly restore perfection to your stay.</p>
             </div>
             <div class="service-box" onclick="location.href='cleaningrequest.html'">
                 <h2>Request Room Cleaning</h2>
-                <p>Elevate your stay with our impeccable room cleaning serviceâ€”request a room refresh at your convenience for a pristine and indulgent experience.</p>
+                <p>Elevate your stay with our impeccable room cleaning service—request a room refresh at your convenience for a pristine and indulgent experience.</p>
             </div>
             <div class="checkout-container" onclick="location.href='checkout.html'">
                 <h2>Checkout</h2>
@@ -44,25 +44,25 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", () => {
-    // âœ… Ensure the guest is logged in using localStorage
+    // ✅ Ensure the guest is logged in using localStorage
     const guestEmail = localStorage.getItem("loggedInGuestEmail");
 
     if (!guestEmail) {
-        alert("âš ï¸ You must be logged in to access guest services.");
+        alert("⚠️ You must be logged in to access guest services.");
         window.location.href = "index.html"; // Redirect to login
     } else {
-        console.log("âœ… Logged in as:", guestEmail); // Debugging
+        console.log("✅ Logged in as:", guestEmail); // Debugging
     }
 
-    // âœ… Ensure the checkout button redirects correctly
+    // ✅ Ensure the checkout button redirects correctly
     const checkoutBtn = document.getElementById("checkoutRedirectBtn");
     if (checkoutBtn) {
         checkoutBtn.addEventListener("click", () => {
-            console.log("ðŸš€ Checkout button clicked!");
+            console.log("🚀 Checkout button clicked!");
             window.location.href = "checkout.html";  // Redirect to checkout page
         });
     } else {
-        console.error("âŒ Checkout button not found!");
+        console.error("❌ Checkout button not found!");
     }
 });
 
