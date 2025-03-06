@@ -47,7 +47,7 @@
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
 
-    console.log("ðŸ” Attempting login with:", { email, userType });
+    console.log("🔍 Attempting login with:", { email, userType });
 
     const response = await fetch("/login", {
         method: "POST",
@@ -56,14 +56,14 @@
     });
 
     const result = await response.json();
-    console.log("ðŸ” Server Response:", result); // Debugging log
+    console.log("🔍 Server Response:", result); // Debugging log
 
     document.getElementById("message").innerText = result.message;
 
     if (result.success) {
-        alert("âœ… Login successful! Redirecting...");
+        alert("✅ Login successful! Redirecting...");
         if (userType === "guest") {
-            // âœ… **Fix: Store guest email in localStorage**
+            // ✅ **Fix: Store guest email in localStorage**
             localStorage.setItem("loggedInGuestEmail", email);
         }
         else if (userType === "staff") {
@@ -71,9 +71,9 @@
         }
         window.location.href = result.redirectTo;
     } else {
-        console.log("âŒ Login failed:", result.message);
+        console.log("❌ Login failed:", result.message);
         if (result.redirectTo) {
-            alert("âš ï¸ User not registered! Redirecting to Registration Page...");
+            alert("⚠️ User not registered! Redirecting to Registration Page...");
             window.location.href = result.redirectTo;
         }
     }
