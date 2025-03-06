@@ -385,7 +385,8 @@ app.post("/update-maintenance-status", async (req, res) => {
       return res.status(404).json({ success: false, message: "Request not found." });
     }
     console.log(`✅ Maintenance request ${requestId} updated to: ${status}`);
-    res.json({ success: true, message: Request updated to ${status} });
+    res.json({ success: true, message: `Request updated to ${status}` });
+
   } catch (error) {
     console.error("❌ Error updating maintenance request:", error);
     return res.status(500).json({ success: false, message: "Database error while updating request." });
