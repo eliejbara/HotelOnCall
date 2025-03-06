@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
     const ordersContainer = document.getElementById("orders-container");
 
-    // Store the current status of orders to persist during the refresh
+    // Store the current status of orders to persist during refresh
     let statusCache = {};
 
     // Fetch orders from the server
@@ -10,7 +10,8 @@ document.addEventListener("DOMContentLoaded", () => {
             .then(res => res.json())
             .then(data => {
                 console.log("✅ Orders received:", data);
-                ordersContainer.innerHTML = ""; // Clear the current orders
+                // Clear the current orders
+                ordersContainer.innerHTML = "";
 
                 data.forEach(order => {
                     const orderBox = document.createElement("div");
@@ -34,7 +35,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (statusCache[order.id]) {
                         statusSelect.value = statusCache[order.id];
                     }
-
                     // Cache status change
                     statusSelect.addEventListener("change", () => {
                         statusCache[order.id] = statusSelect.value;
@@ -48,37 +48,37 @@ document.addEventListener("DOMContentLoaded", () => {
             .catch(err => console.error("Error fetching orders:", err));
     }
 
-    // Define updateOrder to avoid errors (implement your logic as needed)
+    // Define updateOrder function
     function updateOrder(orderId) {
-  // Get the new status from the select element
-  const statusSelect = document.getElementById(`status-${orderId}`);
-  const newStatus = statusSelect.value;
-  console.log("Updating order", orderId, "to status:", newStatus);
+        console.log("updateOrder triggered for order", orderId);
+        // Get the new status from the select element
+        const statusSelect = document.getElementById(`status-${orderId}`);
+        const newStatus = statusSelect.value;
+        console.log("Updating order", orderId, "to status:", newStatus);
 
-  // Send a POST request to the server to update the order status
-  fetch("/cook/update-order", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ orderId: orderId, status: newStatus })
-  })
-    .then(res => res.json())
-    .then(data => {
-      console.log("Server response:", data);
-      if (data.success) {
-        // Optionally update the displayed status immediately
-        const statusText = document.getElementById(`status-text-${orderId}`);
-        statusText.textContent = newStatus;
-      } else {
-        console.error("Update failed:", data.message);
-      }
-    })
-    .catch(err => console.error("Error updating order:", err));
-}
+        // Send a POST request to update the order status
+        fetch("/cook/update-order", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ orderId: orderId, status: newStatus })
+        })
+            .then(res => res.json())
+            .then(data => {
+                console.log("Server response:", data);
+                if (data.success) {
+                    // Update the displayed status immediately
+                    const statusText = document.getElementById(`status-text-${orderId}`);
+                    statusText.textContent = newStatus;
+                } else {
+                    console.error("Update failed:", data.message);
+                }
+            })
+            .catch(err => console.error("Error updating order:", err));
+    }
 
-
-    // Initial fetch and refresh every 5 seconds
+    // Initial fetch and set refresh interval every 5 seconds
     fetchOrders();
     setInterval(fetchOrders, 5000);
 });
