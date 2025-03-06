@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>HotelOnCall Login</title>
+  <link rel="stylesheet" href="/styles.css">
   <link rel="stylesheet" href="styles.css">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display+SC&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Merriweather&display=swap" rel="stylesheet">
@@ -12,6 +13,7 @@
 
   <!-- Header -->
   <header>
+    <h1>HotelOnCall</h1>
   </header>
 
   <!-- Login Form -->
@@ -42,7 +44,7 @@
   <script>
     document.getElementById("loginForm").addEventListener("submit", async function(event) {
     event.preventDefault();
-    
+
     const userType = document.getElementById("userType").value;
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
