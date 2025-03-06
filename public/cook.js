@@ -1,7 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
     const ordersContainer = document.getElementById("orders-container");
-
-    // Store the current status of orders to persist during refresh
     let statusCache = {};
 
     // Fetch orders from the server
@@ -10,8 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
             .then(res => res.json())
             .then(data => {
                 console.log("✅ Orders received:", data);
-                // Clear the current orders
-                ordersContainer.innerHTML = "";
+                ordersContainer.innerHTML = ""; // Clear the container
 
                 data.forEach(order => {
                     const orderBox = document.createElement("div");
@@ -35,6 +32,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (statusCache[order.id]) {
                         statusSelect.value = statusCache[order.id];
                     }
+
                     // Cache status change
                     statusSelect.addEventListener("change", () => {
                         statusCache[order.id] = statusSelect.value;
@@ -51,24 +49,25 @@ document.addEventListener("DOMContentLoaded", () => {
     // Define updateOrder function
     function updateOrder(orderId) {
         console.log("updateOrder triggered for order", orderId);
-        // Get the new status from the select element
         const statusSelect = document.getElementById(`status-${orderId}`);
         const newStatus = statusSelect.value;
         console.log("Updating order", orderId, "to status:", newStatus);
+        
+        // If needed, convert orderId to number:
+        const numericOrderId = parseInt(orderId, 10);
+        console.log("numericOrderId:", numericOrderId, "type:", typeof numericOrderId);
 
-        // Send a POST request to update the order status
         fetch("/cook/update-order", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ orderId: orderId, status: newStatus })
+            body: JSON.stringify({ orderId: numericOrderId, status: newStatus })
         })
             .then(res => res.json())
             .then(data => {
                 console.log("Server response:", data);
                 if (data.success) {
-                    // Update the displayed status immediately
                     const statusText = document.getElementById(`status-text-${orderId}`);
                     statusText.textContent = newStatus;
                 } else {
@@ -78,7 +77,9 @@ document.addEventListener("DOMContentLoaded", () => {
             .catch(err => console.error("Error updating order:", err));
     }
 
-    // Initial fetch and set refresh interval every 5 seconds
+    // Initial fetch
     fetchOrders();
-    setInterval(fetchOrders, 5000);
+
+    // Temporarily disable auto-refresh for testing update functionality
+    // setInterval(fetchOrders, 5000);
 });
