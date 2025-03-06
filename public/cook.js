@@ -1,5 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
     const ordersContainer = document.getElementById("orders-container");
+
+    // Store the current status of orders to persist during the refresh
     let statusCache = {};
 
     // Fetch orders from the server
@@ -8,7 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
             .then(res => res.json())
             .then(data => {
                 console.log("✅ Orders received:", data);
-                ordersContainer.innerHTML = ""; // Clear the container
+                ordersContainer.innerHTML = ""; // Clear the current orders
 
                 data.forEach(order => {
                     const orderBox = document.createElement("div");
@@ -27,18 +29,18 @@ document.addEventListener("DOMContentLoaded", () => {
                     `;
                     ordersContainer.appendChild(orderBox);
 
-                    // Apply cached status if available
+                    // If the status was changed previously, apply the cached value
                     const statusSelect = document.getElementById(`status-${order.id}`);
                     if (statusCache[order.id]) {
                         statusSelect.value = statusCache[order.id];
                     }
 
-                    // Cache status change
+                    // Add event listener to track status changes before clicking 'Update'
                     statusSelect.addEventListener("change", () => {
-                        statusCache[order.id] = statusSelect.value;
+                        statusCache[order.id] = statusSelect.value; // Cache the new selected value
                     });
 
-                    // Attach event listener for update button
+                    // Add event listener to the update button
                     const updateBtn = document.getElementById(`updateBtn-${order.id}`);
                     updateBtn.addEventListener("click", () => updateOrder(order.id));
                 });
@@ -46,40 +48,30 @@ document.addEventListener("DOMContentLoaded", () => {
             .catch(err => console.error("Error fetching orders:", err));
     }
 
-    // Define updateOrder function
+    // Update order status
     function updateOrder(orderId) {
-        console.log("updateOrder triggered for order", orderId);
-        const statusSelect = document.getElementById(`status-${orderId}`);
-        const newStatus = statusSelect.value;
-        console.log("Updating order", orderId, "to status:", newStatus);
-        
-        // If needed, convert orderId to number:
-        const numericOrderId = parseInt(orderId, 10);
-        console.log("numericOrderId:", numericOrderId, "type:", typeof numericOrderId);
+        const status = document.getElementById(`status-${orderId}`).value;
 
         fetch("/cook/update-order", {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ orderId: numericOrderId, status: newStatus })
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ orderId, status })
         })
-            .then(res => res.json())
-            .then(data => {
-                console.log("Server response:", data);
-                if (data.success) {
-                    const statusText = document.getElementById(`status-text-${orderId}`);
-                    statusText.textContent = newStatus;
-                } else {
-                    console.error("Update failed:", data.message);
-                }
-            })
-            .catch(err => console.error("Error updating order:", err));
+        .then(res => res.json())
+        .then(result => {
+            if (result.success) {
+                console.log("Order updated successfully", result);
+                fetchOrders();  // Refresh the orders after updating
+            } else {
+                console.error("Error:", result.message);
+            }
+        })
+        .catch(err => console.error("Error updating order:", err));
     }
 
     // Initial fetch
     fetchOrders();
 
-    // Temporarily disable auto-refresh for testing update functionality
-    // setInterval(fetchOrders, 5000);
+    // Set interval to refresh orders every 5 seconds
+    setInterval(fetchOrders, 5000); // Refresh orders every 5 seconds
 });
