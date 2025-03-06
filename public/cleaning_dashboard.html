@@ -119,7 +119,7 @@
                         });
                     });
                 } catch (error) {
-                    console.error("❌ Error fetching cleaning requests:", error);
+                    console.error("âŒ Error fetching cleaning requests:", error);
                 }
             }
 
@@ -135,7 +135,7 @@
                     });
 
                     const result = await response.json();
-                    console.log("🔍 API Response:", result); // Debugging
+                    console.log("ðŸ” API Response:", result); // Debugging
 
                     if (result.success) {
                         alert("Status updated successfully!");
@@ -144,7 +144,7 @@
                         alert("Error updating status: " + result.message);
                     }
                 } catch (error) {
-                    console.error("❌ Error updating cleaning request:", error);
+                    console.error("âŒ Error updating cleaning request:", error);
                 }
             };
 
