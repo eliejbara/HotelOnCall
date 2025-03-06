@@ -651,8 +651,8 @@ app.post("/update-cleaning-status", async (req, res) => {
 
         console.log(`✅ Cleaning request ${requestId} updated to: ${status}`);
 
-      
-        return res.json({ success: true, message: Cleaning request updated to ${status} });
+  return res.json({ success: true, message: `Cleaning request updated to ${status}` });
+
     } catch (err) {
         console.error("❌ Error updating cleaning request:", err);
         return res.status(500).json({ success: false, message: "Database error while updating request." });
