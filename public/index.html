@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>HotelOnCall Login</title>
-  <link rel="stylesheet" href="/styles.css">
   <link rel="stylesheet" href="styles.css">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display+SC&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Merriweather&display=swap" rel="stylesheet">
@@ -13,7 +12,6 @@
 
   <!-- Header -->
   <header>
-    <h1>HotelOnCall</h1>
   </header>
 
   <!-- Login Form -->
@@ -44,12 +42,12 @@
   <script>
     document.getElementById("loginForm").addEventListener("submit", async function(event) {
     event.preventDefault();
-
+    
     const userType = document.getElementById("userType").value;
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
 
-    console.log("🔍 Attempting login with:", { email, userType });
+    console.log("ðŸ” Attempting login with:", { email, userType });
 
     const response = await fetch("/login", {
         method: "POST",
@@ -58,14 +56,14 @@
     });
 
     const result = await response.json();
-    console.log("🔍 Server Response:", result); // Debugging log
+    console.log("ðŸ” Server Response:", result); // Debugging log
 
     document.getElementById("message").innerText = result.message;
 
     if (result.success) {
-        alert("✅ Login successful! Redirecting...");
+        alert("âœ… Login successful! Redirecting...");
         if (userType === "guest") {
-            // ✅ **Fix: Store guest email in localStorage**
+            // âœ… **Fix: Store guest email in localStorage**
             localStorage.setItem("loggedInGuestEmail", email);
         }
         else if (userType === "staff") {
@@ -73,9 +71,9 @@
         }
         window.location.href = result.redirectTo;
     } else {
-        console.log("❌ Login failed:", result.message);
+        console.log("âŒ Login failed:", result.message);
         if (result.redirectTo) {
-            alert("⚠️ User not registered! Redirecting to Registration Page...");
+            alert("âš ï¸ User not registered! Redirecting to Registration Page...");
             window.location.href = result.redirectTo;
         }
     }
