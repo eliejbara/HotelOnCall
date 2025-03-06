@@ -26,7 +26,8 @@ app.get('/api/guest-prediction', async (req, res) => {
   }
   try {
       // Forward the request to the Flask API running on port 5000
-      const response = await axios.get(${process.env.FLASK_API_URL}/predict?date=${date});
+      const response = await axios.get(`${process.env.FLASK_API_URL}/predict?date=${date}`);
+
       res.json(response.data);
   } catch (error) {
       console.error("Error fetching prediction:", error);
@@ -238,7 +239,7 @@ app.post("/update-order-status", async (req, res) => {
   }
   try {
     const result = await db.query("UPDATE orders SET order_status = $1 WHERE id = $2", [status, orderId]);
-    console.log(✅ Order ${orderId} updated to: ${status});
+    console.log(`✅ Order ${orderId} updated to: ${status}`);
     res.json({ success: true, message: Order updated to ${status} });
   } catch (error) {
     console.error("❌ Order Status Update Error:", error);
@@ -672,5 +673,6 @@ app.get("/cleaning-requests", async (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(✅ Server running on port ${PORT});
+  console.log(`✅ Server running on port ${PORT}`);
+
 });
