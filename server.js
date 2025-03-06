@@ -109,12 +109,28 @@ app.post("/login", async (req, res) => {
         return res.json({ success: true, message: "Login successful!", redirectTo: "checkin.html", email: user.email });
       }
     } else {
-      const staffResult = await db.query("SELECT * FROM staff_roles WHERE staff_email = $1", [email]);
-      if (staffResult.rows.length > 0) {
-        return res.json({ success: true, message: "Login successful!", redirectTo: "staff_selection.html" });
-      } else {
-        return res.json({ success: false, message: "Staff not registered in the system!" });
-      }
+      const staffResult = await db.query("SELECT role FROM staff_roles WHERE staff_email = $1", [email]);
+
+if (staffResult.rows.length > 0) {
+    const role = staffResult.rows[0].role.trim(); // Remove spaces if any
+    let redirectTo = "";
+
+    if (role === "cook") {
+        redirectTo = "cook_dashboard.html";  // ✅ Redirect to cook dashboard
+    } else if (role === "maintenance") {
+        redirectTo = "maintenance_dashboard.html";
+    } else if (role === "cleaner") {
+        redirectTo = "cleaning_dashboard.html";
+    } else {
+        redirectTo = "staff_selection.html";  // Default fallback
+    }
+
+    console.log(`✅ Staff logged in with role: ${role}, Redirecting to: ${redirectTo}`);
+    return res.json({ success: true, message: "Login successful!", redirectTo });
+} else {
+    return res.json({ success: false, message: "Staff not registered in the system!" });
+}
+
     }
   } catch (error) {
     console.error("Error during login:", error);
@@ -201,13 +217,19 @@ app.post("/select-role", async (req, res) => {
   try {
     // Check if the staff email and role exist in the staff_roles table
     const staffCheck = await db.query(
-      "SELECT * FROM staff_roles WHERE staff_email = $1 AND role = $2",
-      [email, role]
-    );
+  "SELECT role FROM staff_roles WHERE staff_email = $1",
+  [email]
+);
 
-    if (staffCheck.rows.length === 0) {
-      return res.status(403).json({ success: false, message: "Invalid role selection or staff not registered." });
-    }
+if (staffCheck.rows.length === 0) {
+  return res.status(403).json({ success: false, message: "Staff not registered in the system!" });
+}
+
+const storedRole = staffCheck.rows[0].role.trim(); // Trim whitespace
+if (storedRole !== role) {
+  return res.status(403).json({ success: false, message: "Role mismatch! Please select the correct role." });
+}
+
 
     // Redirect to the appropriate dashboard
     let redirectTo = "";
