@@ -649,7 +649,9 @@ app.post("/update-cleaning-status", async (req, res) => {
             return res.status(404).json({ success: false, message: "Cleaning request not found." });
         }
 
-        console.log(✅ Cleaning request ${requestId} updated to: ${status});
+        console.log(`✅ Cleaning request ${requestId} updated to: ${status}`);
+
+      
         return res.json({ success: true, message: Cleaning request updated to ${status} });
     } catch (err) {
         console.error("❌ Error updating cleaning request:", err);
