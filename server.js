@@ -240,7 +240,7 @@ app.post("/update-order-status", async (req, res) => {
   try {
     const result = await db.query("UPDATE orders SET order_status = $1 WHERE id = $2", [status, orderId]);
     console.log(`✅ Order ${orderId} updated to: ${status}`);
-    res.json({ success: true, message: Order updated to ${status} });
+  res.json({ success: true, message: `Order updated to ${status}` });
   } catch (error) {
     console.error("❌ Order Status Update Error:", error);
     return res.status(500).json({ success: false, message: "Database error occurred while updating order status." });
