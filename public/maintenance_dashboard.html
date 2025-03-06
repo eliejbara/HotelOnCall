@@ -120,7 +120,7 @@
                         });
                     });
                 } catch (error) {
-                    console.error("âŒ Error fetching maintenance requests:", error);
+                    console.error("❌ Error fetching maintenance requests:", error);
                 }
             }
 
@@ -136,7 +136,7 @@
                     });
 
                     const result = await response.json();
-                    console.log("ðŸ” API Response:", result); // Debugging
+                    console.log("🔍 API Response:", result); // Debugging
 
                     if (result.success) {
                         alert("Status updated successfully!");
@@ -145,7 +145,7 @@
                         alert("Error updating status: " + result.message);
                     }
                 } catch (error) {
-                    console.error("âŒ Error updating maintenance request:", error);
+                    console.error("❌ Error updating maintenance request:", error);
                 }
             };
 
