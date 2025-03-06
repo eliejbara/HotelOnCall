@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 
 <html lang="en">
@@ -8,10 +7,47 @@
     <meta charset="UTF-8">
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maintenance Dashboard</title>
 
     <title>Order Food</title>
 
     <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-size: cover;
+            text-align: center;
+        }
+        .dashboard-container {
+            background: rgba(236, 224, 174, 0.75);
+            padding: 20px;
+            border-radius: 10px;
+            width: 80%;
+            margin: auto;
+            margin-top: 30px;
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        .request-box {
+            background: rgba(255, 255, 255, 0.7);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+            text-align: left;
+        }
+        .request-box p {
+            margin: 5px 0;
+        }
+        .request-box select, .request-box button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 8px;
+            font-size: 16px;
+        }
+        .status-pending { color: red; font-weight: bold; }
+        .status-in-progress { color: orange; font-weight: bold; }
+        .status-resolved { color: green; font-weight: bold; }
+    </style>
 
 </head>
 
@@ -20,9 +56,13 @@
  
 
     <header>
+        <h1></h1>
 
     </header>
 
+    <main class="dashboard-container">
+        <h2>Pending Maintenance Requests</h2>
+        <div id="maintenanceRequests">Loading...</div>
  
 
     <main class="main-content">
@@ -68,6 +108,11 @@
  
 
     <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            let staffEmail = localStorage.getItem("staffEmail");
+            if (!staffEmail) {
+                alert("You must be logged in as maintenance staff!");
+                window.location.href = "index.html";
 
         let cart = [];
 
@@ -231,6 +276,61 @@
 
             }
 
+            // Object to hold cached status for each maintenance request
+            let statusCache = {};
+
+            // Fetch maintenance requests from the server
+            async function fetchMaintenanceRequests() {
+                try {
+                    const response = await fetch("/maintenance-requests");
+                    const data = await response.json();
+                    const requestsContainer = document.getElementById("maintenanceRequests");
+
+                    if (data.length === 0) {
+                        requestsContainer.innerHTML = "<p>No maintenance requests found.</p>";
+                        return;
+                    }
+
+                    requestsContainer.innerHTML = ""; // Clear the container before adding new requests
+
+                    data.forEach(request => {
+                        const requestDiv = document.createElement("div");
+                        requestDiv.className = "request-box";
+                        requestDiv.innerHTML = `
+                            <p><b>Room:</b> ${request.room_number}</p>
+                            <p><b>Issue:</b> ${request.issue_type}</p>
+                            <p><b>Status:</b> 
+                               <span class="status-${request.request_status.toLowerCase()}">
+                                   ${request.request_status}
+                               </span>
+                            </p>
+                            <p><b>Details:</b> ${request.details || "No additional details provided."}</p>
+
+                            <label for="status-${request.id}">Update Status:</label>
+                            <select id="status-${request.id}">
+                                <option value="Pending" ${request.request_status === "Pending" ? "selected" : ""}>Pending</option>
+                                <option value="In Progress" ${request.request_status === "In Progress" ? "selected" : ""}>In Progress</option>
+                                <option value="Resolved" ${request.request_status === "Resolved" ? "selected" : ""}>Resolved</option>
+                            </select>
+
+                            <button onclick="updateRequestStatus(${request.id})">Update</button>
+                        `;
+                        requestsContainer.appendChild(requestDiv);
+
+                        // If the status was changed previously, apply the cached value
+                        const statusSelect = document.getElementById(`status-${request.id}`);
+                        if (statusCache[request.id]) {
+                            statusSelect.value = statusCache[request.id];
+                        }
+
+                        // Add event listener to store selected status value before the update
+                        statusSelect.addEventListener("change", () => {
+                            statusCache[request.id] = statusSelect.value; // Cache the new selected value
+                        });
+                    });
+                } catch (error) {
+                    console.error("❌ Error fetching maintenance requests:", error);
+                }
             if (cart.length === 0) {
 
                 alert("Your cart is empty.");
@@ -239,6 +339,28 @@
 
             }
 
+            // Function to update the status of a maintenance request
+            window.updateRequestStatus = async function(requestId) {
+                const status = document.getElementById(`status-${requestId}`).value;
+
+                try {
+                    const response = await fetch("/update-maintenance-status", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ requestId, status })
+                    });
+
+                    const result = await response.json();
+                    console.log("🔍 API Response:", result); // Debugging
+
+                    if (result.success) {
+                        alert("Status updated successfully!");
+                        fetchMaintenanceRequests(); // Refresh the requests after update
+                    } else {
+                        alert("Error updating status: " + result.message);
+                    }
+                } catch (error) {
+                    console.error("❌ Error updating maintenance request:", error);
  
 
             try {
@@ -270,7 +392,10 @@
                     renderCart();
 
                 }
+            };
 
+            // Initial fetch to load maintenance requests
+            fetchMaintenanceRequests();
             } catch (error) {
 
                 console.error("Error placing order:", error);
@@ -315,6 +440,9 @@
 
         document.addEventListener("DOMContentLoaded", fetchMenu);
 
+            // Set interval to refresh maintenance requests every 5 seconds
+            setInterval(fetchMaintenanceRequests, 5000); // Refresh every 5 seconds
+        });
     </script>
 
  
@@ -322,7 +450,3 @@
 </body>
 
 </html>
-
- 
-
- 
