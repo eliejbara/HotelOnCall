@@ -49,9 +49,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Initial fetch
     fetchOrders();
-    setInterval(fetchOrders, 5001); // Refresh orders every 5 seconds
-});
-
-    // Set interval to refresh orders every 5 seconds
     setInterval(fetchOrders, 5000); // Refresh orders every 5 seconds
+});
 });
