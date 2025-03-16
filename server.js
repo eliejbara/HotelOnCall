@@ -670,6 +670,53 @@ app.get("/cleaning-requests", async (req, res) => {
     }
 });
 
+// New route for room demand prediction
+app.get('/api/demand-prediction', async (req, res) => {
+  // Get the query parameters required by the new model
+  const {
+    year,
+    month,
+    day_of_week,
+    is_weekend,
+    is_holiday_season,
+    avg_lead_time,
+    sum_previous_bookings,
+    avg_adr,
+    total_children
+  } = req.query;
+
+  // Optional: Validate that all parameters are provided.
+  if (!year || !month || !day_of_week || !is_weekend || !is_holiday_season ||
+      !avg_lead_time || !sum_previous_bookings || !avg_adr || !total_children) {
+    return res.status(400).json({ error: 'Missing required parameters for demand prediction.' });
+  }
+
+  try {
+    // Forward the request to the Flask API.
+    // Ensure that you have set DEMAND_API_URL in your environment variables
+    // For example, "http://your-flask-api-domain:5000"
+    const flaskApiUrl = process.env.DEMAND_API_URL;
+    const response = await axios.get(`${flaskApiUrl}/predict_demand`, {
+      params: {
+        year,
+        month,
+        day_of_week,
+        is_weekend,
+        is_holiday_season,
+        avg_lead_time,
+        sum_previous_bookings,
+        avg_adr,
+        total_children
+      }
+    });
+    res.json(response.data);
+  } catch (error) {
+    console.error("Error fetching room demand prediction:", error);
+    res.status(500).json({ error: 'Error fetching demand prediction from AI service' });
+  }
+});
+
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
