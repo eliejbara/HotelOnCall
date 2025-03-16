@@ -46,7 +46,7 @@ const db = new Pool({
 //  console.error('Unexpected error on idle PostgreSQL client', err);
 //});
 
-
+console.log("DATABASE_URL:", process.env.DATABASE_URL);
 // Connect to PostgreSQL
 db.connect((err) => {
   if (err) {
