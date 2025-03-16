@@ -672,7 +672,7 @@ app.get("/cleaning-requests", async (req, res) => {
 });
 
 // New route for room demand prediction
-app.get('/api/demand-prediction', async (req, res) => {
+app.get('/api/demand_prediction', async (req, res) => {
   // Get the query parameters required by the new model
   const {
     year,
