@@ -38,7 +38,7 @@ app.get('/api/guest-prediction', async (req, res) => {
 // PostgreSQL Connection (using Neon)
 const db = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false } // Required for Neon
+  ssl: { rejectUnauthorized: false },
   idleTimeoutMillis: 30000
 });
 
