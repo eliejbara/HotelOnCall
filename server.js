@@ -1029,7 +1029,7 @@ app.post('/order-taxi', express.json(), (req, res) => {
             const insertTaxiQuery = 'INSERT INTO Taxi (guest_id, destination, notified) VALUES ($1, $2, $3)';
             const destination = "Airport"; // You can dynamically set this based on user input if needed
 
-            return db.query(insertTaxiQuery, [guestID, destination, false])
+            return db.query(insertTaxiQuery, [guestID, destination, true])
                 .then(() => {
                     // Email notification logic within the same route
                     const transporter = nodemailer.createTransport({
