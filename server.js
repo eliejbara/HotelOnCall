@@ -38,8 +38,7 @@ app.use(express.static(path.join(__dirname, "public")));
 // PostgreSQL Connection (using Neon)
 const db = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
-  idleTimeoutMillis: 30000
+  ssl: { rejectUnauthorized: false }
 });
 
 // Add this to handle unexpected errors from the PostgreSQL pool
