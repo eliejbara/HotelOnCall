@@ -25,9 +25,14 @@
         const chatSubmit = document.getElementById("chatSubmit");
         const chatOutput = document.getElementById("chatOutput");
 
+        // Ensure this is an async function to use 'await'
         chatSubmit.addEventListener("click", async function () {
-            const userMessage = chatInput.value;
+            const userMessage = chatInput.value; // Get the message typed by the user
+
+            // Wait for the response from the backend and display it
             const botResponse = await getResponse(userMessage);
+            
+            // Display the user message and bot response in the output container
             chatOutput.innerHTML = `<p><strong>You:</strong> ${userMessage}</p><p><strong>AI:</strong> ${botResponse}</p>`;
         });
     });
