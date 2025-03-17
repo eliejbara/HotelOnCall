@@ -871,6 +871,94 @@ app.get("/cleaning-requests", async (req, res) => {
     }
 });
 
+
+app.post('/send-verification-code', async (req, res) => {
+    const { email } = req.body;
+    
+    // Generate a random 6-digit verification code
+    const verificationCode = Math.floor(100000 + Math.random() * 900000); // Generates a 6-digit code
+    const expiresAt = new Date(Date.now() + 15 * 60000); // Expiration time: 15 minutes from now
+
+    try {
+        // Save the code temporarily in the database
+        await db.query(
+            'INSERT INTO verification_codes (email, code, expires_at) VALUES ($1, $2, $3)', 
+            [email, verificationCode, expiresAt]
+        );
+
+        // Setup Nodemailer to send the email
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: 'hoteloncall55@gmail.com',
+                pass: 'fvwujhuikywpgibi'
+            }
+        });
+
+        const mailOptions = {
+            from: 'hoteloncall55@gmail.com',
+            to: email,
+            subject: 'Password Reset Verification Code',
+            text: `Your verification code is: ${verificationCode}`
+        };
+
+        transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+                console.error("❌ Error sending email:", error);
+                return res.status(500).json({ message: 'Error sending email' });
+            }
+            res.json({ message: 'Verification code sent to your email!', redirectTo: '/reset_password.html' });
+        });
+
+    } catch (err) {
+        console.error("❌ Error saving verification code:", err);
+        return res.status(500).json({ message: 'Database error while saving verification code' });
+    }
+});
+
+
+
+app.post('/reset-password', async (req, res) => {
+    const { email, verificationCode, newPassword, confirmPassword } = req.body;
+
+    if (newPassword !== confirmPassword) {
+        return res.status(400).json({ message: 'Passwords do not match' });
+    }
+
+    try {
+        // Verify the code from the database
+        const codeResult = await db.query(
+            'SELECT * FROM verification_codes WHERE email = $1 AND code = $2',
+            [email, verificationCode]
+        );
+
+        if (codeResult.rowCount === 0) {
+            return res.status(400).json({ message: 'Invalid verification code' });
+        }
+
+        // Hash the new password using bcrypt
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        // Update the user's password in the database
+        await db.query(
+            'UPDATE users SET password = $1 WHERE email = $2',
+            [hashedPassword, email]
+        );
+
+        // Optionally, delete the verification code after it's used
+        await db.query(
+            'DELETE FROM verification_codes WHERE email = $1',
+            [email]
+        );
+
+        res.json({ message: 'Password successfully updated', redirectTo: '/index.html' });
+
+    } catch (err) {
+        console.error("❌ Error resetting password:", err);
+        return res.status(500).json({ message: 'Server error while resetting password' });
+    }
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
