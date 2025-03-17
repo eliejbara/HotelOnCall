@@ -64,35 +64,27 @@ const db = new Pool({
   });
 
 
-  // ** User Registration **
+ // ** User Registration (PostgreSQL Syntax) **
 app.post("/register", async (req, res) => {
-    const { email, password, userType } = req.body;
-    if (!email || !password || !userType) {
-        return res.status(400).json({ success: false, message: "Please provide all required fields." });
+  const { email, password, userType } = req.body;
+  if (!email || !password || !userType) {
+    return res.status(400).json({ success: false, message: "Please provide all required fields." });
+  }
+  try {
+    const userExists = await db.query("SELECT * FROM users WHERE email = $1", [email]);
+    if (userExists.rows.length > 0) {
+      return res.json({ success: false, message: "User already exists!" });
     }
-    try {
-        // Check if the user already exists
-        const result = await db.query("SELECT * FROM users WHERE email = $1", [email]);
-
-        if (result.rows.length > 0) {
-            return res.json({ success: false, message: "User already exists!" });
-        }
-
-        // Hash the password
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        // Insert the new user into the database
-        await db.query(
-            "INSERT INTO users (email, password, user_type) VALUES ($1, $2, $3)",
-            [email, hashedPassword, userType]
-        );
-
-        res.json({ success: true, message: "User registered successfully!", redirectTo: "index.html" });
-
-    } catch (error) {
-        console.error("Error during registration:", error);
-        return res.status(500).json({ success: false, message: "Error processing registration." });
-    }
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await db.query(
+      "INSERT INTO users (email, password, userType) VALUES ($1, $2, $3)",
+      [email, hashedPassword, userType]
+    );
+    res.json({ success: true, message: "User registered successfully!", redirectTo: "index.html" });
+  } catch (error) {
+    console.error("Error registering user:", error);
+    return res.status(500).json({ success: false, message: "Database error occurred." });
+  }
 });
 
 
