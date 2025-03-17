@@ -1,28 +1,37 @@
-async function getResponse(userMessage) {
-    try {
-        // Sending a POST request to the backend API route
-        const response = await fetch('/api/chat', {
-            method: 'POST', // POST method for sending data
-            headers: {
-                'Content-Type': 'application/json', // Indicates that we’re sending JSON data
-            },
-            body: JSON.stringify({ message: userMessage }), // Sending user input as JSON
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HotelOnCall Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <h1>Welcome to HotelOnCall</h1>
+
+    <!-- Chatbot Section -->
+    <div id="chat-container">
+        <h2>AI Assistant</h2>
+        <input type="text" id="chatInput" placeholder="Ask something...">
+        <button id="chatSubmit">Send</button>
+        <div id="chatOutput"></div>
+    </div>
+
+    <script src="js/ai_model.js"></script>
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const chatInput = document.getElementById("chatInput");
+        const chatSubmit = document.getElementById("chatSubmit");
+        const chatOutput = document.getElementById("chatOutput");
+
+        chatSubmit.addEventListener("click", async function () {
+            const userMessage = chatInput.value;
+            const botResponse = await getResponse(userMessage);
+            chatOutput.innerHTML = `<p><strong>You:</strong> ${userMessage}</p><p><strong>AI:</strong> ${botResponse}</p>`;
         });
+    });
+    </script>
 
-        // Check if the response status is not OK (anything other than 2xx)
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-
-        // Parse the JSON response
-        const data = await response.json();
-
-        // Return the generated text or a fallback message if no text is returned
-        return data.generated_text || "Sorry, I didn't understand that.";
-    } catch (error) {
-        // Catching any errors and logging them
-        console.error('Error with API request:', error);
-        return "Error: Unable to process your request.";
-    }
-}
-
+</body>
+</html>
