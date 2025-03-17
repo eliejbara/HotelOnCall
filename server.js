@@ -227,9 +227,9 @@ app.post("/checkin", (req, res) => {
 });
 
 
-// ** Place Food Order (Multiple Items) **
-app.post("/place-order", (req, res) => {
+const format = require("pg-format");
 
+app.post("/place-order", (req, res) => {
     const { guestEmail, orderItems } = req.body;
     console.log("🔍 Storing Order for:", guestEmail);
     
@@ -249,21 +249,23 @@ app.post("/place-order", (req, res) => {
         totalAmount += item.price * item.quantity;
     });
 
-    const sql = "INSERT INTO orders (guest_email, menu_item, quantity, total_price, order_status) VALUES ($1, $2, $3, $4, 'Pending')";
-    
-    db.query(sql, [orderValues], (err) => {
+    // Correct SQL query using pg-format to handle multiple rows
+    const sql = format(
+        "INSERT INTO orders (guest_email, menu_item, quantity, total_price, order_status) VALUES %L RETURNING *",
+        orderValues
+    );
+
+    db.query(sql, (err, result) => {
         if (err) {
             console.error("❌ Order Placement Error:", err);
             return res.status(500).json({ success: false, message: "Error processing order." });
         }
 
         console.log(`✅ Order placed for ${guestEmail}: ${orderItems.length} items.`);
-
-        res.json({ success: true, message: "Order placed successfully!", totalAmount });
-
+        res.json({ success: true, message: "Order placed successfully!", totalAmount, orders: result.rows });
     });
-
 });
+
 
 
 // ** Check Guest's Order Status **
