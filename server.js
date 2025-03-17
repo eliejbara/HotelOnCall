@@ -1016,11 +1016,15 @@ app.post('/order-taxi', express.json(), async (req, res) => {
     }
 
     try {
+        // Begin a transaction
+        await db.query('BEGIN');
+
         // Check if the guest is registered
         const userQuery = 'SELECT id FROM users WHERE email = $1';
         const { rows } = await db.query(userQuery, [guestEmail]);
 
         if (rows.length === 0) {
+            await db.query('ROLLBACK');
             return res.status(404).json({ success: false, message: "Guest not found" });
         }
 
@@ -1056,8 +1060,14 @@ app.post('/order-taxi', express.json(), async (req, res) => {
             }
         });
 
+        // Commit the transaction after all operations are successful
+        await db.query('COMMIT');
+
         return res.json({ success: true, message: "Taxi ordered successfully!" });
+
     } catch (err) {
+        // Rollback the transaction in case of any error
+        await db.query('ROLLBACK');
         console.error("Error ordering taxi:", err);
         return res.status(500).json({ success: false, message: "Error ordering taxi" });
     }
