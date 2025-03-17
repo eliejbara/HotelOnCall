@@ -1008,6 +1008,7 @@ app.get('/api/task-completion', async (req, res) => {
 });
 
 
+
 // Route to order taxi
 app.post('/order-taxi', express.json(), async (req, res) => {
     const { guestEmail } = req.body;
@@ -1065,9 +1066,12 @@ app.post('/order-taxi', express.json(), async (req, res) => {
     } catch (error) {
         await db.query('ROLLBACK');
         console.error("❌ Error ordering taxi:", error);
-        return res.status(500).json({ success: false, message: "Error ordering taxi" });
+
+        // Return error message in the response
+        return res.status(500).json({ success: false, message: "Error ordering taxi", error: error.message });
     }
 });
+
 
 
 const PORT = process.env.PORT || 5000;
