@@ -1,30 +1,18 @@
 // ai_model.js
-
-async function getResponse(userMessage) {
-    try {
-        // Sending a POST request to the backend API route
-        const response = await fetch('/api/chat', {
-            method: 'POST',
-            // POST method for sending data
-            headers: {
-                'Content-Type': 'application/json', // Indicates that we’re sending JSON data
-            },
-            body: JSON.stringify({ message: userMessage }), // Sending user input as JSON
-        });
-
-        // Check if the response status is not OK (anything other than 2xx)
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-
-        // Parse the JSON response
-        const data = await response.json();
-
-        // Return the generated text or a fallback message if no text is returned
-        return data.generated_text || "Sorry, I didn't understand that.";
-    } catch (error) {
-        // Catching any errors and logging them
-        console.error('Error with API request:', error);
-        return "Error: Unable to process your request.";
+async function getResponse(url, options) {
+  try {
+    const response = await fetch(url, options);
+    if (!response.ok) {
+      // Log detailed error information
+      const errorData = await response.text();
+      console.error('Error with API request:', response.status, response.statusText, errorData);
+      throw new Error(`HTTP error! Status: ${response.status}`);
     }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    // Catching any errors and logging them
+    console.error('Error with API request:', error);
+    return "Error: Unable to process your request.";
+  }
 }
