@@ -502,23 +502,62 @@ app.get("/maintenance-requests", async (req, res) => {
   }
 });
 
-app.post("/update-maintenance-status", async (req, res) => {
-  const { requestId, status } = req.body;
-  if (!requestId || !status) {
-    return res.status(400).json({ success: false, message: "Missing request ID or status." });
-  }
-  try {
-    const result = await db.query("UPDATE maintenance_requests SET request_status = $1 WHERE id = $2", [status, requestId]);
-    if (result.rowCount === 0) {
-      return res.status(404).json({ success: false, message: "Request not found." });
+// ** Update Maintenance Request Status **
+app.post("/update-maintenance-status", (req, res) => {
+    const { requestId, status } = req.body;
+
+    if (!requestId || !status) {
+        return res.status(400).json({ success: false, message: "Missing request ID or status." });
     }
-    console.log(`✅ Maintenance request ${requestId} updated to: ${status}`);
-    res.json({ success: true, message: `Request updated to ${status}` });
-  } catch (error) {
-    console.error("❌ Error updating maintenance request:", error);
-    return res.status(500).json({ success: false, message: "Database error while updating request." });
-  }
+
+    // Update the maintenance request status in PostgreSQL
+    db.query("UPDATE maintenance_requests SET request_status = $1 WHERE id = $2", 
+    [status, requestId], (err, result) => {
+        if (err) {
+            console.error("❌ Error updating maintenance request:", err);
+            return res.status(500).json({ success: false, message: "Database error while updating request." });
+        }
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({ success: false, message: "Request not found." });
+        }
+
+        console.log(`✅ Maintenance request ${requestId} updated to: ${status}`);
+        res.json({ success: true, message: `Request updated to ${status}` });
+
+        // Send email if the request is marked as "Resolved"
+        if (status === "Resolved") {
+            db.query("SELECT guest_email FROM maintenance_requests WHERE id = $1", [requestId], (err, rows) => {
+                if (!err && rows.rowCount > 0) {
+                    const guestEmail = rows.rows[0].guest_email;
+                    const nodemailer = require('nodemailer');
+                    const transporter = nodemailer.createTransport({
+                        service: 'gmail',
+                        auth: {
+                            user: 'hoteloncall55@gmail.com',      
+                            pass: 'fvwujhuikywpgibi'
+                        }
+                    });
+                    const mailOptions = {
+                        from: 'hoteloncall55@gmail.com',
+                        to: guestEmail,
+                        subject: 'Your Maintenance Request is Completed',
+                        text: 'Hello, your maintenance request has been completed. Thank you for your patience!'
+                    };
+
+                    transporter.sendMail(mailOptions, (error, info) => {
+                        if (error) {
+                            console.error("Error sending maintenance completion email:", error);
+                        } else {
+                            console.log("Maintenance completion email sent:", info.response);
+                        }
+                    });
+                }
+            });
+        }
+    });
 });
+
 
 // Checkout endpoint
 app.post("/checkout", (req, res) => {
