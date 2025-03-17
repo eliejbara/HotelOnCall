@@ -226,6 +226,7 @@ app.post("/checkin", (req, res) => {
     });
 });
 
+
 // ** Place Food Order (Multiple Items) **
 app.post("/place-order", (req, res) => {
 
@@ -248,7 +249,7 @@ app.post("/place-order", (req, res) => {
         totalAmount += item.price * item.quantity;
     });
 
-    const sql = "INSERT INTO orders (guest_email, menu_item, quantity, total_price, order_status) VALUES ($1, $2, $3, $4, $5)";
+    const sql = "INSERT INTO orders (guest_email, menu_item, quantity, total_price, order_status) VALUES ($1, $2, $3, $4, 'Pending')";
     
     db.query(sql, [orderValues], (err) => {
         if (err) {
@@ -263,6 +264,7 @@ app.post("/place-order", (req, res) => {
     });
 
 });
+
 
 // ** Check Guest's Order Status **
 app.get("/check-order/:guestEmail", async (req, res) => {
