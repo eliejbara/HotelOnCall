@@ -349,21 +349,61 @@ app.get("/cook/orders", async (req, res) => {
 });
 
 // ** Cook - Update Order Status **
-app.post("/cook/update-order", async (req, res) => {
-  const { orderId, status } = req.body;
-  if (!orderId || !status) {
-    return res.status(400).json({ success: false, message: "Missing order ID or status." });
-  }
-  try {
-    const result = await db.query("UPDATE orders SET order_status = $1 WHERE id = $2", [status, orderId]);
-    if (result.rowCount === 0) {
-      return res.status(404).json({ success: false, message: "Order not found." });
+app.post("/cook/update-order", (req, res) => {
+    const { orderId, status } = req.body;
+
+    if (!orderId || !status) {
+        return res.status(400).json({ success: false, message: "Missing order ID or status." });
     }
-    res.json({ success: true, message: `Order #${orderId} updated to ${status}` });
-  } catch (error) {
-    console.error("❌ Order Status Update Error:", error);
-    return res.status(500).json({ success: false, message: "Database error while updating order status." });
-  }
+
+    const sqlUpdate = "UPDATE orders SET order_status = $1 WHERE id = $2";
+
+    db.query(sqlUpdate, [status, orderId], (err, result) => {
+        if (err) {
+            console.error("❌ Order Status Update Error:", err);
+            return res.status(500).json({ success: false, message: "Database error while updating order status." });
+        }
+        if (result.rowCount === 0) {
+            return res.status(404).json({ success: false, message: "Order not found." });
+        }
+
+        // Insert email sending logic if status is the trigger status
+        if (status === "Completed") {
+            const sqlSelect = "SELECT guest_email FROM orders WHERE id = $1";
+
+            db.query(sqlSelect, [orderId], (err, rows) => {
+                if (!err && rows.rowCount > 0) {
+                    const guestEmail = rows.rows[0].guest_email;
+                    const nodemailer = require('nodemailer');
+
+                    const transporter = nodemailer.createTransport({
+                        service: 'gmail',
+                        auth: {
+                            user: 'hoteloncall55@gmail.com',      
+                            pass: 'fvwujhuikywpgibi'
+                        }
+                    });
+
+                    const mailOptions = {
+                        from: 'hoteloncall55@gmail.com',
+                        to: guestEmail,
+                        subject: 'Your Order is Completed',
+                        text: 'Hello, your order has been completed. Thank you for your patience!'
+                    };
+
+                    transporter.sendMail(mailOptions, (error, info) => {
+                        if (error) {
+                            console.error("Error sending order completion email:", error);
+                        } else {
+                            console.log("Order completion email sent:", info.response);
+                        }
+                    });
+                }
+            });
+        }
+
+        res.json({ success: true, message: `Order #${orderId} updated to ${status}` });
+    });
 });
 
 // ** Serve Static Pages **
