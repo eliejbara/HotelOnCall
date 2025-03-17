@@ -1,13 +1,24 @@
 async function getResponse(userMessage) {
-    const response = await fetch("https://api-inference.huggingface.co/models/facebook/blenderbot-400M-distill", {
-        method: "POST",
-        headers: { 
-            "Authorization": "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",
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ inputs: userMessage })
-    });
+    try {
+        const response = await fetch("https://api-inference.huggingface.co/models/facebook/blenderbot-400M-distill", {
+            method: "POST",
+            headers: { 
+                "Authorization": "Bearer YOUR_HUGGINGFACE_API_KEY", // Replace with your actual API key
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ inputs: userMessage })
+        });
 
-    const data = await response.json();
-    return data.generated_text || "I'm here to help!";
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log("API Response:", data); // Debugging: log the full API response
+
+        return data.generated_text || "Sorry, I didn't understand that.";
+    } catch (error) {
+        console.error('Error with API request:', error);
+        return "Error: Unable to process your request.";
+    }
 }
