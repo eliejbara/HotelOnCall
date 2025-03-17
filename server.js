@@ -959,6 +959,56 @@ app.post('/reset-password', async (req, res) => {
     }
 });
 
+
+app.get('/api/feedback', async (req, res) => {
+    const query = `
+        SELECT 
+            checkouts.room_number, 
+            users.email, 
+            checkouts.feedback, 
+            checkouts.checkout_time 
+        FROM checkouts
+        INNER JOIN users ON checkouts.guest_id = users.id
+        ORDER BY checkouts.checkout_time DESC;
+    `;
+
+    try {
+        const result = await db.query(query);
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+
+app.get('/api/task-completion', async (req, res) => {
+    const queries = {
+        cleaning: `SELECT COUNT(*) AS total, SUM(CASE WHEN request_status = 'Completed' THEN 1 ELSE 0 END) AS done FROM cleaning_requests`,
+        cooking: `SELECT COUNT(*) AS total, SUM(CASE WHEN order_status = 'Completed' THEN 1 ELSE 0 END) AS done FROM orders`,
+        maintenance: `SELECT COUNT(*) AS total, SUM(CASE WHEN request_status = 'Resolved' THEN 1 ELSE 0 END) AS done FROM maintenance_requests`
+    };
+
+    try {
+        let results = {};
+
+        for (const key of Object.keys(queries)) {
+            const data = await db.query(queries[key]);
+            const total = parseInt(data.rows[0].total) || 1;
+            const done = parseInt(data.rows[0].done) || 0;
+            results[key] = total > 0 ? Math.round((done / total) * 100) : 0;
+        }
+
+        console.log("Task Completion Results:", results);
+        res.json(results);
+
+    } catch (err) {
+        console.error("❌ Error fetching task completion data:", err);
+        res.status(500).json({ success: false, message: "Database error." });
+    }
+});
+
+
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
