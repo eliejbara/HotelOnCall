@@ -796,7 +796,7 @@ app.get("/guest-cleaning/:guestEmail", async (req, res) => {
     }
 });
 
-// Update cleaning request status
+
 app.post("/update-cleaning-status", async (req, res) => {
     const { requestId, status } = req.body;
 
@@ -805,9 +805,9 @@ app.post("/update-cleaning-status", async (req, res) => {
     }
 
     try {
-        // Update the cleaning request status
+        // Update cleaning request status in the database
         const result = await db.query(
-            "UPDATE cleaning_requests SET request_status = $1 WHERE id = $2",
+            "UPDATE cleaning_requests SET request_status = $1 WHERE id = $2 RETURNING guest_email",
             [status, requestId]
         );
 
@@ -816,9 +816,40 @@ app.post("/update-cleaning-status", async (req, res) => {
         }
 
         console.log(`✅ Cleaning request ${requestId} updated to: ${status}`);
-        return res.json({ success: true, message: `Cleaning request updated to ${status}` });
+
+        if (status === "Completed") {
+            const guestEmail = result.rows[0]?.guest_email;
+
+            if (guestEmail) {
+                const transporter = nodemailer.createTransport({
+                    service: "gmail",
+                    auth: {
+                        user: "hoteloncall55@gmail.com",
+                        pass: "fvwujhuikywpgibi",
+                    },
+                });
+
+                const mailOptions = {
+                    from: "hoteloncall55@gmail.com",
+                    to: guestEmail,
+                    subject: "Your Cleaning Request is Completed",
+                    text: "Hello, your cleaning request has been completed. We hope you enjoy the refreshed environment!",
+                };
+
+                transporter.sendMail(mailOptions, (error, info) => {
+                    if (error) {
+                        console.error("Error sending cleaning completion email:", error);
+                    } else {
+                        console.log("Cleaning completion email sent:", info.response);
+                    }
+                });
+            }
+        }
+
+        res.json({ success: true, message: `Cleaning request updated to ${status}` });
+
     } catch (err) {
-        console.error("❌ Error updating cleaning request:", err);
+        console.error("❌ Database error while updating request:", err);
         return res.status(500).json({ success: false, message: "Database error while updating request." });
     }
 });
