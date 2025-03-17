@@ -25,10 +25,26 @@
         const chatSubmit = document.getElementById("chatSubmit");
         const chatOutput = document.getElementById("chatOutput");
 
+        // Send message when 'Send' button is clicked
         chatSubmit.addEventListener("click", async function () {
-            const userMessage = chatInput.value;
+            const userMessage = chatInput.value.trim();
+            if (userMessage === "") return; // Don't send empty messages
+
             const botResponse = await getResponse(userMessage);
-            chatOutput.innerHTML = `<p><strong>You:</strong> ${userMessage}</p><p><strong>AI:</strong> ${botResponse}</p>`;
+            chatOutput.innerHTML += `<p><strong>You:</strong> ${userMessage}</p><p><strong>AI:</strong> ${botResponse}</p>`;
+            chatInput.value = ''; // Clear input after sending
+        });
+
+        // Allow sending message by pressing the "Enter" key
+        chatInput.addEventListener("keypress", async function (e) {
+            if (e.key === 'Enter') {
+                const userMessage = chatInput.value.trim();
+                if (userMessage === "") return; // Don't send empty messages
+
+                const botResponse = await getResponse(userMessage);
+                chatOutput.innerHTML += `<p><strong>You:</strong> ${userMessage}</p><p><strong>AI:</strong> ${botResponse}</p>`;
+                chatInput.value = ''; // Clear input after sending
+            }
         });
     });
     </script>
