@@ -1,16 +1,20 @@
+require('dotenv').config(); // Add this line at the top of your file
+
+const apiKey = process.env.HUGGINGFACE_API_KEY;
+
 async function getResponse(userMessage) {
     try {
         const response = await fetch("https://api-inference.huggingface.co/models/facebook/blenderbot-400M-distill", {
             method: "POST",
             headers: { 
-                "Authorization": `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
+                "Authorization": `Bearer ${apiKey}`,
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({ inputs: userMessage })
         });
 
         if (!response.ok) {
-            throw new Error(`Error: ${response.statusText}`);
+            throw new Error(`HTTP error! Status: ${response.status}`);
         }
 
         const data = await response.json();
