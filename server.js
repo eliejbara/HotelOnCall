@@ -1065,12 +1065,21 @@ app.post('/order-taxi', express.json(), async (req, res) => {
         
     } catch (error) {
         await db.query('ROLLBACK');
-        console.error("❌ Error ordering taxi:", error);
+        console.error("❌ Error ordering taxi:", error); // Log the full error object
 
-        // Return error message in the response
-        return res.status(500).json({ success: false, message: "Error ordering taxi", error: error.message });
+        // Send detailed error in the response
+        return res.status(500).json({
+            success: false,
+            message: "Error ordering taxi",
+            error: {
+                message: error.message,
+                stack: error.stack, // Optional: Include stack trace for debugging
+                name: error.name, // Optional: Include error name
+            }
+        });
     }
 });
+
 
 
 
