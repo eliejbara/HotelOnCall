@@ -83,7 +83,7 @@ app.post("/register", async (req, res) => {
 
         // Insert the new user into the database
         await db.query(
-            "INSERT INTO users (email, password, user_type) VALUES ($1, $2, $3)",
+            "INSERT INTO users (email, password, userType) VALUES ($1, $2, $3)",
             [email, hashedPassword, userType]
         );
 
