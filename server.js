@@ -228,36 +228,45 @@ app.post("/checkin", (req, res) => {
 });
 
 
-// ** Place Food Order (Multiple Items) **
-app.post("/place-order", (req, res) => {
-
+// ** Corrected Place Food Order (Multiple Items) **
+app.post("/place-order", async (req, res) => {
     const { guestEmail, orderItems } = req.body;
+
     if (!guestEmail || !orderItems || orderItems.length === 0) {
         return res.status(400).json({ success: false, message: "Invalid order request." });
     }
-    let orderValues = [];
+
     let totalAmount = 0;
 
-    orderItems.forEach(item => {
-        orderValues.push([guestEmail, item.name, item.quantity, item.price * item.quantity, "Pending"]);
-        totalAmount += item.price * item.quantity;
-    });
+    try {
+        // Begin a transaction to insert multiple rows correctly
+        await db.query('BEGIN');
 
-    const sql = "INSERT INTO orders (guest_email, menu_item, quantity, total_price, order_status) VALUES ($1, $2, $3, $4, 'Pending')";
-    
-    db.query(sql, [orderValues], (err) => {
-        if (err) {
-            console.error("❌ Order Placement Error:", err);
-            return res.status(500).json({ success: false, message: "Error processing order." });
-        }
+        const insertPromises = orderItems.map(async item => {
+            const itemTotal = item.price * item.quantity;
+            totalAmount += itemTotal;
+            return db.query(
+                "INSERT INTO orders (guest_email, menu_item, quantity, total_price, order_status) VALUES ($1, $2, $3, $4, 'Pending')",
+                [guestEmail, item.name, item.quantity, itemTotal]
+            );
+        });
+
+        await Promise.all(insertPromises);
+
+        // Commit transaction after all insertions are successful
+        await db.query('COMMIT');
 
         console.log(`✅ Order placed for ${guestEmail}: ${orderItems.length} items.`);
 
         res.json({ success: true, message: "Order placed successfully!", totalAmount });
 
-    });
-
+    } catch (error) {
+        await db.query('ROLLBACK');
+        console.error("❌ Order Placement Error:", error);
+        return res.status(500).json({ success: false, message: "Error processing order." });
+    }
 });
+
 
 
 // ** Check Guest's Order Status **
