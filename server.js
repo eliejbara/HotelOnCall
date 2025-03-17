@@ -1009,76 +1009,180 @@ app.get('/api/task-completion', async (req, res) => {
 
 
 
-// Route to order taxi
-app.post('/order-taxi', express.json(), async (req, res) => {
-    const { guestEmail } = req.body;
-
-    if (!guestEmail) {
-        return res.status(400).json({ success: false, message: "Guest email is required" });
-    }
+app.get("/calculate-bill/:roomNumber", async (req, res) => {
+    const roomNumber = req.params.roomNumber;
+    const query = `
+      SELECT 
+        c.room_number,
+        c.nights,
+        (c.nights * 250) AS room_charge,
+        COALESCE(SUM(o.total_price), 0) AS food_charge,
+        ((c.nights * 250) + COALESCE(SUM(o.total_price), 0)) AS total_bill
+      FROM check_ins c
+      LEFT JOIN users u ON c.guest_id = u.id
+      LEFT JOIN orders o ON u.email = o.guest_email
+      WHERE c.room_number = $1
+      GROUP BY c.id
+    `;
 
     try {
-        // Begin a transaction to handle multiple operations
-        await db.query('BEGIN');
+        const result = await db.query(query, [roomNumber]);
 
-        // Check if the guest is registered
-        const checkGuestQuery = 'SELECT id FROM users WHERE email = $1';
-        const guestResult = await db.query(checkGuestQuery, [guestEmail]);
-
-        if (guestResult.rows.length === 0) {
-            await db.query('ROLLBACK');
-            return res.status(404).json({ success: false, message: "Guest not found" });
+        if (result.rowCount === 0) {
+            return res.status(404).json({ success: false, message: "No active check-in found for that room" });
         }
 
-        const guestID = guestResult.rows[0].id;
+        // Return the total bill in cents (Stripe expects amounts in cents)
+        const totalBillCents = Math.round(result.rows[0].total_bill * 100);
+        res.json({ success: true, totalBillCents });
 
-        // Insert the taxi order into the Taxi table
-        const insertTaxiQuery = 'INSERT INTO Taxi (guest_id, destination, notified) VALUES ($1, $2, $3)';
-        const destination = "Airport"; // You can dynamically set this based on user input if needed
-
-        await db.query(insertTaxiQuery, [guestID, destination, false]);
-
-        // Commit transaction after all insertions are successful
-        await db.query('COMMIT');
-
-        console.log(`✅ Taxi ordered for guest ${guestEmail} (ID: ${guestID}) to ${destination}`);
-
-        // Email notification logic
-        const transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: 'hoteloncall55@gmail.com',
-                pass: 'fvwujhuikywpgibi',  
-            }
-        });
-
-        const mailOptions = {
-            from: 'hoteloncall55@gmail.com',
-            to: guestEmail,
-            subject: 'Your Taxi Has Been Ordered!',
-            text: `Dear Valued Guest,\n\nWe are pleased to inform you that a taxi has been successfully ordered for you to take you to the ${destination}. Your vehicle will be arriving shortly to ensure a smooth and timely journey.\n\nThank you for choosing us. Should you require any further assistance, please don't hesitate to reach out.\n\nWarm Regards,\nThe HotelOnCall Team`
-        };
-
-        await transporter.sendMail(mailOptions);
-
-        return res.json({ success: true, message: "Taxi ordered successfully!" });
-        
-    } catch (error) {
-        await db.query('ROLLBACK');
-        console.error("❌ Error ordering taxi:", error); // Log the full error object
-
-        // Send detailed error in the response
-        return res.status(500).json({
-            success: false,
-            message: "Error ordering taxi",
-            error: {
-                message: error.message,
-                stack: error.stack, // Optional: Include stack trace for debugging
-                name: error.name, // Optional: Include error name
-            }
-        });
+    } catch (err) {
+        console.error("❌ Error calculating bill:", err);
+        return res.status(500).json({ success: false, message: "Error calculating bill" });
     }
 });
+
+
+app.post("/create-checkout-session", async (req, res) => {
+    const { roomNumber } = req.body;
+    if (!roomNumber) {
+      return res.status(400).json({ success: false, message: "Room number is required" });
+    }
+    
+    // Calculate total charges using your database schema
+    const query = `
+      SELECT 
+        c.room_number,
+        c.nights,
+        (c.nights * 250) AS room_charge,
+        COALESCE(SUM(o.total_price), 0) AS food_charge,
+        (SELECT COUNT(*) FROM cleaning_requests cr WHERE cr.guest_email = u.email) * 30 AS cleaning_charge,
+        (SELECT COUNT(*) FROM maintenance_requests mr WHERE mr.guest_email = u.email) * 50 AS maintenance_charge,
+        (
+          (c.nights * 250) 
+          + COALESCE(SUM(o.total_price), 0)
+          + (SELECT COUNT(*) FROM cleaning_requests cr WHERE cr.guest_email = u.email) * 30
+          + (SELECT COUNT(*) FROM maintenance_requests mr WHERE mr.guest_email = u.email) * 50
+        ) AS total_bill
+      FROM check_ins c
+      LEFT JOIN users u ON c.guest_id = u.id
+      LEFT JOIN orders o ON u.email = o.guest_email
+      WHERE c.room_number = $1
+      GROUP BY c.id, u.email;
+    `;
+    
+    try {
+        const { rows } = await db.query(query, [roomNumber]);
+        
+        if (rows.length === 0) {
+            return res.status(404).json({ success: false, message: "No active check-in found for that room" });
+        }
+        
+        // Destructure the charges from the query result
+        const { room_charge, food_charge, cleaning_charge, maintenance_charge, nights } = rows[0];
+        
+        // Debug: Print out each charge in the terminal
+        console.log("DEBUG: Room Charge:", room_charge);
+        console.log("DEBUG: Food Charge:", food_charge);
+        console.log("DEBUG: Cleaning Charge:", cleaning_charge);
+        console.log("DEBUG: Maintenance Charge:", maintenance_charge);
+        
+        // Convert amounts to cents for Stripe (multiply by 100)
+        const roomChargeCents = Math.round(room_charge * 100);
+        const foodChargeCents = Math.round(food_charge * 100);
+        const cleaningChargeCents = Math.round(cleaning_charge * 100);
+        const maintenanceChargeCents = Math.round(maintenance_charge * 100);
+        
+        // Create Stripe session
+        const session = await stripe.checkout.sessions.create({
+            payment_method_types: ['card'],
+            line_items: [
+                {
+                    price_data: {
+                        currency: 'usd',
+                        product_data: {
+                            name: `Room Charge for Room ${roomNumber} (${nights} night(s))`,
+                        },
+                        unit_amount: roomChargeCents,
+                    },
+                    quantity: 1,
+                },
+                {
+                    price_data: {
+                        currency: 'usd',
+                        product_data: {
+                            name: "Food Charge",
+                        },
+                        unit_amount: foodChargeCents,
+                    },
+                    quantity: 1,
+                },
+                {
+                    price_data: {
+                        currency: 'usd',
+                        product_data: {
+                            name: "Cleaning Charge",
+                        },
+                        unit_amount: cleaningChargeCents,
+                    },
+                    quantity: 1,
+                },
+                {
+                    price_data: {
+                        currency: 'usd',
+                        product_data: {
+                            name: "Maintenance Charge",
+                        },
+                        unit_amount: maintenanceChargeCents,
+                    },
+                    quantity: 1,
+                }
+            ],
+            mode: 'payment',
+            // Update these URLs according to your environment (localhost or production)
+            success_url: 'http://localhost:5001/payment_success.html?session_id={CHECKOUT_SESSION_ID}',
+            cancel_url: 'http://localhost:5001/checkout.html',
+        });
+        
+        res.json({ success: true, sessionId: session.id, url: session.url });
+    } catch (err) {
+        console.error("Stripe Checkout Session Error:", err);
+        res.status(500).json({ success: false, message: "Stripe Checkout Session Error" });
+    }
+});
+
+
+app.post("/finalize-checkout", express.json(), async (req, res) => {
+    const { guestEmail } = req.body;
+    if (!guestEmail) {
+      return res.status(400).json({ success: false, message: "Missing guest email." });
+    }
+  
+    try {
+      // First, retrieve the guest's id from the users table
+      const query = "SELECT id FROM users WHERE email = $1";
+      const { rows } = await db.query(query, [guestEmail]);
+  
+      if (rows.length === 0) {
+        return res.status(404).json({ success: false, message: "No user found with this email." });
+      }
+      const guestId = rows[0].id;
+  
+      // Now update the check_ins table using the guest id
+      const updateQuery = "UPDATE check_ins SET payment_status = 'paid' WHERE guest_id = $1";
+      const updateResult = await db.query(updateQuery, [guestId]);
+  
+      if (updateResult.rowCount === 0) {
+        return res.status(404).json({ success: false, message: "No active check-in found for this guest." });
+      }
+  
+      console.log(`✅ Checkout finalized for guest id: ${guestId}`);
+      return res.json({ success: true, message: "Payment finalized and checkout complete." });
+    } catch (err) {
+      console.error("❌ Error finalizing checkout:", err);
+      return res.status(500).json({ success: false, message: "Server error while finalizing checkout." });
+    }
+  });
 
 
 
