@@ -18,21 +18,21 @@ app.use(cors());
 app.use(express.static(path.join(__dirname, "public")));
 
 // New route for guest prediction (Flask API integration)
-app.get('/api/guest-prediction', async (req, res) => {
-  // Get the 'date' query parameter (should be in YYYY-MM-DD format)
-  const { date } = req.query;
-  if (!date) {
-      return res.status(400).json({ error: 'Date parameter is required (YYYY-MM-DD)' });
-  }
-  try {
-      // Forward the request to the Flask API running on port 5000
-      const response = await axios.get(`${process.env.FLASK_API_URL}/predict?date=${date}`);
-      res.json(response.data);
-  } catch (error) {
-      console.error("Error fetching prediction:", error);
-      res.status(500).json({ error: 'Error fetching prediction from AI service' });
-  }
-});
+// app.get('/api/guest-prediction', async (req, res) => {
+//   // Get the 'date' query parameter (should be in YYYY-MM-DD format)
+//   const { date } = req.query;
+//   if (!date) {
+//       return res.status(400).json({ error: 'Date parameter is required (YYYY-MM-DD)' });
+//   }
+//   try {
+//       // Forward the request to the Flask API running on port 5000
+//       const response = await axios.get(`${process.env.FLASK_API_URL}/predict?date=${date}`);
+//       res.json(response.data);
+//   } catch (error) {
+//       console.error("Error fetching prediction:", error);
+//       res.status(500).json({ error: 'Error fetching prediction from AI service' });
+//   }
+// });
 
 
 // PostgreSQL Connection (using Neon)
