@@ -1140,8 +1140,8 @@ app.post("/create-checkout-session", async (req, res) => {
             ],
             mode: 'payment',
             // Update these URLs according to your environment (localhost or production)
-            success_url: 'http://localhost:5001/payment_success.html?session_id={CHECKOUT_SESSION_ID}',
-            cancel_url: 'http://localhost:5001/checkout.html',
+            success_url: 'https://hotel-on-call.vercel.app/payment_success.html?session_id={CHECKOUT_SESSION_ID}',
+            cancel_url: 'https://hotel-on-call.vercel.app/checkout.html',
         });
         
         res.json({ success: true, sessionId: session.id, url: session.url });
