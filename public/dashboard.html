@@ -5,9 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard</title>
   <script>
-    // Wait for the DOM to be fully loaded before running the script
     document.addEventListener('DOMContentLoaded', function() {
-      // Function to send a POST request to the server API
       async function getResponse(apiEndpoint, requestBody) {
         try {
           const response = await fetch(apiEndpoint, {
@@ -18,33 +16,27 @@
             body: JSON.stringify(requestBody),
           });
 
-          // Check if the response is successful (status code 200)
           if (!response.ok) {
             throw new Error(`HTTP error! Status: ${response.status}`);
           }
 
-          // Parse the JSON response
           const data = await response.json();
           return data.generated_text || "Sorry, I didn't understand that.";
         } catch (error) {
-          // Log the error for debugging purposes
           console.error('Error with API request:', error);
           throw error;
         }
       }
 
-      // Add event listener to button click
       const button = document.querySelector('button');
       if (button) {
         button.addEventListener('click', async function() {
           try {
-            // Example API endpoint and request body
-            const result = await getResponse('/api/chat', { message: "Hello, AI!" }); // Your API Call
+            // Use the correct Vercel app URL here
+            const result = await getResponse('https://hotel-on-call.vercel.app/api/chat', { message: "Hello, AI!" }); // Your API Call
             console.log(result);
           } catch (e) {
-            // Log detailed error information
             console.error("Error getting response: ", e);
-            // Handle error, e.g., display an error message to the user
             alert("There was an error processing your request. Please try again later.");
           }
         });
