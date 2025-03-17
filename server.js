@@ -95,42 +95,60 @@ app.post("/register", async (req, res) => {
     }
 });
 
-
 // ** User Login with Redirection Logic **
 app.post("/login", async (req, res) => {
-  const { email, password, userType } = req.body;
-  if (!email || !password || !userType) {
-    return res.status(400).json({ success: false, message: "Please provide all required fields." });
-  }
-  try {
-    const result = await db.query("SELECT * FROM users WHERE email = $1 AND userType = $2", [email, userType]);
-    if (result.rows.length === 0) {
-      return res.json({ success: false, message: "User not found!", redirectTo: "register.html" });
+    const { email, password, userType } = req.body;
+
+    if (!email || !password || !userType) {
+        return res.status(400).json({ success: false, message: "Please provide all required fields." });
     }
-    const user = result.rows[0];
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.json({ success: false, message: "Invalid credentials!" });
+
+    try {
+        // Query to check user credentials and type
+        const result = await db.query("SELECT * FROM users WHERE email = $1 AND userType = $2", [email, userType]);
+
+        if (result.rows.length === 0) {
+            return res.json({ success: false, message: "User not found!", redirectTo: "register.html" });
+        }
+
+        const user = result.rows[0];
+
+        // Check if password matches
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.json({ success: false, message: "Invalid credentials!" });
+        }
+
+        if (userType === "guest") {
+            // Check if guest has already checked in
+            const checkinResult = await db.query("SELECT * FROM check_ins WHERE guest_id = $1", [user.id]);
+
+            if (checkinResult.rows.length > 0) {
+                // Guest already checked in → Redirect to guest services
+                return res.json({ success: true, message: "Login successful!", redirectTo: "guest_services.html", email: user.email });
+            } else {
+                // Guest not checked in → Redirect to check-in page
+                return res.json({ success: true, message: "Login successful!", redirectTo: "checkin.html", email: user.email });
+            }
+        } else {
+            // ** Check if staff exists in the staff_roles table **
+            const staffResult = await db.query("SELECT * FROM staff_roles WHERE staff_email = $1", [email]);
+
+            if (staffResult.rows.length > 0) {
+                const staffRole = staffResult.rows[0].role;
+
+                if (staffRole === "manager") {
+                    return res.json({ success: true, message: "Login successful!", redirectTo: "manager_dashboard.html" });
+                } else {
+                    return res.json({ success: true, message: "Login successful!", redirectTo: "staff_selection.html" });
+                }
+            } else {
+                return res.json({ success: false, message: "Staff not registered in the system!" });
+            }
+        }
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Server error during login." });
     }
-    if (userType === "guest") {
-      const checkinResult = await db.query("SELECT * FROM check_ins WHERE guest_id = $1", [user.id]);
-      if (checkinResult.rows.length > 0) {
-        return res.json({ success: true, message: "Login successful!", redirectTo: "guest_services.html", email: user.email });
-      } else {
-        return res.json({ success: true, message: "Login successful!", redirectTo: "checkin.html", email: user.email });
-      }
-    } else {
-      const staffResult = await db.query("SELECT * FROM staff_roles WHERE staff_email = $1", [email]);
-      if (staffResult.rows.length > 0) {
-        return res.json({ success: true, message: "Login successful!", redirectTo: "staff_selection.html" });
-      } else {
-        return res.json({ success: false, message: "Staff not registered in the system!" });
-      }
-    }
-  } catch (error) {
-    console.error("Error during login:", error);
-    return res.status(500).json({ success: false, message: "Server error during login." });
-  }
 });
 
 // ** Available Rooms **
