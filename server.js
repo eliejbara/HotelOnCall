@@ -227,25 +227,41 @@ app.post("/checkin", (req, res) => {
 });
 
 // ** Place Food Order (Multiple Items) **
-app.post("/place-order", async (req, res) => {
-  const { guestEmail, orderItems } = req.body;
-  if (!guestEmail || !orderItems || orderItems.length === 0) {
-    return res.status(400).json({ success: false, message: "Invalid order request." });
-  }
-  try {
-    let totalAmount = 0;
-    for (let item of orderItems) {
-      totalAmount += item.price * item.quantity;
-      await db.query(
-        "INSERT INTO orders (guest_email, menu_item, quantity, total_price, order_status) VALUES ($1, $2, $3, $4, 'Pending')",
-        [guestEmail, item.name, item.quantity, item.price * item.quantity]
-      );
+app.post("/place-order", (req, res) => {
+
+    const { guestEmail, orderItems } = req.body;
+    console.log("🔍 Storing Order for:", guestEmail);
+    
+    if (!guestEmail) {
+        return res.status(401).json({ success: false, message: "⚠️ You must be logged in to place an order." });
     }
-    res.json({ success: true, message: "Order placed successfully!", totalAmount });
-  } catch (error) {
-    console.error("Error placing order:", error);
-    return res.status(500).json({ success: false, message: "Database error occurred." });
-  }
+
+    if (!orderItems || orderItems.length === 0) {
+        return res.status(400).json({ success: false, message: "Invalid order request." });
+    }
+
+    let orderValues = [];
+    let totalAmount = 0;
+
+    orderItems.forEach(item => {
+        orderValues.push([guestEmail, item.name, item.quantity, item.price * item.quantity, "Pending"]);
+        totalAmount += item.price * item.quantity;
+    });
+
+    const sql = "INSERT INTO orders (guest_email, menu_item, quantity, total_price, order_status) VALUES ($1, $2, $3, $4, $5)";
+    
+    db.query(sql, [orderValues], (err) => {
+        if (err) {
+            console.error("❌ Order Placement Error:", err);
+            return res.status(500).json({ success: false, message: "Error processing order." });
+        }
+
+        console.log(`✅ Order placed for ${guestEmail}: ${orderItems.length} items.`);
+
+        res.json({ success: true, message: "Order placed successfully!", totalAmount });
+
+    });
+
 });
 
 // ** Check Guest's Order Status **
