@@ -1,53 +1,21 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HotelOnCall Dashboard</title>
-    <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-
-    <h1>Welcome to HotelOnCall</h1>
-
-    <!-- Chatbot Section -->
-    <div id="chat-container">
-        <h2>AI Assistant</h2>
-        <input type="text" id="chatInput" placeholder="Ask something...">
-        <button id="chatSubmit">Send</button>
-        <div id="chatOutput"></div>
-    </div>
-
-    <script src="js/ai_model.js"></script>
-    <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const chatInput = document.getElementById("chatInput");
-        const chatSubmit = document.getElementById("chatSubmit");
-        const chatOutput = document.getElementById("chatOutput");
-
-        // Send message when 'Send' button is clicked
-        chatSubmit.addEventListener("click", async function () {
-            const userMessage = chatInput.value.trim();
-            if (userMessage === "") return; // Don't send empty messages
-
-            const botResponse = await getResponse(userMessage);
-            chatOutput.innerHTML += `<p><strong>You:</strong> ${userMessage}</p><p><strong>AI:</strong> ${botResponse}</p>`;
-            chatInput.value = ''; // Clear input after sending
+async function getResponse(userMessage) {
+    try {
+        const response = await fetch('/api/chat', { // Sends request to your backend API route on Vercel
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ message: userMessage })
         });
 
-        // Allow sending message by pressing the "Enter" key
-        chatInput.addEventListener("keypress", async function (e) {
-            if (e.key === 'Enter') {
-                const userMessage = chatInput.value.trim();
-                if (userMessage === "") return; // Don't send empty messages
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
 
-                const botResponse = await getResponse(userMessage);
-                chatOutput.innerHTML += `<p><strong>You:</strong> ${userMessage}</p><p><strong>AI:</strong> ${botResponse}</p>`;
-                chatInput.value = ''; // Clear input after sending
-            }
-        });
-    });
-    </script>
-
-</body>
-</html>
+        const data = await response.json();
+        return data.generated_text || "Sorry, I didn't understand that.";
+    } catch (error) {
+        console.error('Error with API request:', error);
+        return "Error: Unable to process your request.";
+    }
+}
