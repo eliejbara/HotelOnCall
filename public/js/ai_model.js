@@ -3,7 +3,7 @@ async function getResponse(userMessage) {
         const response = await fetch("https://api-inference.huggingface.co/models/facebook/blenderbot-400M-distill", {
             method: "POST",
             headers: { 
-                "Authorization": "Bearer YOUR_HUGGINGFACE_API_KEY", // Replace with your actual API key
+                "Authorization": "HUGGINGFACE_API_KEY", // Replace with your actual API key
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({ inputs: userMessage })
