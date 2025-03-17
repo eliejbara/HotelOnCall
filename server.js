@@ -1026,7 +1026,7 @@ app.post('/order-taxi', express.json(), (req, res) => {
             const guestID = result.rows[0].id;
 
             // Insert the taxi order into the Taxi table
-            const insertTaxiQuery = 'INSERT INTO taxi (guest_id, destination, notified) VALUES ($1, $2, $3)';
+            const insertTaxiQuery = 'INSERT INTO Taxi (guest_id, destination, notified) VALUES ($1, $2, $3)';
             const destination = "Airport"; // You can dynamically set this based on user input if needed
 
             return db.query(insertTaxiQuery, [guestID, destination, false])
