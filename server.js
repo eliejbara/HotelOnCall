@@ -6,6 +6,8 @@ const bcrypt = require("bcrypt");
 const cors = require("cors");
 const path = require("path");
 const axios = require("axios");
+const nodemailer = require("nodemailer");
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 
 const app = express();
