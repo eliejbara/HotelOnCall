@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manager Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="styles.css"> 
+    <style>
+        body {
+            background-color: #4a120d; /* Solid dark red background */
+            background-image: none; /* Ensure no background image */
+        }
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 100px; /* Adjusted spacing for a luxurious feel */
+            margin: 70px 0;
+        }
+        .dashboard-button {
+            background: linear-gradient(145deg, #CFA75C, #B88A44); /* Gold gradient */
+            color: white;
+            width: 180px; /* Bigger size for a premium look */
+            height: 180px;
+            border: none;
+            border-radius: 50%;
+            font-size: 22px;
+            font-weight: bold;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease-in-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.4); /* Softer and more elegant shadow */
+            position: relative;
+        }
+        .dashboard-button:hover {
+            background: linear-gradient(145deg, #B88A44, #CFA75C);
+            transform: scale(1.1);
+            box-shadow: 0px 8px 18px rgba(0, 0, 0, 0.5);
+        }
+        .dashboard-button::after {
+            content: attr(data-label);
+            position: absolute;
+            bottom: -40px;
+            font-size: 18px;
+            font-weight: bold;
+            color: white;
+        }
+        .button-icon {
+            font-size: 50px;
+        }
+
+        /* Styling for feedback and chart sections */
+        .card {
+            background: linear-gradient(145deg, #CFA75C, #B88A44); /* Gold gradient */
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.4); /* Softer shadow */
+        }
+
+        .card h2 {
+            text-align: center;
+            color: white;
+        }
+
+        .card table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .card th, .card td {
+            padding: 10px;
+            text-align: left;
+            color: black; /* Set feedback text color to black for visibility */
+            border-bottom: 1px solid #ddd;
+        }
+
+        .card th {
+            background-color: #B88A44; /* Slightly darker gold header */
+            color: white;
+        }
+
+        .chart-container {
+            height: 300px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <header></header>
+    <div class="container">
+        <!-- Guest Feedback Section -->
+        <div class="card">
+            <h2>Guest Feedback</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Room</th>
+                        <th>Email</th>
+                        <th>Feedback</th>
+                        <th>Checkout</th>
+                    </tr>
+                </thead>
+                <tbody id="feedback-table"></tbody>
+            </table>
+        </div>
+
+        <!-- Task Completion Chart Section -->
+        <div class="card">
+            <h2>Task Completion Chart</h2>
+            <div class="chart-container">
+                <canvas id="taskChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Dashboard Buttons Section -->
+        <div class="button-container">
+            <button class="dashboard-button" onclick="location.href='cook_dashboard.html'">Cook Activity</button>
+            <button class="dashboard-button" onclick="location.href='maintenance_dashboard.html'">Maintenance Activity</button>
+            <button class="dashboard-button" onclick="location.href='cleaning_dashboard.html'">Cleaner Activity</button>
+            <button class="dashboard-button" onclick="location.href='dashboard.html'">Guest Prediction AI</button>
+        </div>
+    </div>
+
+    <footer>
+        <p>Contact Us: HotelOnCall Team</p>
+        <p>ehj00@mail.aub.edu | nwd06@mail.aub.edu | ahn25@mail.aub.edu | kms36@mail.aub.edu | rmt29@mail.aub.edu</p>
+    </footer>
+
+    <script>
+        let chartInstance = null;
+
+        function refreshData() {
+            // Fetch and update feedback table
+            fetch("/api/feedback")
+                .then(response => response.json())
+                .then(data => {
+                    const tableBody = document.getElementById("feedback-table");
+                    tableBody.innerHTML = "";
+                    data.forEach(item => {
+                        const row = `<tr>
+                            <td>${item.room_number}</td>
+                            <td>${item.email}</td>
+                            <td>${item.feedback}</td>
+                            <td>${new Date(item.checkout_time).toLocaleString()}</td>
+                        </tr>`;
+                        tableBody.insertAdjacentHTML("beforeend", row);
+                    });
+                })
+                .catch(error => console.error("Error fetching feedback:", error));
+
+            // Fetch and update task completion chart
+            fetch("/api/task-completion")
+                .then(response => response.json())
+                .then(data => {
+                    const ctx = document.getElementById("taskChart").getContext("2d");
+
+                    // If a chart instance exists, destroy it before creating a new one
+                    if (chartInstance) {
+                        chartInstance.destroy();
+                    }
+
+                    // Create new chart with updated data
+                    chartInstance = new Chart(ctx, {
+                        type: "bar",
+                        data: {
+                            labels: ["Cleaning", "Cooking", "Maintenance"],
+                            datasets: [{
+                                label: "Completion %",
+                                data: [data.cleaning, data.cooking, data.maintenance],
+                                backgroundColor: [
+                                    "#D32F2F",  // Vibrant Rose for Cleaning
+                                    "#D32F2F",  // Dark Rose for Cooking
+                                    "#D32F2F"    // Rose Gold for Maintenance, metallic and sophisticated
+                                ],
+                                borderRadius: 8,
+                                barThickness: 50
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    max: 100,
+                                    ticks: {
+                                        color: "white" // Y-axis tick labels in white
+                                    }
+                                },
+                                x: {
+                                    ticks: {
+                                        color: "white" // X-axis tick labels in white
+                                    }
+                                }
+                            },
+                            plugins: {
+                                tooltip: {
+                                    bodyColor: "white", // Tooltip text color
+                                    titleColor: "white" // Tooltip title color
+                                },
+                                legend: {
+                                    labels: {
+                                        color: "white" // Legend text color
+                                    }
+                                }
+                            }
+                        }
+                    });
+                })
+                .catch(error => console.error("Error fetching task data:", error));
+        }
+
+        document.addEventListener("DOMContentLoaded", refreshData);
+
+        // Set interval to refresh the table and chart every 5 seconds
+        setInterval(refreshData, 5000);
+    </script>
+</body>
+</html>
