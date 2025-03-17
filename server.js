@@ -163,27 +163,67 @@ app.get("/available-rooms", async (req, res) => {
 });
 
 // ** Guest Check-In (Now Redirects Directly to Guest Services) **
-app.post("/checkin", async (req, res) => {
-  const { guestEmail, roomNumber, nights } = req.body;
-  if (!guestEmail || !roomNumber || !nights) {
-    return res.status(400).json({ success: false, message: "Please provide all required fields." });
-  }
-  try {
-    const userResult = await db.query("SELECT id FROM users WHERE email = $1 AND userType = 'guest'", [guestEmail]);
-    if (userResult.rows.length === 0) {
-      return res.status(400).json({ success: false, message: "Guest not registered! Please register first." });
+app.post("/checkin", (req, res) => {
+    const { guestEmail, roomNumber, nights } = req.body;
+
+    if (!guestEmail || !roomNumber || !nights) {
+        return res.status(400).json({ success: false, message: "Please provide all required fields." });
     }
-    const guestId = userResult.rows[0].id;
-    const roomResult = await db.query("SELECT * FROM check_ins WHERE room_number = $1", [roomNumber]);
-    if (roomResult.rows.length > 0) {
-      return res.status(400).json({ success: false, message: "Room already booked! Choose another room." });
-    }
-    await db.query("INSERT INTO check_ins (guest_id, room_number, nights) VALUES ($1, $2, $3)", [guestId, roomNumber, nights]);
-    res.json({ success: true, message: "Check-in successful!", redirectTo: "guest_services.html" });
-  } catch (error) {
-    console.error("Error during check-in:", error);
-    return res.status(500).json({ success: false, message: "Database error occurred." });
-  }
+
+    // Check if the guest exists
+    db.query("SELECT id FROM users WHERE email = $1 AND userType = 'guest'", [guestEmail], (err, result) => {
+        if (err) return res.status(500).json({ success: false, message: "Database error occurred." });
+
+        if (result.rows.length === 0) {
+            return res.status(400).json({ success: false, message: "Guest not registered! Please register first." });
+        }
+
+        const guestId = result.rows[0].id;
+
+        // Check if the room is already booked
+        db.query("SELECT * FROM check_ins WHERE room_number = $1", [roomNumber], (err, roomResult) => {
+            if (err) return res.status(500).json({ success: false, message: "Database error occurred." });
+
+            if (roomResult.rows.length > 0) {
+                return res.status(400).json({ success: false, message: "Room already booked! Choose another room." });
+            }
+
+            // Insert check-in information into the database
+            db.query("INSERT INTO check_ins (guest_id, room_number, nights) VALUES ($1, $2, $3)", [guestId, roomNumber, nights], (err) => {
+                if (err) return res.status(500).json({ success: false, message: "Error processing check-in." });
+
+                // Send check-in email using nodemailer
+                const transporter = nodemailer.createTransport({
+                    service: 'gmail',
+                    auth: {
+                        user: 'hoteloncall55@gmail.com',
+                        pass: 'fvwujhuikywpgibi'
+                    }
+                });
+
+                const mailOptions = {
+                    from: 'hoteloncall55@gmail.com',
+                    to: guestEmail,
+                    subject: 'Welcome to Our Luxury Hotel',
+                    text: `Dear Valued Guest,
+                    
+                    We are delighted to welcome you to our distinguished sanctuary of luxury. As you arrive, our dedicated concierge team awaits to ensure your check-in is as seamless as it is exquisite. Every detail of your stay—from your elegantly appointed room to our refined amenities—has been curated with your comfort and pleasure in mind. We look forward to providing you with an unforgettable experience that truly reflects the pinnacle of hospitality.
+                    
+                    Warm regards,
+                    HotelOnCall Team`
+                };
+
+                transporter.sendMail(mailOptions, (error, info) => {
+                    if (error) {
+                        console.error("Error sending check-in email:", error);
+                    } else {
+                        console.log("Check-in email sent:", info.response);
+                    }
+                    res.json({ success: true, message: "Check-in successful!", redirectTo: "guest_services.html" });
+                });
+            });
+        });
+    });
 });
 
 // ** Place Food Order (Multiple Items) **
