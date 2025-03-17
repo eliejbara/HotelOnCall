@@ -1,11 +1,11 @@
 // ai_model.js
 
-// JavaScript to interact with the AI model via the backend API
 async function getResponse(userMessage) {
     try {
         // Sending a POST request to the backend API route
         const response = await fetch('/api/chat', {
-            method: 'POST', // POST method for sending data
+            method: 'POST',
+            // POST method for sending data
             headers: {
                 'Content-Type': 'application/json', // Indicates that we’re sending JSON data
             },
