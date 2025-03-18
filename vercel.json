@@ -1,9 +1,5 @@
 {
   "version": 2,
-  "builds": [
-    { "src": "public/js/ai_model.js", "use": "@vercel/node" }
-  ],
-  "routes": [
-    { "src": "/api/chat", "dest": "/api/chat.js" }
-  ]
+  "builds": [{ "src": "server.js", "use": "@vercel/node" }],
+  "routes": [{ "src": "/(.*)", "dest": "server.js" }]
 }
