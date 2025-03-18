@@ -40,22 +40,33 @@ app.use(express.static(path.join(__dirname, "public")));
 //});
 
 
+
+//old 
+/*
 // New route for guest prediction (Flask API integration)
 app.get('/api/guest-prediction', async (req, res) => {
-// Get the 'date' query parameter (should be in YYYY-MM-DD format)
-const { date } = req.query;
-if (!date) {
-return res.status(400).json({ error: 'Date parameter is required (YYYY-MM-DD)' });
-}
-try {
-// Forward the request to the Flask API running on port 5000
-const response = await axios.get(`${process.env.FLASK_API_URL}/predict?date=${date}`);
-res.json(response.data);
-} catch (error) {
-console.error("Error fetching prediction:", error);
- res.status(500).json({ error: 'Error fetching prediction from AI service' });
-}
+    // Get the 'date' query parameter (should be in YYYY-MM-DD format)
+    const { date } = req.query;
+    
+    // Check if the date parameter is provided
+    if (!date) {
+        return res.status(400).json({ error: 'Date parameter is required (YYYY-MM-DD)' });
+    }
+
+    try {
+        // Forward the request to the Flask API running on port 5000
+        const response = await axios.get(`${process.env.FLASK_API_URL}/predict?date=${date}`);
+        
+        // Send the response data back to the client
+        res.json(response.data);
+    } catch (error) {
+        // Log the error and return a 500 response
+        console.error("Error fetching prediction:", error);
+        res.status(500).json({ error: 'Error fetching prediction from AI service' });
+    }
 });
+*/
+
 
 
 // PostgreSQL Connection (using Neon)
