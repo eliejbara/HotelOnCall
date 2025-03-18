@@ -8,7 +8,7 @@ const path = require("path");
 const axios = require("axios");
 const nodemailer = require("nodemailer");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-const fetch = require('node-fetch');
+
 //
 
 const app = express();
@@ -1200,42 +1200,6 @@ app.post("/finalize-checkout", express.json(), async (req, res) => {
     }
   });
 
-//what nour added is below 
-
-
-// Add the API route for handling chatbot messages
-app.post("/api/chat", async (req, res) => {
-    console.log("API route hit");
-    const { message } = req.body;
-
-    if (!message) {
-        return res.status(400).json({ error: "No message provided" });
-    }
-
-    try {
-        const apiKey = process.env.HUGGINGFACE_API_KEY;
-        const response = await fetch("https://api-inference.huggingface.co/models/facebook/blenderbot-400M-distill", {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${apiKey}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ inputs: message }),
-        });
-
-        if (!response.ok) {
-            return res.status(response.status).json({ error: "Error with Hugging Face API request" });
-        }
-
-        const data = await response.json();
-        res.status(200).json({ generated_text: data.generated_text || "Sorry, I didn't understand that." });
-    } catch (error) {
-        console.error("Error with API request:", error);
-        res.status(500).json({ error: "Internal server error" });
-    }
-});
-
-//end of nour editing
 
 
 const PORT = process.env.PORT || 5000;
