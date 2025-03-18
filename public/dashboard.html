@@ -1,53 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard</title>
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      async function getResponse(apiEndpoint, requestBody) {
-        try {
-          const response = await fetch(apiEndpoint, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(requestBody),
-          });
-
-          if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-          }
-
-          const data = await response.json();
-          return data.generated_text || "Sorry, I didn't understand that.";
-        } catch (error) {
-          console.error('Error with API request:', error);
-          throw error;
-        }
-      }
-
-      const button = document.querySelector('button');
-      if (button) {
-        button.addEventListener('click', async function() {
-          try {
-            // Use the correct Vercel app URL here
-            const result = await getResponse('https://hotel-on-call.vercel.app/api/chat', { message: "Hello, AI!" }); // Your API Call
-            console.log(result);
-          } catch (e) {
-            console.error("Error getting response: ", e);
-            alert("There was an error processing your request. Please try again later.");
-          }
-        });
-      } else {
-        console.error("Button not found in the document.");
-      }
-    });
-  </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <script defer src="/js/ai_model.js"></script>
 </head>
 <body>
-  <h1>Welcome to the Dashboard</h1>
-  <button>Get Response</button>
+    <h1>Welcome to the Dashboard</h1>
+    <button id="chatButton">Get Response</button>
+    <p id="response"></p>
 </body>
 </html>
