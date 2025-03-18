@@ -20,22 +20,7 @@ app.use(cors());
 // ✅ Serve static files from the absolute path of "public" (Only fix)
 app.use(express.static(path.join(__dirname, "public")));
 
-// New route for guest prediction (Flask API integration)
-app.get('/api/guest-prediction', async (req, res) => {
-// Get the 'date' query parameter (should be in YYYY-MM-DD format)
-const { date } = req.query;
-if (!date) {
-return res.status(400).json({ error: 'Date parameter is required (YYYY-MM-DD)' });
-}
-try {
-// Forward the request to the Flask API running on port 5000
-const response = await axios.get(`${process.env.FLASK_API_URL}/predict?date=${date}`);
-res.json(response.data);
-} catch (error) {
-console.error("Error fetching prediction:", error);
-res.status(500).json({ error: 'Error fetching prediction from AI service' });
-}
-});
+
 
 // PostgreSQL Connection (using Neon)
 const db = new Pool({
@@ -1198,64 +1183,6 @@ app.post("/finalize-checkout", express.json(), async (req, res) => {
       return res.status(500).json({ success: false, message: "Server error while finalizing checkout." });
     }
   });
-
-
-app.post('/order-taxi', express.json(), async (req, res) => {
-    const { guestEmail } = req.body;
-
-    if (!guestEmail) {
-        return res.status(400).json({ success: false, message: "Guest email is required" });
-    }
-
-    try {
-        // Check if the guest is registered
-        const userQuery = 'SELECT id FROM users WHERE email = $1';
-        const { rows } = await db.query(userQuery, [guestEmail]);
-
-        if (rows.length === 0) {
-            return res.status(404).json({ success: false, message: "Guest not found" });
-        }
-
-        const guestID = rows[0].id;
-
-        // Insert the taxi order into the Taxi table
-        const insertTaxiQuery = 'INSERT INTO taxi (guest_id, destination, notified) VALUES ($1, $2, $3)';
-        const destination = "Airport"; // You can dynamically set this based on user input if needed
-
-        await db.query(insertTaxiQuery, [guestID, destination, false]);
-
-        // Send email notification
-        const transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: 'hoteloncall55@gmail.com',
-                pass: 'fvwujhuikywpgibi',  
-            }
-        });
-
-        const mailOptions = {
-            from: 'hoteloncall55@gmail.com',
-            to: guestEmail,
-            subject: 'Your Taxi Has Been Ordered!',
-            text: `Dear Valued Guest,\n\nWe are pleased to inform you that a taxi has been successfully ordered for you to take you to the ${destination}. Your vehicle will be arriving shortly to ensure a smooth and timely journey.\n\nThank you for choosing us. Should you require any further assistance, please don't hesitate to reach out.\n\nWarm Regards,\nThe HotelOnCall Team`
-        };
-
-        transporter.sendMail(mailOptions, (error, info) => {
-            if (error) {
-                console.error("Error sending email:", error);
-            } else {
-                console.log('Email sent: ' + info.response);
-            }
-        });
-
-        return res.json({ success: true, message: "Taxi ordered successfully!" });
-    } catch (err) {
-        console.error("Error ordering taxi:", err);
-        return res.status(500).json({ success: false, message: "Error ordering taxi" });
-    }
-});
-
-
 
 
 
