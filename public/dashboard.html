@@ -3,12 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard</title>
-    <script defer src="/js/ai_model.js"></script>
+    <title>HotelOnCall Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1>Welcome to the Dashboard</h1>
-    <button id="chatButton">Get Response</button>
-    <p id="response"></p>
+
+    <h1>Welcome to HotelOnCall</h1>
+
+    <div id="chat-container">
+        <h2>AI Assistant</h2>
+        <input type="text" id="chatInput" placeholder="Ask something...">
+        <button id="chatSubmit">Send</button>
+        <div id="chatOutput"></div>
+    </div>
+
+    <script src="js/ai_model.js"></script>
 </body>
 </html>
