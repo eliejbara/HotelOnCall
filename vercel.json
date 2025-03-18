@@ -1,9 +1,11 @@
 {
   "version": 2,
   "builds": [
-    { "src": "server.js", "use": "@vercel/node" }
+    { "src": "server.js", "use": "@vercel/node" },
+    { "src": "api/chat.js", "use": "@vercel/node" }  // Make sure this file is correctly defined
   ],
   "routes": [
-    { "src": "/(.*)", "dest": "server.js" }
+    { "src": "/api/(.*)", "dest": "/api/$1" },  // Route API requests to serverless functions
+    { "src": "/(.*)", "dest": "server.js" }  // All other routes handled by server.js
   ]
 }
