@@ -1,37 +1,144 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HotelOnCall Dashboard</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8">
+  <title>Hotel Management Dashboard - Room Demand Prediction</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f9;
+      margin: 40px;
+      text-align: center;
+    }
+    h1 {
+      color: #b59b6d;
+      font-size: 28px;
+      font-weight: bold;
+    }
+    form {
+      background-color: #ffffff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+      display: inline-block;
+      max-width: 400px;
+      width: 100%;
+    }
+    label {
+      font-size: 16px;
+      color: #444;
+      font-weight: 500;
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: 1px solid #dcdcdc;
+      border-radius: 6px;
+      font-size: 15px;
+      background-color: #fafafa;
+      color: #333;
+    }
+    input:focus {
+      border-color: #b59b6d;
+      outline: none;
+      background-color: #fff;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #b59b6d;
+      border: none;
+      border-radius: 6px;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #9e864f;
+    }
+    #result {
+      margin-top: 20px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #2f4f4f;
+    }
+  </style>
 </head>
 <body>
+  <h1>Room Demand Prediction</h1>
+  <form id="predictionForm">
+    <label for="date">Enter Date (YYYY-MM-DD): </label>
+    <input type="text" id="date" name="date" placeholder="2025-03-15" required>
 
-    <h1>Welcome to HotelOnCall</h1>
+    <label for="avg_lead_time">Average Lead Time (days): </label>
+    <input type="number" id="avg_lead_time" name="avg_lead_time" placeholder="30" required>
 
-    <!-- Chatbot Section -->
-    <div id="chat-container">
-        <h2>AI Assistant</h2>
-        <input type="text" id="chatInput" placeholder="Ask something...">
-        <button id="chatSubmit">Send</button>
-        <div id="chatOutput"></div>
-    </div>
+    <label for="sum_previous_bookings">Sum of Previous Bookings: </label>
+    <input type="number" id="sum_previous_bookings" name="sum_previous_bookings" placeholder="5" required>
 
-    <script src="js/ai_model.js"></script>
-    <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const chatInput = document.getElementById("chatInput");
-        const chatSubmit = document.getElementById("chatSubmit");
-        const chatOutput = document.getElementById("chatOutput");
+    <label for="avg_adr">Average Daily Rate (ADR): </label>
+    <input type="number" id="avg_adr" name="avg_adr" placeholder="100" required>
 
-        chatSubmit.addEventListener("click", async function () {
-            const userMessage = chatInput.value;
-            const botResponse = await getResponse(userMessage);
-            chatOutput.innerHTML = `<p><strong>You:</strong> ${userMessage}</p><p><strong>AI:</strong> ${botResponse}</p>`;
-        });
+    <label for="total_children">Total Children: </label>
+    <input type="number" id="total_children" name="total_children" placeholder="2" required>
+
+    <button type="submit">Predict Room Demand</button>
+  </form>
+  <div id="result"></div>
+  
+  <script>
+    document.getElementById('predictionForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      // Get the date input and additional features
+      const dateInput = document.getElementById('date').value;
+      const avgLeadTime = document.getElementById('avg_lead_time').value;
+      const sumPrevBookings = document.getElementById('sum_previous_bookings').value;
+      const avgAdr = document.getElementById('avg_adr').value;
+      const totalChildren = document.getElementById('total_children').value;
+
+      // Parse the date to extract year, month, and day of week
+      const dt = new Date(dateInput);
+      if (isNaN(dt)) {
+        document.getElementById('result').innerText = 'Invalid date format.';
+        return;
+      }
+      const year = dt.getFullYear();
+      // JavaScript months are 0-indexed; add 1 for our 1-12 scale.
+      const month = dt.getMonth() + 1;
+      
+      // JavaScript: getDay() returns 0 for Sunday, 1 for Monday, ... 6 for Saturday.
+      // We need Monday = 0, ..., Sunday = 6. So:
+      const jsDay = dt.getDay();
+      const dayOfWeek = (jsDay === 0) ? 6 : jsDay - 1;
+      const isWeekend = (dayOfWeek >= 5) ? 1 : 0;
+      const isHolidaySeason = (month === 7 || month === 8 || month === 12) ? 1 : 0;
+
+      // Construct the API URL with query parameters.
+      // Update the base URL to your actual deployed endpoint if needed.
+      const apiUrl = `https://hotel-on-call.vercel.app/api/demand-prediction?year=${year}&month=${month}&day_of_week=${dayOfWeek}&is_weekend=${isWeekend}&is_holiday_season=${isHolidaySeason}&avg_lead_time=${avgLeadTime}&sum_previous_bookings=${sumPrevBookings}&avg_adr=${avgAdr}&total_children=${totalChildren}`;
+      
+      document.getElementById('result').innerText = 'Fetching prediction...';
+
+      try {
+        const response = await fetch(apiUrl);
+        if (!response.ok) {
+          throw new Error(`Server error: ${response.status}`);
+        }
+        const data = await response.json();
+        if (data.predicted_room_demand !== undefined) {
+          document.getElementById('result').innerText = `Predicted room demand for ${dateInput}: ${data.predicted_room_demand}`;
+        } else {
+          document.getElementById('result').innerText = 'No prediction available.';
+        }
+      } catch (error) {
+        console.error('Error fetching prediction:', error);
+        document.getElementById('result').innerText = 'Error fetching prediction. Please try again.';
+      }
     });
-    </script>
-
+  </script>
 </body>
 </html>
