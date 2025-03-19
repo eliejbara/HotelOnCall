@@ -239,7 +239,6 @@ app.post("/checkin", (req, res) => {
     });
 });
 
-
 app.post("/place-order", async (req, res) => {
     const { guestEmail, orderItems } = req.body;
 
@@ -254,27 +253,23 @@ app.post("/place-order", async (req, res) => {
         await db.query('BEGIN');
         console.log("Transaction Started");
 
-        // Insert each item into the orders table and calculate the total amount
-        const orderInsertPromises = orderItems.map(async (item) => {
-            const itemTotal = item.price * item.quantity;
-            totalAmount += itemTotal;
+        // Create a batch insert query with all items
+        const insertQuery = `
+            INSERT INTO orders (guest_email, menu_item, quantity, total_price, order_status)
+            VALUES
+            ${orderItems.map((item, index) => `($1, $${index * 4 + 2}, $${index * 4 + 3}, $${index * 4 + 4}, 'Pending')`).join(', ')}
+            RETURNING id, menu_item, quantity, total_price, order_status
+        `;
+        
+        // Flatten the values for the query
+        const insertValues = orderItems.reduce((acc, item) => {
+            acc.push(guestEmail, item.name, item.quantity, item.price * item.quantity);
+            return acc;
+        }, []);
 
-            console.log(`Inserting item: ${item.name}, Total: ${itemTotal}`);
-
-            // Insert the item into the 'orders' table and return the inserted row
-            const result = await db.query(
-                "INSERT INTO orders (guest_email, menu_item, quantity, total_price, order_status) VALUES ($1, $2, $3, $4, 'Pending') RETURNING id, menu_item, quantity, total_price, order_status",
-                [guestEmail, item.name, item.quantity, itemTotal]
-            );
-            
-            return result.rows[0]; // Return the inserted row (we only need the inserted item details)
-        });
-
-        // Wait for all insert operations to complete
-        const insertedItems = await Promise.all(orderInsertPromises);
-
-        // Log inserted items to confirm
-        console.log("Inserted Order Items:", insertedItems);
+        // Execute the batch insert query
+        const result = await db.query(insertQuery, insertValues);
+        console.log("Inserted Order Items:", result.rows);
 
         // Commit the transaction after all insertions are successful
         await db.query('COMMIT');
@@ -284,8 +279,8 @@ app.post("/place-order", async (req, res) => {
         res.json({
             success: true,
             message: "Order placed successfully!",
-            totalAmount,
-            insertedItems, // Send the inserted items back to the frontend
+            totalAmount: result.rows.reduce((total, item) => total + parseFloat(item.total_price), 0), // Sum the total from returned rows
+            insertedItems: result.rows, // Send the inserted rows back to the frontend
         });
 
     } catch (error) {
@@ -295,6 +290,7 @@ app.post("/place-order", async (req, res) => {
         return res.status(500).json({ success: false, message: "Error processing order." });
     }
 });
+
 
 
 
