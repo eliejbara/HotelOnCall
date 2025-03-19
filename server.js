@@ -1284,8 +1284,8 @@ app.get('/api/demand_prediction', async (req, res) => {
       // Forward the request to the Flask API.
       // Ensure that you have set DEMAND_API_URL in your environment variables
       // For example, "http://your-flask-api-domain:5000"
-      const flaskApiUrl = process.env.DEMAND_API_URL.replace(/\/+$/, "");
-      const response = await axios.get(`${flaskApiUrl}/api/demand_prediction`, {
+      const flaskApiUrl = "https://hotel-on-call.up.railway.app/api/demand_prediction";
+      const response = await axios.get(flaskApiUrl, {
         params: {
           year,
           month,
