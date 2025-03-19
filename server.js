@@ -731,8 +731,8 @@ app.get("/menu", async (req, res) => {
 
 // Route to get available cleaning slots
 app.get("/available-cleaning-slots", (req, res) => {
-    // SQL query to fetch available cleaning time slots
-    db.query("SELECT time_slot FROM cleaning_times WHERE available = TRUE", (err, result) => {
+    // SQL query to fetch available cleaning time slots and order them by time
+    db.query("SELECT time_slot FROM cleaning_times WHERE available = TRUE ORDER BY time_slot ASC", (err, result) => {
         if (err) {
             console.error("❌ Error fetching cleaning time slots:", err);
             return res.status(500).json({ message: "Server error" });
@@ -742,12 +742,14 @@ app.get("/available-cleaning-slots", (req, res) => {
 
         // Check if we have any available cleaning time slots
         if (result.rows.length > 0) {
-            res.json(result.rows.map(row => row.time_slot));  // Map to just return the time_slot values
+            // Return the time_slot values in ascending order
+            res.json(result.rows.map(row => row.time_slot));
         } else {
             res.status(404).json({ message: "No available time slots." });
         }
     });
 });
+
 
 // Request cleaning route (POST)
 app.post("/request-cleaning", async (req, res) => {
