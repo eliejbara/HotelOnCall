@@ -89,57 +89,58 @@
   </form>
   <div id="result"></div>
   
-  <script>
-    document.getElementById('predictionForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
+ <script>
+  document.getElementById('predictionForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
 
-  // Get the date input and additional features
-  const dateInput = document.getElementById('date').value;
-  const avgLeadTime = document.getElementById('avg_lead_time').value;
-  const sumPrevBookings = document.getElementById('sum_previous_bookings').value;
-  const avgAdr = document.getElementById('avg_adr').value;
-  const totalChildren = document.getElementById('total_children').value;
+    // Get the date input and additional features
+    const dateInput = document.getElementById('date').value;
+    const avgLeadTime = document.getElementById('avg_lead_time').value;
+    const sumPrevBookings = document.getElementById('sum_previous_bookings').value;
+    const avgAdr = document.getElementById('avg_adr').value;
+    const totalChildren = document.getElementById('total_children').value;
 
-  // Parse the date to extract year, month, and day of week
-  const dt = new Date(dateInput);
-  if (isNaN(dt)) {
-    document.getElementById('result').innerText = 'Invalid date format. Please use YYYY-MM-DD format.';
-    return;
-  }
-  const year = dt.getFullYear();
-  const month = dt.getMonth() + 1; // JavaScript months are 0-indexed
-  const jsDay = dt.getDay();
-  const dayOfWeek = (jsDay === 0) ? 6 : jsDay - 1; // Adjust Sunday to 6 (Saturday)
-  const isWeekend = (dayOfWeek >= 5) ? 1 : 0;
-  const isHolidaySeason = (month === 7 || month === 8 || month === 12) ? 1 : 0;
-
-  // Construct the API URL with query parameters
-  const apiUrl = `https://hotel-on-call.vercel.app/api/demand_prediction?year=${year}&month=${month}&day_of_week=${dayOfWeek}&is_weekend=${isWeekend}&is_holiday_season=${isHolidaySeason}&avg_lead_time=${avgLeadTime}&sum_previous_bookings=${sumPrevBookings}&avg_adr=${avgAdr}&total_children=${totalChildren}`;
-
-  // Log the API URL for debugging purposes
-  console.log('API URL:', apiUrl);
-
-  document.getElementById('result').innerText = 'Fetching prediction...';
-
-  try {
-    const response = await fetch(apiUrl);
-    if (!response.ok) {
-      throw new Error(`Server error: ${response.status} - ${response.statusText}`);
+    // Parse the date to extract year, month, and day of week
+    const dt = new Date(dateInput);
+    if (isNaN(dt)) {
+      document.getElementById('result').innerText = 'Invalid date format. Please use YYYY-MM-DD format.';
+      return;
     }
-    const data = await response.json();
-    console.log('API Response:', data);  // Log the response data to check the structure
-    
-    if (data.predicted_room_demand !== undefined) {
-      document.getElementById('result').innerText = `Predicted room demand for ${dateInput}: ${data.predicted_room_demand}`;
-    } else {
-      document.getElementById('result').innerText = 'No prediction available or server error.';
-    }
-  } catch (error) {
-    console.error('Error fetching prediction:', error);
-    document.getElementById('result').innerText = 'Error fetching prediction. Please try again later.';
-  }
-});
+    const year = dt.getFullYear();
+    const month = dt.getMonth() + 1; // JavaScript months are 0-indexed
+    const jsDay = dt.getDay();
+    const dayOfWeek = (jsDay === 0) ? 6 : jsDay - 1; // Adjust Sunday to 6 (Saturday)
+    const isWeekend = (dayOfWeek >= 5) ? 1 : 0;
+    const isHolidaySeason = (month === 7 || month === 8 || month === 12) ? 1 : 0;
 
-  </script>
+    // Construct the API URL with query parameters
+    const apiUrl = `https://hotel-on-call.vercel.app/api/demand_prediction?year=${year}&month=${month}&day_of_week=${dayOfWeek}&is_weekend=${isWeekend}&is_holiday_season=${isHolidaySeason}&avg_lead_time=${avgLeadTime}&sum_previous_bookings=${sumPrevBookings}&avg_adr=${avgAdr}&total_children=${totalChildren}`;
+
+    // Log the API URL for debugging purposes
+    console.log('API URL:', apiUrl);
+
+    document.getElementById('result').innerText = 'Fetching prediction...';
+
+    try {
+      const response = await fetch(apiUrl);
+      if (!response.ok) {
+        console.error(`Error: ${response.status} - ${response.statusText}`);
+        throw new Error(`Server error: ${response.status} - ${response.statusText}`);
+      }
+      const data = await response.json();
+      console.log('API Response:', data);  // Log the response data to check the structure
+
+      if (data.predicted_room_demand !== undefined) {
+        document.getElementById('result').innerText = `Predicted room demand for ${dateInput}: ${data.predicted_room_demand}`;
+      } else {
+        document.getElementById('result').innerText = 'No prediction available or server error.';
+      }
+    } catch (error) {
+      console.error('Error fetching prediction:', error);
+      document.getElementById('result').innerText = 'Error fetching prediction. Please try again later.';
+    }
+  });
+</script>
+
 </body>
 </html>
