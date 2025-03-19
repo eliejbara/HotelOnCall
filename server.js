@@ -1285,7 +1285,7 @@ app.get('/api/demand_prediction', async (req, res) => {
       // Ensure that you have set DEMAND_API_URL in your environment variables
       // For example, "http://your-flask-api-domain:5000"
       const flaskApiUrl = process.env.DEMAND_API_URL.replace(/\/+$/, "");
-      const response = await axios.get(`${flaskApiUrl}/predict_demand`, {
+      const response = await axios.get(`${flaskApiUrl}/demand_prediction`, {
         params: {
           year,
           month,
