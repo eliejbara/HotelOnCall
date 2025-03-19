@@ -264,7 +264,8 @@ app.post("/place-order", async (req, res) => {
 
         // Flatten the values for the query
         const insertValues = orderItems.reduce((acc, item) => {
-            acc.push(guestEmail, item.name, item.quantity, item.price * item.quantity);
+            const totalPrice = item.price * item.quantity;
+            acc.push(guestEmail, item.name, item.quantity, totalPrice);
             return acc;
         }, []);
 
@@ -281,7 +282,7 @@ app.post("/place-order", async (req, res) => {
 
         // Calculate the total amount from inserted rows
         totalAmount = result.rows.reduce((total, item) => total + parseFloat(item.total_price), 0);
-        
+
         // Send the success response along with the total amount and the inserted items
         res.json({
             success: true,
@@ -298,6 +299,7 @@ app.post("/place-order", async (req, res) => {
         return res.status(500).json({ success: false, message: "Error processing order." });
     }
 });
+
 
 
 
