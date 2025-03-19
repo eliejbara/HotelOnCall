@@ -6,11 +6,11 @@
   "routes": [
     {
       "src": "/api/demand_prediction(.*)",
-      "dest": "https://hotel-on-call.vercel.app/api/demand_prediction$1"  // Flask API URL
+      "dest": "https://hotel-on-call.vercel.app/api/demand_prediction$1"  
     },
     {
       "src": "/(.*)",
-      "dest": "/server.js"  // All other routes are handled by Node.js
+      "dest": "/server.js"  
     }
   ]
 }
