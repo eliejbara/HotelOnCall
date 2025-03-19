@@ -1259,58 +1259,51 @@ app.post('/order-taxi', express.json(), async (req, res) => {
 });
 
 
-@app.route('/api/demand_prediction', methods=['GET'])
-def predict_demand():
-    try:
-        # Log the incoming request parameters
-        print("Received parameters:", request.args)
+// New route for room demand prediction
+app.get('/api/demand-prediction', async (req, res) => {
+  // Get the query parameters required by the new model
+  const {
+    year,
+    month,
+    day_of_week,
+    is_weekend,
+    is_holiday_season,
+    avg_lead_time,
+    sum_previous_bookings,
+    avg_adr,
+    total_children
+  } = req.query;
 
-        # Parse input parameters with default values
-        year = int(request.args.get("year", 2025))
-        month = int(request.args.get("month", 7))
-        day_of_week = int(request.args.get("day_of_week", 4))
-        is_weekend = int(request.args.get("is_weekend", 0))
-        is_holiday_season = int(request.args.get("is_holiday_season", 0))
-        avg_lead_time = float(request.args.get("avg_lead_time", 30))
-        sum_previous_bookings = float(request.args.get("sum_previous_bookings", 5))
-        avg_adr = float(request.args.get("avg_adr", 100))
-        total_children = float(request.args.get("total_children", 2))
+  // Optional: Validate that all parameters are provided.
+  if (!year || !month || !day_of_week || !is_weekend || !is_holiday_season ||
+      !avg_lead_time || !sum_previous_bookings || !avg_adr || !total_children) {
+    return res.status(400).json({ error: 'Missing required parameters for demand prediction.' });
+  }
 
-        # Build a row dictionary with the features
-        row_dict = {
-            "year": year,
-            "day_of_week": day_of_week,
-            "is_weekend": is_weekend,
-            "is_holiday_season": is_holiday_season,
-            "avg_lead_time": avg_lead_time,
-            "sum_previous_bookings": sum_previous_bookings,
-            "avg_adr": avg_adr,
-            "total_children": total_children
-        }
-        # Initialize dummy month columns to 0
-        for m_col in DUMMY_MONTH_COLS:
-            row_dict[m_col] = 0
-
-        # Set the correct dummy column to 1 for the given month
-        month_col = f"month_{month}"
-        if month_col in row_dict:
-            row_dict[month_col] = 1
-
-        # Create DataFrame ensuring columns are in the correct order
-        X_input = pd.DataFrame([row_dict])
-        X_input = X_input[FEATURES]
-
-        # Predict and round the result
-        prediction = model.predict(X_input)
-        predicted_count = int(round(prediction[0]))
-
-        # Log the prediction result
-        print(f"Prediction result: {predicted_count}")
-        
-        return jsonify({"predicted_room_demand": predicted_count})
-    except Exception as e:
-        print("Error in prediction:", e)
-        return jsonify({"error": str(e)}), 500
+  try {
+    // Forward the request to the Flask API.
+    // Ensure that you have set DEMAND_API_URL in your environment variables
+    // For example, "http://your-flask-api-domain:5000"
+    const flaskApiUrl = process.env.DEMAND_API_URL;
+    const response = await axios.get(`${flaskApiUrl}/demand_prediction`, {
+      params: {
+        year,
+        month,
+        day_of_week,
+        is_weekend,
+        is_holiday_season,
+        avg_lead_time,
+        sum_previous_bookings,
+        avg_adr,
+        total_children
+      }
+    });
+    res.json(response.data);
+  } catch (error) {
+    console.error("Error fetching room demand prediction:", error);
+    res.status(500).json({ error: 'Error fetching demand prediction from AI service' });
+  }
+});
 
 
 
