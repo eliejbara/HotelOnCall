@@ -73,9 +73,7 @@
             alert("Error fetching room information. Please try again.");
         }
 
-
-        // Function to fetch and update available time slots
-async function fetchAndUpdateTimeSlots() {
+        async function fetchAndUpdateTimeSlots() {
     try {
         const response = await fetch("/available-cleaning-slots");
         const slots = await response.json();
@@ -87,8 +85,17 @@ async function fetchAndUpdateTimeSlots() {
         }
 
         if (Array.isArray(slots) && slots.length > 0) {
-            // Sort slots in ascending order (earliest first)
-            slots.sort((a, b) => new Date('1970-01-01T' + a) - new Date('1970-01-01T' + b));
+            // Sort the slots with custom logic: AM times before PM times
+            slots.sort((a, b) => {
+                // Extract AM/PM and time from the slot (e.g. '09:09 AM')
+                const timeA = a.split(' ');
+                const timeB = b.split(' ');
+
+                // Compare times by AM/PM
+                if (timeA[1] === 'AM' && timeB[1] === 'PM') return -1;
+                if (timeA[1] === 'PM' && timeB[1] === 'AM') return 1;
+                return new Date('1970-01-01T' + timeA[0]) - new Date('1970-01-01T' + timeB[0]);
+            });
 
             // Add sorted time slots to the dropdown
             slots.forEach(slot => {
@@ -116,6 +123,7 @@ async function fetchAndUpdateTimeSlots() {
         document.getElementById("message").innerText = "Error fetching available time slots. Please try again.";
     }
 }
+
 
     
         // Fetch and update time slots immediately when the page loads
