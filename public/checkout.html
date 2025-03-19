@@ -38,9 +38,6 @@
               </div>
             <button id="checkoutBtn">Checkout</button>
             <button type="button" onclick="window.location.href='guest_services.html';">Return to Services</button>
-            <button id="orderTaxiBtn">Order a Taxi</button>
-            <br>
-            <img src="taxi.png" class="taxi-animation" alt="Moving Taxi">
             <p id="message"></p>
         </div>
     </main>
@@ -74,26 +71,6 @@
             } catch (error) {
                 console.error("❌ Error fetching room:", error);
             }
-
-            // Order Taxi button functionality
-        document.getElementById("orderTaxiBtn").addEventListener("click", async () => {
-          console.log("Order Taxi button clicked!");
-            try {
-                const response = await fetch("/order-taxi", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ guestEmail }) // Send the guestEmail
-                });
-                const result = await response.json();
-                if (result.success) {
-                    alert("🚖 Taxi ordered successfully!");
-                } else {
-                    alert("⚠️ Error ordering taxi: " + result.message);
-                }
-            } catch (error) {
-                console.error("❌ Error ordering taxi:", error);
-            }
-        });
             
       // Check if the URL has ?paid=true
       const urlParams = new URLSearchParams(window.location.search);
