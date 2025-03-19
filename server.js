@@ -560,13 +560,15 @@ app.post("/update-maintenance-status", (req, res) => {
 
 
 
-
 app.post("/checkout", (req, res) => {
     const { guestEmail, feedback } = req.body;
 
     if (!guestEmail) {
+        console.error("❌ No guest email provided");
         return res.status(400).json({ success: false, message: "Guest email is required for checkout." });
     }
+
+    console.log(`🔍 Guest Email: ${guestEmail}`);
 
     // Find guest's check-in record
     db.query(
@@ -579,10 +581,12 @@ app.post("/checkout", (req, res) => {
             }
 
             if (result.rowCount === 0) {
+                console.error(`❌ No active check-in found for guest email: ${guestEmail}`);
                 return res.json({ success: false, message: "No active check-in found." });
             }
 
             const { guest_id, room_number } = result.rows[0];
+            console.log(`Guest found: guest_id = ${guest_id}, room_number = ${room_number}`);
 
             // Fetch cleaning requests to get the time slots
             db.query(
@@ -595,6 +599,7 @@ app.post("/checkout", (req, res) => {
                     }
 
                     if (result.rowCount === 0) {
+                        console.error("❌ No cleaning requests found.");
                         return res.status(400).json({ success: false, message: "No cleaning requests found for this guest." });
                     }
 
@@ -689,6 +694,7 @@ app.post("/checkout", (req, res) => {
         }
     );
 });
+
 
 
 
