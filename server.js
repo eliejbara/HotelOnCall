@@ -96,7 +96,7 @@ app.post("/register", async (req, res) => {
     }
 });
 
-// ** User Login with Redirection Logic **
+
 app.post("/login", async (req, res) => {
     const { email, password, userType } = req.body;
 
@@ -132,25 +132,32 @@ app.post("/login", async (req, res) => {
                 return res.json({ success: true, message: "Login successful!", redirectTo: "checkin.html", email: user.email });
             }
         } else {
-            // ** Check if staff exists in the staff_roles table **
-            const staffResult = await db.query("SELECT * FROM staff_roles WHERE staff_email = $1", [email]);
-
-            if (staffResult.rows.length > 0) {
-                const staffRole = staffResult.rows[0].role;
-
-                if (staffRole === "manager") {
-                    return res.json({ success: true, message: "Login successful!", redirectTo: "manager_dashboard.html" });
-                } else {
-                    return res.json({ success: true, message: "Login successful!", redirectTo: "staff_selection.html" });
-                }
+            // ** Check if the user is a manager or staff**
+            if (userType === "manager") {
+                // Direct manager login
+                return res.json({ success: true, message: "Login successful!", redirectTo: "manager_dashboard.html" });
             } else {
-                return res.json({ success: false, message: "Staff not registered in the system!" });
+                // ** Check if staff exists in the staff_roles table **
+                const staffResult = await db.query("SELECT * FROM staff_roles WHERE staff_email = $1", [email]);
+
+                if (staffResult.rows.length > 0) {
+                    const staffRole = staffResult.rows[0].role;
+
+                    if (staffRole === "manager") {
+                        return res.json({ success: true, message: "Login successful!", redirectTo: "manager_dashboard.html" });
+                    } else {
+                        return res.json({ success: true, message: "Login successful!", redirectTo: "staff_selection.html" });
+                    }
+                } else {
+                    return res.json({ success: false, message: "Staff not registered in the system!" });
+                }
             }
         }
     } catch (error) {
         return res.status(500).json({ success: false, message: "Server error during login." });
     }
 });
+
 
 // ** Available Rooms **
 app.get("/available-rooms", async (req, res) => {
