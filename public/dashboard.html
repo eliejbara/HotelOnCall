@@ -4,7 +4,67 @@
   <meta charset="UTF-8">
   <title>Hotel Management Dashboard - Room Demand Prediction</title>
   <style>
-    /* Same styles as before */
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f9;
+      margin: 40px;
+      text-align: center;
+    }
+    h1 {
+      color: #b59b6d;
+      font-size: 28px;
+      font-weight: bold;
+    }
+    form {
+      background-color: #ffffff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+      display: inline-block;
+      max-width: 400px;
+      width: 100%;
+    }
+    label {
+      font-size: 16px;
+      color: #444;
+      font-weight: 500;
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: 1px solid #dcdcdc;
+      border-radius: 6px;
+      font-size: 15px;
+      background-color: #fafafa;
+      color: #333;
+    }
+    input:focus {
+      border-color: #b59b6d;
+      outline: none;
+      background-color: #fff;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #b59b6d;
+      border: none;
+      border-radius: 6px;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #9e864f;
+    }
+    #result {
+      margin-top: 20px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #2f4f4f;
+    }
   </style>
 </head>
 <body>
@@ -46,7 +106,6 @@
         document.getElementById('result').innerText = 'Invalid date format. Please use YYYY-MM-DD format.';
         return;
       }
-
       const year = dt.getFullYear();
       const month = dt.getMonth() + 1; // JavaScript months are 0-indexed
       const jsDay = dt.getDay();
@@ -55,7 +114,12 @@
       const isHolidaySeason = (month === 7 || month === 8 || month === 12) ? 1 : 0;
 
       // Construct the API URL with query parameters
-      const apiUrl = `https://web-production-f430d.up.railway.app/demand_prediction?year=${year}&month=${month}&day_of_week=${dayOfWeek}&is_weekend=${isWeekend}&is_holiday_season=${isHolidaySeason}&avg_lead_time=${avgLeadTime}&sum_previous_bookings=${sumPrevBookings}&avg_adr=${avgAdr}&total_children=${totalChildren}`;
+    const apiUrl = `https://web-production-f430d.up.railway.app/demand_prediction?year=${year}&month=${month}&day_of_week=${dayOfWeek}&is_weekend=${isWeekend}&is_holiday_season=${isHolidaySeason}&avg_lead_time=${avgLeadTime}&sum_previous_bookings=${sumPrevBookings}&avg_adr=${avgAdr}&total_children=${totalChildren}`;
+
+
+
+      // Log the API URL for debugging purposes
+      console.log('API URL:', apiUrl);
 
       document.getElementById('result').innerText = 'Fetching prediction...';
 
@@ -66,7 +130,7 @@
           throw new Error(`Server error: ${response.status} - ${response.statusText}`);
         }
         const data = await response.json();
-        console.log('API Response:', data);
+        console.log('API Response:', data);  // Log the response data to check the structure
 
         if (data.predicted_room_demand !== undefined) {
           document.getElementById('result').innerText = `Predicted room demand for ${dateInput}: ${data.predicted_room_demand}`;
@@ -79,5 +143,6 @@
       }
     });
   </script>
+
 </body>
 </html>
