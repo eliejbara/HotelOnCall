@@ -98,7 +98,12 @@ app.post("/register", async (req, res) => {
 
 
 app.post("/login", async (req, res) => {
-    const { email, password, userType } = req.body;
+    let { email, password, userType } = req.body;
+
+  // If the email is manager's email and userType is "staff", treat it as "manager"
+    if (email === "manager@gmail.com" && userType === "staff") {
+        userType = "manager";
+    }
 
     if (!email || !password || !userType) {
         return res.status(400).json({ success: false, message: "Please provide all required fields." });
