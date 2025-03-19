@@ -5,12 +5,12 @@
   ],
   "routes": [
     {
-      "src": "/api/demand_prediction(.*)",
-      "dest": "https://hotel-on-call.vercel.app/api/demand_prediction$1"  
+      "src": "/api/demand_prediction",
+      "dest": "https://hotel-on-call.vercel.app/api/demand_prediction"
     },
     {
       "src": "/(.*)",
-      "dest": "/server.js"  
+      "dest": "/server.js"
     }
   ]
 }
