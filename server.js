@@ -1284,7 +1284,8 @@ app.get('/api/demand-prediction', async (req, res) => {
 
   try {
     // Forward the request to the Flask API.
-   const flaskApiUrl = "https://hotel-on-call.vercel.app/api/demand_prediction";
+  const flaskApiUrl = `https://hotel-on-call.vercel.app/demand_prediction?year=${year}&month=${month}&day_of_week=${dayOfWeek}&is_weekend=${isWeekend}&is_holiday_season=${isHolidaySeason}&avg_lead_time=${avgLeadTime}&sum_previous_bookings=${sumPrevBookings}&avg_adr=${avgAdr}&total_children=${totalChildren}`;
+
  // if using Vercel's API routes
     if (!flaskApiUrl) {
       return res.status(500).json({ error: 'Flask API URL is not defined in environment variables.' });
