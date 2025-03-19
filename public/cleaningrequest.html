@@ -105,6 +105,13 @@ document.addEventListener("DOMContentLoaded", async () => {
                 timeSlotDropdown.appendChild(option);
                 document.getElementById("message").innerText = "Sorry, all cleaning slots are full. Please try again later.";
             }
+            // Check if a time slot was selected before the refresh and set it
+
+            const cachedSlot = localStorage.getItem('selectedTimeSlot');
+            if (cachedSlot) {
+                timeSlotDropdown.value = cachedSlot;
+            }
+            
         } catch (error) {
             console.error("Error fetching time slots:", error);
             document.getElementById("message").innerText = "Error fetching available time slots. Please try again.";
