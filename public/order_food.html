@@ -106,26 +106,22 @@
         }
         
         
-        
         async function placeOrder() {
-            if (!guestEmail) {
-                alert("Error: You must be logged in to place an order.");
-                return;
-            }
-            
-    
-            if (cart.length === 0) {
-                alert("Your cart is empty.");
-                return;
-            }
-    
-            try {
-                const response = await fetch("/place-order", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ guestEmail, orderItems: cart })  // Send all items in the cart
-                });
+    if (!guestEmail) {
+        alert("Error: You must be logged in to place an order.");
+        return;
+    }
+    if (cart.length === 0) {
+        alert("Your cart is empty.");
+        return;
+    }
 
+    try {
+        const response = await fetch("/place-order", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ guestEmail, orderItems: cart })
+        });
         const result = await response.json();
         alert(result.message);
 
@@ -136,10 +132,10 @@
                 <h3>Your Order Details</h3>
                 <ul>
                     ${result.insertedItems.map(item => `
-                        <li>${item.menu_item} - Quantity: ${item.quantity} - Total: $${item.total_price.toFixed(2)}</li>
+                        <li>${item.menu_item} - Quantity: ${item.quantity} - Total: $${parseFloat(item.total_price).toFixed(2)}</li>
                     `).join('')}
                 </ul>
-                <p><strong>Total Amount: $${result.totalAmount.toFixed(2)}</strong></p>
+                <p><strong>Total Amount: $${parseFloat(result.totalAmount).toFixed(2)}</strong></p>
             `;
             document.getElementById("orderStatus").appendChild(orderDetailsDiv);
 
@@ -151,6 +147,7 @@
         console.error("Error placing order:", error);
     }
 }
+
 
 
 
