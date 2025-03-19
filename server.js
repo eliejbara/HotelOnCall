@@ -587,8 +587,10 @@ app.post("/checkout", (req, res) => {
             // Make cleaning time slot available before deleting cleaning requests
             db.query(
                 `UPDATE cleaning_times 
-                 SET available = 1 
-                 WHERE time_slot IN (SELECT time_slot FROM cleaning_requests WHERE guest_email = (SELECT email FROM users WHERE id = $1))`,
+                SET available = 1 
+                WHERE time_slot IN (SELECT time_slot FROM cleaning_requests WHERE guest_email = (SELECT email FROM users WHERE id = $1))
+                RETURNING *;
+                `,
                 [guest_id],
                 (err) => {
                     if (err) {
