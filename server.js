@@ -632,58 +632,66 @@ app.post("/checkout", (req, res) => {
                                         return res.status(500).json({ success: false, message: "Database error while deleting cleaning requests." });
                                     }
 
-                                    // Insert checkout record into the checkouts table
-                                    const checkoutTime = new Date();
-                                    db.query(
-                                        "INSERT INTO checkouts (guest_id, room_number, checkout_time, feedback) VALUES ($1, $2, $3, $4)",
-                                        [guest_id, room_number, checkoutTime, feedback || null],
-                                        (err) => {
-                                            if (err) {
-                                                console.error("❌ Error inserting checkout record:", err);
-                                                return res.status(500).json({ success: false, message: "Database error while inserting checkout record." });
-                                            }
+                                    // Delete the guest's maintenance requests before checkout
+                                    db.query("DELETE FROM maintenance_requests WHERE guest_email = (SELECT email FROM users WHERE id = $1)", [guest_id], (err) => {
+                                        if (err) {
+                                            console.error("❌ Error deleting maintenance requests:", err);
+                                            return res.status(500).json({ success: false, message: "Database error while deleting maintenance requests." });
+                                        }
 
-                                            // Remove check-in record and make room available again
-                                            db.query("DELETE FROM check_ins WHERE guest_id = $1", [guest_id], (err) => {
+                                        // Insert checkout record into the checkouts table
+                                        const checkoutTime = new Date();
+                                        db.query(
+                                            "INSERT INTO checkouts (guest_id, room_number, checkout_time, feedback) VALUES ($1, $2, $3, $4)",
+                                            [guest_id, room_number, checkoutTime, feedback || null],
+                                            (err) => {
                                                 if (err) {
-                                                    console.error("❌ Error during checkout:", err);
-                                                    return res.status(500).json({ success: false, message: "Database error during checkout." });
+                                                    console.error("❌ Error inserting checkout record:", err);
+                                                    return res.status(500).json({ success: false, message: "Database error while inserting checkout record." });
                                                 }
 
-                                                const nodemailer = require('nodemailer');
-                                                const transporter = nodemailer.createTransport({
-                                                    service: 'gmail',
-                                                    auth: {
-                                                        user: 'hoteloncall55@gmail.com',
-                                                        pass: 'fvwujhuikywpgibi'
+                                                // Remove check-in record and make room available again
+                                                db.query("DELETE FROM check_ins WHERE guest_id = $1", [guest_id], (err) => {
+                                                    if (err) {
+                                                        console.error("❌ Error during checkout:", err);
+                                                        return res.status(500).json({ success: false, message: "Database error during checkout." });
                                                     }
-                                                });
 
-                                                const mailOptions = {
-                                                    from: 'hoteloncall55@gmail.com',
-                                                    to: guestEmail,
-                                                    subject: 'Thank You for Staying With Us',
-                                                    text: `Dear Esteemed Guest,
-                                                    Thank you for choosing to spend your time with us at our luxurious retreat. As you prepare for departure, we trust that your stay was as memorable as it was indulgent. Our team is here to ensure that your check-out is smooth and effortless, while we take great pride in having served you with the highest level of excellence. We sincerely hope that the experience and memories created during your visit will beckon you back in the near future.
-                                                    Warm regards,
-                                                    HotelOnCall Team`
-                                                };
+                                                    const nodemailer = require('nodemailer');
+                                                    const transporter = nodemailer.createTransport({
+                                                        service: 'gmail',
+                                                        auth: {
+                                                            user: 'hoteloncall55@gmail.com',
+                                                            pass: 'fvwujhuikywpgibi'
+                                                        }
+                                                    });
 
-                                                transporter.sendMail(mailOptions, (error, info) => {
-                                                    if (error) {
-                                                        console.error("Error sending checkout email:", error);
-                                                    } else {
-                                                        console.log("Checkout email sent:", info.response);
-                                                    }
-                                                    res.json({
-                                                        success: true,
-                                                        message: `Checkout successful! Room ${room_number} is now available.`,
-                                                        clearSession: true
+                                                    const mailOptions = {
+                                                        from: 'hoteloncall55@gmail.com',
+                                                        to: guestEmail,
+                                                        subject: 'Thank You for Staying With Us',
+                                                        text: `Dear Esteemed Guest,
+                                                        Thank you for choosing to spend your time with us at our luxurious retreat. As you prepare for departure, we trust that your stay was as memorable as it was indulgent. Our team is here to ensure that your check-out is smooth and effortless, while we take great pride in having served you with the highest level of excellence. We sincerely hope that the experience and memories created during your visit will beckon you back in the near future.
+                                                        Warm regards,
+                                                        HotelOnCall Team`
+                                                    };
+
+                                                    transporter.sendMail(mailOptions, (error, info) => {
+                                                        if (error) {
+                                                            console.error("Error sending checkout email:", error);
+                                                        } else {
+                                                            console.log("Checkout email sent:", info.response);
+                                                        }
+                                                        res.json({
+                                                            success: true,
+                                                            message: `Checkout successful! Room ${room_number} is now available.`,
+                                                            clearSession: true
+                                                        });
                                                     });
                                                 });
-                                            });
-                                        }
-                                    );
+                                            }
+                                        );
+                                    });
                                 });
                             });
                         }
@@ -693,6 +701,7 @@ app.post("/checkout", (req, res) => {
         }
     );
 });
+
 
 
 
