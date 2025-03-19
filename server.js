@@ -790,57 +790,70 @@ app.post("/request-cleaning", async (req, res) => {
 
 // Book the first available cleaning slot and mark it as unavailable
 app.get("/first-available-cleaning", async (req, res) => {
-  const { guestEmail, roomNumber } = req.query;
+    const { guestEmail, roomNumber } = req.query;
 
-  if (!guestEmail || !roomNumber) {
-      console.log("❌ Error: Missing guestEmail or roomNumber");
-      return res.status(400).json({ success: false, message: "Missing guestEmail or roomNumber" });
-  }
+    if (!guestEmail || !roomNumber) {
+        console.log("❌ Error: Missing guestEmail or roomNumber");
+        return res.status(400).json({ success: false, message: "Missing guestEmail or roomNumber" });
+    }
 
-  console.log("🔍 Fetching first available cleaning slot...");
+    console.log("🔍 Fetching available cleaning slots...");
 
-  try {
-      // Start transaction
-      await db.query('BEGIN');
+    try {
+        // Start transaction
+        await db.query('BEGIN');
 
-      // Fetch first available slot
-      const result = await db.query(
-          "SELECT time_slot FROM cleaning_times WHERE available = TRUE LIMIT 1"
-      );
+        // Fetch all available slots
+        const result = await db.query(
+            "SELECT time_slot FROM cleaning_times WHERE available = TRUE"
+        );
 
-      if (result.rows.length === 0) {
-          console.log("⚠️ No available slots found.");
-          await db.query('ROLLBACK');
-          return res.json({ success: false, message: "No available slots found." });
-      }
+        if (result.rows.length === 0) {
+            console.log("⚠️ No available slots found.");
+            await db.query('ROLLBACK');
+            return res.json({ success: false, message: "No available slots found." });
+        }
 
-      let timeSlot = result.rows[0].time_slot.trim();
-      console.log("✅ Found available time slot:", timeSlot);
+        // Sort the slots (AM before PM, and order by time)
+        let slots = result.rows.map(row => row.time_slot.trim());
+        slots.sort((a, b) => {
+            const timeA = a.split(' ');
+            const timeB = b.split(' ');
 
-      // Mark the slot as unavailable
-      const updateResult = await db.query(
-          "UPDATE cleaning_times SET available = FALSE WHERE time_slot = $1 RETURNING *",
-          [timeSlot]
-      );
-      console.log("🔄 Updated slot:", updateResult.rows);
+            if (timeA[1] === 'AM' && timeB[1] === 'PM') return -1;
+            if (timeA[1] === 'PM' && timeB[1] === 'AM') return 1;
+            return new Date('1970-01-01T' + timeA[0]) - new Date('1970-01-01T' + timeB[0]);
+        });
 
-      // Insert cleaning request
-      const insertResult = await db.query(
-          "INSERT INTO cleaning_requests (guest_email, room_number, time_slot) VALUES ($1, $2, $3) RETURNING *",
-          [guestEmail, roomNumber, timeSlot]
-      );
-      console.log("📝 Inserted cleaning request:", insertResult.rows);
+        // Select the first available time slot
+        const timeSlot = slots[0];
+        console.log("✅ First available time slot:", timeSlot);
 
-      // Commit transaction
-      await db.query('COMMIT');
+        // Mark the selected slot as unavailable
+        const updateResult = await db.query(
+            "UPDATE cleaning_times SET available = FALSE WHERE time_slot = $1 RETURNING *",
+            [timeSlot]
+        );
+        console.log("🔄 Updated slot:", updateResult.rows);
 
-      res.json({ success: true, timeSlot, guestEmail, roomNumber });
-  } catch (error) {
-      console.error("❌ Error processing request:", error);
-      await db.query('ROLLBACK');
-      res.status(500).json({ success: false, message: "Server error" });
-  }
+        // Insert cleaning request
+        const insertResult = await db.query(
+            "INSERT INTO cleaning_requests (guest_email, room_number, time_slot) VALUES ($1, $2, $3) RETURNING *",
+            [guestEmail, roomNumber, timeSlot]
+        );
+        console.log("📝 Inserted cleaning request:", insertResult.rows);
+
+        // Commit transaction
+        await db.query('COMMIT');
+
+        res.json({ success: true, timeSlot, guestEmail, roomNumber });
+    } catch (error) {
+        console.error("❌ Error processing request:", error);
+        await db.query('ROLLBACK');
+        res.status(500).json({ success: false, message: "Server error" });
+    }
 });
+
  
 
 
