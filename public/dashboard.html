@@ -1,1 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HotelOnCall Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
 
+    <h1>Welcome to HotelOnCall</h1>
+
+    <!-- Chatbot Section -->
+    <div id="chat-container">
+        <h2>AI Assistant</h2>
+        <input type="text" id="chatInput" placeholder="Ask something...">
+        <button id="chatSubmit">Send</button>
+        <div id="chatOutput"></div>
+    </div>
+
+    <script src="js/ai_model.js"></script>
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const chatInput = document.getElementById("chatInput");
+        const chatSubmit = document.getElementById("chatSubmit");
+        const chatOutput = document.getElementById("chatOutput");
+
+        chatSubmit.addEventListener("click", async function () {
+            const userMessage = chatInput.value;
+            const botResponse = await getResponse(userMessage);
+            chatOutput.innerHTML = `<p><strong>You:</strong> ${userMessage}</p><p><strong>AI:</strong> ${botResponse}</p>`;
+        });
+    });
+    </script>
+
+</body>
+</html>
