@@ -114,7 +114,7 @@
       const isHolidaySeason = (month === 7 || month === 8 || month === 12) ? 1 : 0;
 
       // Construct the API URL with query parameters
-   const apiUrl = `https://hotel-on-call.vercel.app/demand_predict?year=${year}&month=${month}&day_of_week=${dayOfWeek}&is_weekend=${isWeekend}&is_holiday_season=${isHolidaySeason}&avg_lead_time=${avgLeadTime}&sum_previous_bookings=${sumPrevBookings}&avg_adr=${avgAdr}&total_children=${totalChildren}`;
+   const apiUrl = `https://hotel-on-call.vercel.app/demand_prediction?year=${year}&month=${month}&day_of_week=${dayOfWeek}&is_weekend=${isWeekend}&is_holiday_season=${isHolidaySeason}&avg_lead_time=${avgLeadTime}&sum_previous_bookings=${sumPrevBookings}&avg_adr=${avgAdr}&total_children=${totalChildren}`;
 
       // Log the API URL for debugging purposes
       console.log('API URL:', apiUrl);
