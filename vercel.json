@@ -6,7 +6,7 @@
   "routes": [
     {
       "src": "/api/demand_prediction",
-      "dest": "https://hotel-on-call.vercel.app/api/demand_prediction"
+      "dest": "/api/demand_prediction"
     },
     {
       "src": "/(.*)",
