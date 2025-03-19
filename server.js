@@ -239,6 +239,7 @@ app.post("/checkin", (req, res) => {
     });
 });
 
+
 app.post("/place-order", async (req, res) => {
     const { guestEmail, orderItems } = req.body;
 
@@ -249,25 +250,28 @@ app.post("/place-order", async (req, res) => {
     let totalAmount = 0;
 
     try {
-        // Begin a transaction to insert multiple rows correctly
+        // Start a database transaction
         await db.query('BEGIN');
         console.log("Transaction Started");
 
-        // Create a batch insert query with all items
+        // Prepare the batch insert query
         const insertQuery = `
             INSERT INTO orders (guest_email, menu_item, quantity, total_price, order_status)
             VALUES
             ${orderItems.map((item, index) => `($1, $${index * 4 + 2}, $${index * 4 + 3}, $${index * 4 + 4}, 'Pending')`).join(', ')}
             RETURNING id, menu_item, quantity, total_price, order_status
         `;
-        
+
         // Flatten the values for the query
         const insertValues = orderItems.reduce((acc, item) => {
             acc.push(guestEmail, item.name, item.quantity, item.price * item.quantity);
             return acc;
         }, []);
 
-        // Execute the batch insert query
+        console.log("Insert Query:", insertQuery);
+        console.log("Insert Values:", insertValues);
+
+        // Execute the query
         const result = await db.query(insertQuery, insertValues);
         console.log("Inserted Order Items:", result.rows);
 
@@ -275,21 +279,26 @@ app.post("/place-order", async (req, res) => {
         await db.query('COMMIT');
         console.log("Transaction Committed");
 
+        // Calculate the total amount from inserted rows
+        totalAmount = result.rows.reduce((total, item) => total + parseFloat(item.total_price), 0);
+        
         // Send the success response along with the total amount and the inserted items
         res.json({
             success: true,
             message: "Order placed successfully!",
-            totalAmount: result.rows.reduce((total, item) => total + parseFloat(item.total_price), 0), // Sum the total from returned rows
+            totalAmount,
             insertedItems: result.rows, // Send the inserted rows back to the frontend
         });
 
     } catch (error) {
         // Rollback the transaction in case of any error
         await db.query('ROLLBACK');
-        console.error("❌ Order Placement Error:", error);
+        console.error("❌ Order Placement Error:", error.message);
+        console.error(error.stack); // Log the full error stack for debugging
         return res.status(500).json({ success: false, message: "Error processing order." });
     }
 });
+
 
 
 
