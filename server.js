@@ -785,59 +785,60 @@ app.post("/request-cleaning", async (req, res) => {
     }
 });
 
+
 // Book the first available cleaning slot and mark it as unavailable
- app.get("/first-available-cleaning", async (req, res) => {
-   const { guestEmail, roomNumber } = req.query;
- 
-   if (!guestEmail || !roomNumber) {
-       console.log("❌ Error: Missing guestEmail or roomNumber");
-       return res.status(400).json({ success: false, message: "Missing guestEmail or roomNumber" });
-   }
- 
-   console.log("🔍 Fetching first available cleaning slot...");
- 
-   try {
-       // Start transaction
-       await db.query('BEGIN');
- 
-       // Fetch first available slot
-       const result = await db.query(
-           "SELECT time_slot FROM cleaning_times WHERE available = TRUE LIMIT 1"
-       );
- 
-       if (result.rows.length === 0) {
-           console.log("⚠️ No available slots found.");
-           await db.query('ROLLBACK');
-           return res.json({ success: false, message: "No available slots found." });
-       }
- 
-       let timeSlot = result.rows[0].time_slot.trim();
-       console.log("✅ Found available time slot:", timeSlot);
- 
-       // Mark the slot as unavailable
-       const updateResult = await db.query(
-           "UPDATE cleaning_times SET available = FALSE WHERE time_slot = $1 RETURNING *",
-           [timeSlot]
-       );
-       console.log("🔄 Updated slot:", updateResult.rows);
- 
-       // Insert cleaning request
-       const insertResult = await db.query(
-           "INSERT INTO cleaning_requests (guest_email, room_number, time_slot) VALUES ($1, $2, $3) RETURNING *",
-           [guestEmail, roomNumber, timeSlot]
-       );
-       console.log("📝 Inserted cleaning request:", insertResult.rows);
- 
-       // Commit transaction
-       await db.query('COMMIT');
- 
-       res.json({ success: true, timeSlot, guestEmail, roomNumber });
-   } catch (error) {
-       console.error("❌ Error processing request:", error);
-       await db.query('ROLLBACK');
-       res.status(500).json({ success: false, message: "Server error" });
-   }
- });
+app.get("/first-available-cleaning", async (req, res) => {
+  const { guestEmail, roomNumber } = req.query;
+
+  if (!guestEmail || !roomNumber) {
+      console.log("❌ Error: Missing guestEmail or roomNumber");
+      return res.status(400).json({ success: false, message: "Missing guestEmail or roomNumber" });
+  }
+
+  console.log("🔍 Fetching first available cleaning slot...");
+
+  try {
+      // Start transaction
+      await db.query('BEGIN');
+
+      // Fetch first available slot
+      const result = await db.query(
+          "SELECT time_slot FROM cleaning_times WHERE available = TRUE LIMIT 1"
+      );
+
+      if (result.rows.length === 0) {
+          console.log("⚠️ No available slots found.");
+          await db.query('ROLLBACK');
+          return res.json({ success: false, message: "No available slots found." });
+      }
+
+      let timeSlot = result.rows[0].time_slot.trim();
+      console.log("✅ Found available time slot:", timeSlot);
+
+      // Mark the slot as unavailable
+      const updateResult = await db.query(
+          "UPDATE cleaning_times SET available = FALSE WHERE time_slot = $1 RETURNING *",
+          [timeSlot]
+      );
+      console.log("🔄 Updated slot:", updateResult.rows);
+
+      // Insert cleaning request
+      const insertResult = await db.query(
+          "INSERT INTO cleaning_requests (guest_email, room_number, time_slot) VALUES ($1, $2, $3) RETURNING *",
+          [guestEmail, roomNumber, timeSlot]
+      );
+      console.log("📝 Inserted cleaning request:", insertResult.rows);
+
+      // Commit transaction
+      await db.query('COMMIT');
+
+      res.json({ success: true, timeSlot, guestEmail, roomNumber });
+  } catch (error) {
+      console.error("❌ Error processing request:", error);
+      await db.query('ROLLBACK');
+      res.status(500).json({ success: false, message: "Server error" });
+  }
+});
  
 
 
