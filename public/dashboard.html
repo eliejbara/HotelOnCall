@@ -93,7 +93,7 @@
     document.getElementById('predictionForm').addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      // Get the date input and additional features
+      // Get the form input values
       const dateInput = document.getElementById('date').value;
       const avgLeadTime = document.getElementById('avg_lead_time').value;
       const sumPrevBookings = document.getElementById('sum_previous_bookings').value;
@@ -106,6 +106,7 @@
         document.getElementById('result').innerText = 'Invalid date format. Please use YYYY-MM-DD format.';
         return;
       }
+
       const year = dt.getFullYear();
       const month = dt.getMonth() + 1; // JavaScript months are 0-indexed
       const jsDay = dt.getDay();
@@ -113,17 +114,14 @@
       const isWeekend = (dayOfWeek >= 5) ? 1 : 0;
       const isHolidaySeason = (month === 7 || month === 8 || month === 12) ? 1 : 0;
 
-      // Construct the API URL with query parameters
-    const apiUrl = `https://web-production-f430d.up.railway.app/demand_prediction?year=${year}&month=${month}&day_of_week=${dayOfWeek}&is_weekend=${isWeekend}&is_holiday_season=${isHolidaySeason}&avg_lead_time=${avgLeadTime}&sum_previous_bookings=${sumPrevBookings}&avg_adr=${avgAdr}&total_children=${totalChildren}`;
+      // Construct the API URL for the backend (not directly calling Flask here)
+      const apiUrl = `/api/demand-prediction?year=${year}&month=${month}&day_of_week=${dayOfWeek}&is_weekend=${isWeekend}&is_holiday_season=${isHolidaySeason}&avg_lead_time=${avgLeadTime}&sum_previous_bookings=${sumPrevBookings}&avg_adr=${avgAdr}&total_children=${totalChildren}`;
 
-
-
-      // Log the API URL for debugging purposes
-      console.log('API URL:', apiUrl);
-
+      // Show fetching message
       document.getElementById('result').innerText = 'Fetching prediction...';
 
       try {
+        // Make the API call to the backend
         const response = await fetch(apiUrl);
         if (!response.ok) {
           console.error(`Error: ${response.status} - ${response.statusText}`);
