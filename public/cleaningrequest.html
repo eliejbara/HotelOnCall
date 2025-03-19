@@ -180,24 +180,27 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     // Book the first available slot directly without selecting from the dropdown
-    document.getElementById("bookCleaning").addEventListener("click", () => {
-        fetch(`/first-available-cleaning?guestEmail=${encodeURIComponent(guestEmail)}&roomNumber=${encodeURIComponent(document.getElementById('roomNumber').value)}`, {
-            method: "GET",
-            headers: { "Content-Type": "application/json" }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert(`Successfully booked the first available cleaning slot at ${data.timeSlot}`);
-            } else {
-                alert("No available cleaning slots found.");
-            }
-        })
-        .catch(error => {
-            console.error("Error:", error);
-            alert("Error booking first available cleaning. Please try again.");
-        });
+document.getElementById("bookCleaning").addEventListener("click", () => {
+    fetch(`/first-available-cleaning?guestEmail=${encodeURIComponent(guestEmail)}&roomNumber=${encodeURIComponent(document.getElementById('roomNumber').value)}`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Successfully booked the first available cleaning slot at ${data.timeSlot}`);
+            document.getElementById("message").innerText = `Successfully booked the first available cleaning slot at ${data.timeSlot}`;
+        } else {
+            alert("No available cleaning slots found.");
+            document.getElementById("message").innerText = "No available cleaning slots found.";
+        }
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        alert("Error booking first available cleaning. Please try again.");
     });
+});
+
 });
 </script>
 
