@@ -657,22 +657,6 @@ p a:hover {
   color: #5C4033;
   transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
   max-width: 400px;
-  position: relative; /* Allows animation within */
-  overflow: hidden; /* Prevents overflow */
-  min-height: 250px; /* Ensures enough space for animation */
 }
 
-.taxi-animation {
-  position: absolute;
-  bottom: 10px;
-  left: -50px; /* Start slightly outside */
-  width: 80px; /* Adjusted size to fit */
-  height: auto;
-  animation: moveTaxi 4s linear infinite;
-}
 
-@keyframes moveTaxi {
-  0% { left: -120px; opacity: 0; }
-  10% { opacity: 1; } /* Fade-in effect */
-  100% { left: 100%; opacity: 1; }
-}
