@@ -240,7 +240,6 @@ app.post("/checkin", (req, res) => {
 });
 
 
-// ** Corrected Place Food Order (Multiple Items) **
 app.post("/place-order", async (req, res) => {
     const { guestEmail, orderItems } = req.body;
 
@@ -254,30 +253,43 @@ app.post("/place-order", async (req, res) => {
         // Begin a transaction to insert multiple rows correctly
         await db.query('BEGIN');
 
-        const insertPromises = orderItems.map(async item => {
+        // Insert each item into the orders table and calculate the total amount
+        const orderInsertPromises = orderItems.map(async (item) => {
             const itemTotal = item.price * item.quantity;
             totalAmount += itemTotal;
+
+            // Insert the item into the 'orders' table
             return db.query(
-                "INSERT INTO orders (guest_email, menu_item, quantity, total_price, order_status) VALUES ($1, $2, $3, $4, 'Pending')",
+                "INSERT INTO orders (guest_email, menu_item, quantity, total_price, order_status) VALUES ($1, $2, $3, $4, 'Pending') RETURNING *",
                 [guestEmail, item.name, item.quantity, itemTotal]
             );
         });
 
-        await Promise.all(insertPromises);
+        // Wait for all insert operations to complete
+        const insertedItems = await Promise.all(orderInsertPromises);
 
-        // Commit transaction after all insertions are successful
+        // Log inserted items to confirm
+        console.log("Inserted Order Items:", insertedItems);
+
+        // Commit the transaction after all insertions are successful
         await db.query('COMMIT');
 
-        console.log(`✅ Order placed for ${guestEmail}: ${orderItems.length} items.`);
-
-        res.json({ success: true, message: "Order placed successfully!", totalAmount });
+        // Send the success response along with the total amount and the inserted items
+        res.json({
+            success: true,
+            message: "Order placed successfully!",
+            totalAmount,
+            insertedItems: insertedItems.map((result) => result.rows[0]), // Return inserted rows
+        });
 
     } catch (error) {
+        // Rollback the transaction in case of any error
         await db.query('ROLLBACK');
         console.error("❌ Order Placement Error:", error);
         return res.status(500).json({ success: false, message: "Error processing order." });
     }
 });
+
 
 
 
