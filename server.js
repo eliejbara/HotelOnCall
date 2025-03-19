@@ -8,7 +8,6 @@ const path = require("path");
 const axios = require("axios");
 const nodemailer = require("nodemailer");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-const moment = require('moment');
 
 
 
@@ -789,6 +788,7 @@ app.post("/request-cleaning", async (req, res) => {
 });
 
 
+// Book the first available cleaning slot and mark it as unavailable
 app.get("/first-available-cleaning", async (req, res) => {
   const { guestEmail, roomNumber } = req.query;
 
@@ -803,9 +803,9 @@ app.get("/first-available-cleaning", async (req, res) => {
       // Start transaction
       await db.query('BEGIN');
 
-      // Fetch all available slots in AM/PM format
+      // Fetch first available slot
       const result = await db.query(
-          "SELECT time_slot FROM cleaning_times WHERE available = TRUE ORDER BY time_slot ASC"
+          "SELECT time_slot FROM cleaning_times WHERE available = TRUE LIMIT 1"
       );
 
       if (result.rows.length === 0) {
@@ -814,20 +814,7 @@ app.get("/first-available-cleaning", async (req, res) => {
           return res.json({ success: false, message: "No available slots found." });
       }
 
-      // Convert all times to 24-hour format for sorting
-      const availableSlots = result.rows.map(row => {
-          const ampmTime = row.time_slot.trim();
-          const formattedTime = moment(ampmTime, 'hh:mm A').format('HH:mm'); // Convert to 24-hour format
-          return { originalTime: ampmTime, convertedTime: formattedTime };
-      });
-
-      // Sort slots based on the converted 24-hour time
-      availableSlots.sort((a, b) => {
-          return a.convertedTime.localeCompare(b.convertedTime);
-      });
-
-      // Get the first available slot in the sorted list
-      const timeSlot = availableSlots[0].originalTime;
+      let timeSlot = result.rows[0].time_slot.trim();
       console.log("✅ Found available time slot:", timeSlot);
 
       // Mark the slot as unavailable
