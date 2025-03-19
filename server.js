@@ -1259,33 +1259,26 @@ app.post('/order-taxi', express.json(), async (req, res) => {
 });
 
 
-app.use(cors({
-  origin: 'https://hotel-on-call.vercel.app',  // Your frontend URL
-  credentials: true,
-}));
-
-// Define the /api/demand-prediction route
 app.get('/api/demand-prediction', async (req, res) => {
-  const { year, month, day_of_week, is_weekend, is_holiday_season, avg_lead_time, sum_previous_bookings, avg_adr, total_children } = req.query;
-
-  // Make sure all parameters are passed correctly
-  if (!year || !month || !day_of_week || !is_weekend || !is_holiday_season || !avg_lead_time || !sum_previous_bookings || !avg_adr || !total_children) {
-    return res.status(400).json({ error: 'Missing required parameters for demand prediction.' });
-  }
-
   try {
-    // Forward request to the Flask API
-    const flaskApiUrl = `https://web-production-f430d.up.railway.app/demand_prediction?year=${year}&month=${month}&day_of_week=${day_of_week}&is_weekend=${is_weekend}&is_holiday_season=${is_holiday_season}&avg_lead_time=${avg_lead_time}&sum_previous_bookings=${sum_previous_bookings}&avg_adr=${avg_adr}&total_children=${total_children}`;
-    
-    // Call the Flask API
-    const response = await axios.get(flaskApiUrl);
-    res.json(response.data);  // Return the prediction data to the frontend
+    const { year, month, day_of_week, is_weekend, is_holiday_season, avg_lead_time, sum_previous_bookings, avg_adr, total_children } = req.query;
+
+    // Make sure all parameters are provided
+    if (!year || !month || !day_of_week || !is_weekend || !is_holiday_season || !avg_lead_time || !sum_previous_bookings || !avg_adr || !total_children) {
+      return res.status(400).json({ error: 'Missing required parameters for demand prediction.' });
+    }
+
+    // Construct the Railway API URL
+    const apiUrl = `https://web-production-f430d.up.railway.app/demand_prediction?year=${year}&month=${month}&day_of_week=${day_of_week}&is_weekend=${is_weekend}&is_holiday_season=${is_holiday_season}&avg_lead_time=${avg_lead_time}&sum_previous_bookings=${sum_previous_bookings}&avg_adr=${avg_adr}&total_children=${total_children}`;
+
+    // Fetch data from the Railway API
+    const response = await axios.get(apiUrl);
+    res.json(response.data);
   } catch (error) {
-    console.error("Error fetching room demand prediction:", error);
-    res.status(500).json({ error: 'Error fetching demand prediction from AI service' });
+    console.error('Error fetching data from Railway API:', error);
+    res.status(500).json({ error: 'Error fetching data from Railway API' });
   }
 });
-
 
 
 
