@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,7 +17,6 @@
         }
     </style>
 </head>
-
 <body>
 
 <header></header>
@@ -35,14 +33,13 @@
             </select>
 
             <button type="submit">Request Cleaner</button>
-            <button id="bookCleaning">Book First Available Slot</button>
+            <button type="button" id="bookCleaning">Book First Available Slot</button>
             <button type="button" id="checkStatusBtn">Check Request Status</button>
 
             <div id="requestsList"></div>
         </form>
         <button type="button" onclick="window.location.href='guest_services.html';">Return to Services</button>
         <p id="message"></p>
-        
     </div>
 </main>
 
@@ -51,178 +48,157 @@
     <p>ehj00@mail.aub.edu | nwd06@mail.aub.edu | ahn25@mail.aub.edu | kms36@mail.aub.edu | rmt29@mail.aub.edu</p>
 </footer>
 
-<script>let guestEmail = localStorage.getItem("loggedInGuestEmail");
+<script>
+let guestEmail = localStorage.getItem("loggedInGuestEmail");
 
-    document.addEventListener("DOMContentLoaded", async () => {
-        if (!guestEmail) {
-            alert("You must be logged in as a guest!");
-            window.location.href = "index.html";
-            return;
+document.addEventListener("DOMContentLoaded", async () => {
+    if (!guestEmail) {
+        alert("You must be logged in as a guest!");
+        window.location.href = "index.html";
+        return;
+    }
+
+    try {
+        const response = await fetch(`/guest-room/${guestEmail}`);
+        const data = await response.json();
+        if (data.room_number) {
+            document.getElementById("roomNumber").value = data.room_number;
+        } else {
+            alert("Error: Room number not found.");
         }
-    
+    } catch (error) {
+        console.error("Error fetching room:", error);
+        alert("Error fetching room information. Please try again.");
+    }
+
+    // Fetch and update available cleaning slots
+    async function fetchAndUpdateTimeSlots() {
         try {
-            const response = await fetch(`/guest-room/${guestEmail}`);
-            const data = await response.json();
-            if (data.room_number) {
-                document.getElementById("roomNumber").value = data.room_number;
+            const response = await fetch("/available-cleaning-slots");
+            const slots = await response.json();
+            const timeSlotDropdown = document.getElementById("timeSlot");
+
+            while (timeSlotDropdown.options.length > 1) {
+                timeSlotDropdown.remove(1);
+            }
+
+            if (Array.isArray(slots) && slots.length > 0) {
+                slots.sort((a, b) => {
+                    const timeA = a.split(' ');
+                    const timeB = b.split(' ');
+
+                    if (timeA[1] === 'AM' && timeB[1] === 'PM') return -1;
+                    if (timeA[1] === 'PM' && timeB[1] === 'AM') return 1;
+                    return new Date('1970-01-01T' + timeA[0]) - new Date('1970-01-01T' + timeB[0]);
+                });
+
+                slots.forEach(slot => {
+                    const option = document.createElement("option");
+                    option.value = slot;
+                    option.textContent = slot;
+                    timeSlotDropdown.appendChild(option);
+                });
             } else {
-                alert("Error: Room number not found.");
+                const option = document.createElement("option");
+                option.value = "";
+                option.textContent = "No available slots. Please try again later.";
+                timeSlotDropdown.appendChild(option);
+                document.getElementById("message").innerText = "Sorry, all cleaning slots are full. Please try again later.";
             }
         } catch (error) {
-            console.error("Error fetching room:", error);
-            alert("Error fetching room information. Please try again.");
+            console.error("Error fetching time slots:", error);
+            document.getElementById("message").innerText = "Error fetching available time slots. Please try again.";
         }
-
-        async function fetchAndUpdateTimeSlots() {
-    try {
-        const response = await fetch("/available-cleaning-slots");
-        const slots = await response.json();
-        const timeSlotDropdown = document.getElementById("timeSlot");
-
-        // Clear the existing options (except the first one)
-        while (timeSlotDropdown.options.length > 1) {
-            timeSlotDropdown.remove(1);
-        }
-
-        if (Array.isArray(slots) && slots.length > 0) {
-            // Sort the slots with custom logic: AM times before PM times
-            slots.sort((a, b) => {
-                // Extract AM/PM and time from the slot (e.g. '09:09 AM')
-                const timeA = a.split(' ');
-                const timeB = b.split(' ');
-
-                // Compare times by AM/PM
-                if (timeA[1] === 'AM' && timeB[1] === 'PM') return -1;
-                if (timeA[1] === 'PM' && timeB[1] === 'AM') return 1;
-                return new Date('1970-01-01T' + timeA[0]) - new Date('1970-01-01T' + timeB[0]);
-            });
-
-            // Add sorted time slots to the dropdown
-            slots.forEach(slot => {
-                const option = document.createElement("option");
-                option.value = slot;
-                option.textContent = slot;
-                timeSlotDropdown.appendChild(option);
-            });
-        } else {
-            const option = document.createElement("option");
-            option.value = "";
-            option.textContent = "No available slots. Please try again later.";
-            timeSlotDropdown.appendChild(option);
-            document.getElementById("message").innerText = "Sorry, all cleaning slots are full. Please try again later.";
-        }
-
-        // Check if a time slot was selected before the refresh and set it
-        const cachedSlot = localStorage.getItem('selectedTimeSlot');
-        if (cachedSlot) {
-            timeSlotDropdown.value = cachedSlot;
-        }
-
-    } catch (error) {
-        console.error("Error fetching time slots:", error);
-        document.getElementById("message").innerText = "Error fetching available time slots. Please try again.";
     }
-}
 
+    // Fetch and update time slots when the page loads
+    fetchAndUpdateTimeSlots();
+    
+    // Refresh the time slots every 3 seconds
+    setInterval(fetchAndUpdateTimeSlots, 3000);
 
-    
-        // Fetch and update time slots immediately when the page loads
-        fetchAndUpdateTimeSlots();
-    
-        // Refresh the time slots every 3 seconds
-        setInterval(fetchAndUpdateTimeSlots, 3000); // 3000ms = 3 seconds
-    
-        // Store selected time slot in localStorage
-        document.getElementById("timeSlot").addEventListener("change", function () {
-            const selectedTime = this.value;
-            if (selectedTime) {
-                localStorage.setItem('selectedTimeSlot', selectedTime);
+    // Submit cleaning request
+    document.getElementById("cleaningForm").addEventListener("submit", async function(event) {
+        event.preventDefault();
+
+        const roomNumber = document.getElementById("roomNumber").value;
+        const timeSlot = document.getElementById("timeSlot").value;
+
+        if (!timeSlot) {
+            alert("Please select a valid cleaning time slot.");
+            return;
+        }
+
+        try {
+            const response = await fetch("/request-cleaning", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ guestEmail, roomNumber, timeSlot })
+            });
+
+            const result = await response.json();
+            document.getElementById("message").innerText = result.message;
+
+            if (result.success) {
+                alert("Cleaning request submitted!");
+                document.getElementById("cleaningForm").reset();
+            } else {
+                alert(result.message || "Error submitting cleaning request.");
             }
-        });
-    
-        // Submit cleaning request
-        document.getElementById("cleaningForm").addEventListener("submit", async function(event) {
-            event.preventDefault();
-    
-            const roomNumber = document.getElementById("roomNumber").value;
-            const timeSlot = document.getElementById("timeSlot").value;
-    
-            if (!timeSlot) {
-                alert("Please select a valid cleaning time slot.");
+        } catch (error) {
+            console.error("Error submitting cleaning request:", error);
+            alert("Error submitting cleaning request. Please try again.");
+        }
+    });
+
+    // Check cleaning request status
+    document.getElementById("checkStatusBtn").addEventListener("click", async () => {
+        try {
+            const response = await fetch(`/guest-cleaning/${guestEmail}`);
+            const data = await response.json();
+            const requestsList = document.getElementById("requestsList");
+
+            if (data.length === 0) {
+                requestsList.innerHTML = "<p>No cleaning requests found.</p>";
                 return;
             }
-    
-            try {
-                const response = await fetch("/request-cleaning", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ guestEmail, roomNumber, timeSlot })
-                });
-    
-                const result = await response.json();
-                document.getElementById("message").innerText = result.message;
-    
-                if (result.success) {
-                    alert("Cleaning request submitted!");
-                    document.getElementById("cleaningForm").reset();
-                    localStorage.removeItem('selectedTimeSlot'); // Clear cached time slot after submission
-                } else {
-                    alert(result.message || "Error submitting cleaning request.");
-                }
-            } catch (error) {
-                console.error("Error submitting cleaning request:", error);
-                alert("Error submitting cleaning request. Please try again.");
-            }
-        });
-    
-        // Check cleaning request status
-        document.getElementById("checkStatusBtn").addEventListener("click", async () => {
-            try {
-                const response = await fetch(`/guest-cleaning/${guestEmail}`);
-                const data = await response.json();
-                const requestsList = document.getElementById("requestsList");
-    
-                if (data.length === 0) {
-                    requestsList.innerHTML = "<p>No cleaning requests found.</p>";
-                    return;
-                }
-    
-                requestsList.innerHTML = "";
-                data.forEach(req => {
-                    const requestDiv = document.createElement("div");
-                    requestDiv.className = "request-box";
-                    requestDiv.innerHTML = 
-                        `<p><b>Room:</b> ${req.room_number}</p>
-                         <p><b>Time Slot:</b> ${req.time_slot}</p>
-                         <p><b>Status:</b> <span class="${req.request_status.toLowerCase()}">${req.request_status}</span></p>`;
-                    requestsList.appendChild(requestDiv);
-                });
-            } catch (error) {
-                console.error("Error fetching cleaning requests:", error);
-                alert("Error fetching cleaning request status. Please try again.");
-            }
-        });
-    
-        // Book the first available slot
-        document.getElementById("bookCleaning").addEventListener("click", () => {
-            fetch(`https://hotel-on-call.vercel.app/first-available-cleaning?guestEmail=${encodeURIComponent(guestEmail)}&roomNumber=${encodeURIComponent(document.getElementById('roomNumber').value)}`, {
-                method: "GET",
-                headers: { "Content-Type": "application/json" }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert(`Booked cleaning slot at ${data.timeSlot}`);
-                } else {
-                    alert("No available slots found.");
-                }
-            })
-            .catch(error => {
-                console.error("Error:", error);
-                alert("Error booking first available cleaning. Please try again.");
+
+            requestsList.innerHTML = "";
+            data.forEach(req => {
+                const requestDiv = document.createElement("div");
+                requestDiv.className = "request-box";
+                requestDiv.innerHTML = 
+                    `<p><b>Room:</b> ${req.room_number}</p>
+                     <p><b>Time Slot:</b> ${req.time_slot}</p>
+                     <p><b>Status:</b> <span class="${req.request_status.toLowerCase()}">${req.request_status}</span></p>`;
+                requestsList.appendChild(requestDiv);
             });
+        } catch (error) {
+            console.error("Error fetching cleaning requests:", error);
+            alert("Error fetching cleaning request status. Please try again.");
+        }
+    });
+
+    // Book the first available slot directly without selecting from the dropdown
+    document.getElementById("bookCleaning").addEventListener("click", () => {
+        fetch(`/first-available-cleaning?guestEmail=${encodeURIComponent(guestEmail)}&roomNumber=${encodeURIComponent(document.getElementById('roomNumber').value)}`, {
+            method: "GET",
+            headers: { "Content-Type": "application/json" }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`Successfully booked the first available cleaning slot at ${data.timeSlot}`);
+            } else {
+                alert("No available cleaning slots found.");
+            }
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            alert("Error booking first available cleaning. Please try again.");
         });
     });
+});
 </script>
 
 </body>
