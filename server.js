@@ -559,7 +559,6 @@ app.post("/update-maintenance-status", (req, res) => {
 });
 
 
-
 app.post("/checkout", (req, res) => {
     const { guestEmail, feedback } = req.body;
 
@@ -610,7 +609,7 @@ app.post("/checkout", (req, res) => {
                     // Make cleaning time slot available before deleting cleaning requests
                     db.query(
                         `UPDATE cleaning_times
-                         SET available = 1
+                         SET available = TRUE
                          WHERE time_slot = ANY($1)`,
                         [timeSlots], // Pass the array of time slots
                         (err) => {
@@ -694,6 +693,7 @@ app.post("/checkout", (req, res) => {
         }
     );
 });
+
 
 
 
