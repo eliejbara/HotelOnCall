@@ -1259,57 +1259,27 @@ app.post('/order-taxi', express.json(), async (req, res) => {
 });
 
 
-app.get('/api/demand-prediction', async (req, res) => {
-  // Get the query parameters required by the new model
-  const {
-    year,
-    month,
-    day_of_week,
-    is_weekend,
-    is_holiday_season,
-    avg_lead_time,
-    sum_previous_bookings,
-    avg_adr,
-    total_children
-  } = req.query;
+app.use(cors({
+  origin: 'https://hotel-on-call.vercel.app',  // Your frontend URL
+  credentials: true,
+}));
 
-  // Optional: Validate that all parameters are provided.
-  if (!year || !month || !day_of_week || !is_weekend || !is_holiday_season ||
-      !avg_lead_time || !sum_previous_bookings || !avg_adr || !total_children) {
+// Define the /api/demand-prediction route
+app.get('/api/demand-prediction', async (req, res) => {
+  const { year, month, day_of_week, is_weekend, is_holiday_season, avg_lead_time, sum_previous_bookings, avg_adr, total_children } = req.query;
+
+  // Make sure all parameters are passed correctly
+  if (!year || !month || !day_of_week || !is_weekend || !is_holiday_season || !avg_lead_time || !sum_previous_bookings || !avg_adr || !total_children) {
     return res.status(400).json({ error: 'Missing required parameters for demand prediction.' });
   }
 
-  // Log the parameters being forwarded to Flask API for debugging
-  console.log('Received parameters:', { year, month, day_of_week, is_weekend, is_holiday_season, avg_lead_time, sum_previous_bookings, avg_adr, total_children });
-
   try {
-    // Forward the request to the Flask API.
- const flaskApiUrl = `https://web-production-f430d.up.railway.app/demand_prediction?year=${year}&month=${month}&day_of_week=${dayOfWeek}&is_weekend=${isWeekend}&is_holiday_season=${isHolidaySeason}&avg_lead_time=${avgLeadTime}&sum_previous_bookings=${sumPrevBookings}&avg_adr=${avgAdr}&total_children=${totalChildren}`;
-
- // if using Vercel's API routes
-    if (!flaskApiUrl) {
-      return res.status(500).json({ error: 'Flask API URL is not defined in environment variables.' });
-    }
+    // Forward request to the Flask API
+    const flaskApiUrl = `https://web-production-f430d.up.railway.app/demand_prediction?year=${year}&month=${month}&day_of_week=${day_of_week}&is_weekend=${is_weekend}&is_holiday_season=${is_holiday_season}&avg_lead_time=${avg_lead_time}&sum_previous_bookings=${sum_previous_bookings}&avg_adr=${avg_adr}&total_children=${total_children}`;
     
-    // Make the API call to Flask
-    const response = await axios.get(`${flaskApiUrl}/demand_prediction`, {
-      params: {
-        year,
-        month,
-        day_of_week,
-        is_weekend,
-        is_holiday_season,
-        avg_lead_time,
-        sum_previous_bookings,
-        avg_adr,
-        total_children
-      }
-    });
-
-    // Log the response from Flask API for debugging
-    console.log('Flask API Response:', response.data);
-
-    res.json(response.data);
+    // Call the Flask API
+    const response = await axios.get(flaskApiUrl);
+    res.json(response.data);  // Return the prediction data to the frontend
   } catch (error) {
     console.error("Error fetching room demand prediction:", error);
     res.status(500).json({ error: 'Error fetching demand prediction from AI service' });
