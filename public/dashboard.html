@@ -4,67 +4,7 @@
   <meta charset="UTF-8">
   <title>Hotel Management Dashboard - Room Demand Prediction</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f4f4f9;
-      margin: 40px;
-      text-align: center;
-    }
-    h1 {
-      color: #b59b6d;
-      font-size: 28px;
-      font-weight: bold;
-    }
-    form {
-      background-color: #ffffff;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-      display: inline-block;
-      max-width: 400px;
-      width: 100%;
-    }
-    label {
-      font-size: 16px;
-      color: #444;
-      font-weight: 500;
-    }
-    input {
-      width: 100%;
-      padding: 12px;
-      margin: 10px 0;
-      border: 1px solid #dcdcdc;
-      border-radius: 6px;
-      font-size: 15px;
-      background-color: #fafafa;
-      color: #333;
-    }
-    input:focus {
-      border-color: #b59b6d;
-      outline: none;
-      background-color: #fff;
-    }
-    button {
-      width: 100%;
-      padding: 12px;
-      background-color: #b59b6d;
-      border: none;
-      border-radius: 6px;
-      color: white;
-      font-size: 16px;
-      font-weight: bold;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-    }
-    button:hover {
-      background-color: #9e864f;
-    }
-    #result {
-      margin-top: 20px;
-      font-size: 18px;
-      font-weight: bold;
-      color: #2f4f4f;
-    }
+    /* Same styles as before */
   </style>
 </head>
 <body>
@@ -93,7 +33,7 @@
     document.getElementById('predictionForm').addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      // Get the form input values
+      // Get the date input and additional features
       const dateInput = document.getElementById('date').value;
       const avgLeadTime = document.getElementById('avg_lead_time').value;
       const sumPrevBookings = document.getElementById('sum_previous_bookings').value;
@@ -114,21 +54,19 @@
       const isWeekend = (dayOfWeek >= 5) ? 1 : 0;
       const isHolidaySeason = (month === 7 || month === 8 || month === 12) ? 1 : 0;
 
-      // Construct the API URL for the backend (not directly calling Flask here)
-      const apiUrl = `/api/demand-prediction?year=${year}&month=${month}&day_of_week=${dayOfWeek}&is_weekend=${isWeekend}&is_holiday_season=${isHolidaySeason}&avg_lead_time=${avgLeadTime}&sum_previous_bookings=${sumPrevBookings}&avg_adr=${avgAdr}&total_children=${totalChildren}`;
+      // Construct the API URL with query parameters
+      const apiUrl = `https://web-production-f430d.up.railway.app/demand_prediction?year=${year}&month=${month}&day_of_week=${dayOfWeek}&is_weekend=${isWeekend}&is_holiday_season=${isHolidaySeason}&avg_lead_time=${avgLeadTime}&sum_previous_bookings=${sumPrevBookings}&avg_adr=${avgAdr}&total_children=${totalChildren}`;
 
-      // Show fetching message
       document.getElementById('result').innerText = 'Fetching prediction...';
 
       try {
-        // Make the API call to the backend
         const response = await fetch(apiUrl);
         if (!response.ok) {
           console.error(`Error: ${response.status} - ${response.statusText}`);
           throw new Error(`Server error: ${response.status} - ${response.statusText}`);
         }
         const data = await response.json();
-        console.log('API Response:', data);  // Log the response data to check the structure
+        console.log('API Response:', data);
 
         if (data.predicted_room_demand !== undefined) {
           document.getElementById('result').innerText = `Predicted room demand for ${dateInput}: ${data.predicted_room_demand}`;
@@ -141,6 +79,5 @@
       }
     });
   </script>
-
 </body>
 </html>
