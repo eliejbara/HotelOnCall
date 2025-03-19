@@ -1259,7 +1259,6 @@ app.post('/order-taxi', express.json(), async (req, res) => {
 });
 
 
-// New route for room demand prediction
 app.get('/api/demand-prediction', async (req, res) => {
   // Get the query parameters required by the new model
   const {
@@ -1280,11 +1279,17 @@ app.get('/api/demand-prediction', async (req, res) => {
     return res.status(400).json({ error: 'Missing required parameters for demand prediction.' });
   }
 
+  // Log the parameters being forwarded to Flask API for debugging
+  console.log('Received parameters:', { year, month, day_of_week, is_weekend, is_holiday_season, avg_lead_time, sum_previous_bookings, avg_adr, total_children });
+
   try {
     // Forward the request to the Flask API.
-    // Ensure that you have set DEMAND_API_URL in your environment variables
-    // For example, "http://your-flask-api-domain:5000"
     const flaskApiUrl = process.env.DEMAND_API_URL;
+    if (!flaskApiUrl) {
+      return res.status(500).json({ error: 'Flask API URL is not defined in environment variables.' });
+    }
+    
+    // Make the API call to Flask
     const response = await axios.get(`${flaskApiUrl}/demand_prediction`, {
       params: {
         year,
@@ -1298,12 +1303,17 @@ app.get('/api/demand-prediction', async (req, res) => {
         total_children
       }
     });
+
+    // Log the response from Flask API for debugging
+    console.log('Flask API Response:', response.data);
+
     res.json(response.data);
   } catch (error) {
     console.error("Error fetching room demand prediction:", error);
     res.status(500).json({ error: 'Error fetching demand prediction from AI service' });
   }
 });
+
 
 
 
