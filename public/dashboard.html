@@ -107,20 +107,18 @@
         return;
       }
       const year = dt.getFullYear();
-      // JavaScript months are 0-indexed; add 1 for our 1-12 scale.
-      const month = dt.getMonth() + 1;
-      
-      // JavaScript: getDay() returns 0 for Sunday, 1 for Monday, ... 6 for Saturday.
-      // We need Monday = 0, ..., Sunday = 6. So:
+      const month = dt.getMonth() + 1; // JavaScript months are 0-indexed
       const jsDay = dt.getDay();
-      const dayOfWeek = (jsDay === 0) ? 6 : jsDay - 1;
+      const dayOfWeek = (jsDay === 0) ? 6 : jsDay - 1; // Adjust Sunday to 6 (Saturday)
       const isWeekend = (dayOfWeek >= 5) ? 1 : 0;
       const isHolidaySeason = (month === 7 || month === 8 || month === 12) ? 1 : 0;
 
-      // Construct the API URL with query parameters.
-      // Update the base URL to your actual deployed endpoint if needed.
+      // Construct the API URL with query parameters
       const apiUrl = `https://hotel-on-call.vercel.app/api/demand-prediction?year=${year}&month=${month}&day_of_week=${dayOfWeek}&is_weekend=${isWeekend}&is_holiday_season=${isHolidaySeason}&avg_lead_time=${avgLeadTime}&sum_previous_bookings=${sumPrevBookings}&avg_adr=${avgAdr}&total_children=${totalChildren}`;
       
+      // Log the API URL for debugging purposes
+      console.log('API URL:', apiUrl);
+
       document.getElementById('result').innerText = 'Fetching prediction...';
 
       try {
