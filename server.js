@@ -252,17 +252,22 @@ app.post("/place-order", async (req, res) => {
     try {
         // Begin a transaction to insert multiple rows correctly
         await db.query('BEGIN');
+        console.log("Transaction Started");
 
         // Insert each item into the orders table and calculate the total amount
         const orderInsertPromises = orderItems.map(async (item) => {
             const itemTotal = item.price * item.quantity;
             totalAmount += itemTotal;
 
-            // Insert the item into the 'orders' table
-            return db.query(
-                "INSERT INTO orders (guest_email, menu_item, quantity, total_price, order_status) VALUES ($1, $2, $3, $4, 'Pending') RETURNING *",
+            console.log(`Inserting item: ${item.name}, Total: ${itemTotal}`);
+
+            // Insert the item into the 'orders' table and return the inserted row
+            const result = await db.query(
+                "INSERT INTO orders (guest_email, menu_item, quantity, total_price, order_status) VALUES ($1, $2, $3, $4, 'Pending') RETURNING id, menu_item, quantity, total_price, order_status",
                 [guestEmail, item.name, item.quantity, itemTotal]
             );
+            
+            return result.rows[0]; // Return the inserted row (we only need the inserted item details)
         });
 
         // Wait for all insert operations to complete
@@ -273,13 +278,14 @@ app.post("/place-order", async (req, res) => {
 
         // Commit the transaction after all insertions are successful
         await db.query('COMMIT');
+        console.log("Transaction Committed");
 
         // Send the success response along with the total amount and the inserted items
         res.json({
             success: true,
             message: "Order placed successfully!",
             totalAmount,
-            insertedItems: insertedItems.map((result) => result.rows[0]), // Return inserted rows
+            insertedItems, // Send the inserted items back to the frontend
         });
 
     } catch (error) {
@@ -289,6 +295,7 @@ app.post("/place-order", async (req, res) => {
         return res.status(500).json({ success: false, message: "Error processing order." });
     }
 });
+
 
 
 
