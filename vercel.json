@@ -1,5 +1,16 @@
 {
-    "version": 2,
-    "builds": [{ "src": "server.js", "use": "@vercel/node" }],
-    "routes": [{ "src": "/(.*)", "dest": "server.js" }]
-  }
+  "version": 2,
+  "builds": [
+    { "src": "server.js", "use": "@vercel/node" }
+  ],
+  "routes": [
+    {
+      "src": "/api/demand_prediction(.*)",
+      "dest": "https://hotel-on-call.vercel.app/api/demand_prediction$1"  // Flask API URL
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/server.js"  // All other routes are handled by Node.js
+    }
+  ]
+}
