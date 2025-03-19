@@ -295,10 +295,11 @@ app.post("/place-order", async (req, res) => {
         // Rollback the transaction in case of any error
         await db.query('ROLLBACK');
         console.error("❌ Order Placement Error:", error.message);
-        console.error(error.stack); // Log the full error stack for debugging
+        console.error("Stack trace:", error.stack);  // Log the full error stack for debugging
         return res.status(500).json({ success: false, message: "Error processing order." });
     }
 });
+
 
 
 
