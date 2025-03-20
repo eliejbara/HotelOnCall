@@ -1241,7 +1241,7 @@ app.get('/demand_prediction', async (req, res) => {
 });
 
 // Handle preflight requests (important for CORS)
-app.options('/demand-prediction', (req, res) => {
+app.options('/demand_prediction', (req, res) => {
   res.header('Access-Control-Allow-Origin', 'https://hotel-on-call.vercel.app');
   res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
