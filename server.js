@@ -1210,7 +1210,7 @@ app.post("/finalize-checkout", express.json(), async (req, res) => {
 
 
 
-a// CORS Middleware - Apply to all requests
+// CORS Middleware - Apply to all requests
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', 'https://hotel-on-call.vercel.app');
   res.header('Access-Control-Allow-Credentials', 'true');
