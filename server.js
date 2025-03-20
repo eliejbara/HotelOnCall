@@ -1211,7 +1211,7 @@ app.post("/finalize-checkout", express.json(), async (req, res) => {
 
 
 
-app.get('/api/demand-prediction', async (req, res) => {
+app.get('/api/demand_prediction', async (req, res) => {
   try {
     const { year, month, day_of_week, is_weekend, is_holiday_season, avg_lead_time, sum_previous_bookings, avg_adr, total_children } = req.query;
 
