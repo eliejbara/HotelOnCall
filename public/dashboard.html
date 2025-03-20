@@ -89,7 +89,7 @@
   </form>
   <div id="result"></div>
   
-  <script>
+<script>
     document.getElementById('predictionForm').addEventListener('submit', async (e) => {
       e.preventDefault();
 
@@ -120,9 +120,9 @@
         const response = await fetch(apiUrl, {
           method: 'GET',
           headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          }
+            'Accept': 'application/json'
+          },
+          credentials: 'include' // Ensures cookies are sent if required
         });
         
         if (!response.ok) {
@@ -142,6 +142,7 @@
         document.getElementById('result').innerText = 'Error fetching prediction. Please try again later.';
       }
     });
-  </script>
+</script>
+
 </body>
 </html>
