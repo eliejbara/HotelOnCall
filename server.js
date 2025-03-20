@@ -20,7 +20,7 @@ app.use(cors());
 // ✅ Serve static files from the absolute path of "public" (Only fix)
 app.use(express.static(path.join(__dirname, "public")));
 
-app.get('/api/demand_prediction', async (req, res) => {
+app.get('/demand_prediction', async (req, res) => {
   try {
     const { year, month, day_of_week, is_weekend, is_holiday_season, avg_lead_time, sum_previous_bookings, avg_adr, total_children } = req.query;
 
