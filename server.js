@@ -1221,7 +1221,7 @@ app.get('/api/demand_prediction', async (req, res) => {
     }
 
     // Construct the Railway API URL
-    const apiUrl = `https://web-production-f430d.up.railway.app/api/demand_prediction?year=${year}&month=${month}&day_of_week=${day_of_week}&is_weekend=${is_weekend}&is_holiday_season=${is_holiday_season}&avg_lead_time=${avg_lead_time}&sum_previous_bookings=${sum_previous_bookings}&avg_adr=${avg_adr}&total_children=${total_children}`;
+    const apiUrl = `https://web-production-f430d.up.railway.app/demand_prediction?year=${year}&month=${month}&day_of_week=${day_of_week}&is_weekend=${is_weekend}&is_holiday_season=${is_holiday_season}&avg_lead_time=${avg_lead_time}&sum_previous_bookings=${sum_previous_bookings}&avg_adr=${avg_adr}&total_children=${total_children}`;
 
     // Fetch data from the Railway API
     const response = await axios.get(apiUrl);
