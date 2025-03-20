@@ -15,10 +15,6 @@ const app = express();
 
 // Middleware
 app.use(express.json());
-app.use(cors({
-  origin: 'https://hotel-on-call.vercel.app', // Replace with your actual frontend URL
-  credentials: true
-}));
 
 // ✅ Serve static files from the absolute path of "public" (Only fix)
 app.use(express.static(path.join(__dirname, "public")));
@@ -1214,45 +1210,47 @@ app.post("/finalize-checkout", express.json(), async (req, res) => {
 
 
 
-app.get('/api/predict-demand', async (req, res) => {
-  // Manually setting headers as an extra measure
+a// CORS Middleware - Apply to all requests
+app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', 'https://hotel-on-call.vercel.app');
   res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  next();
+});
 
+// Handle preflight requests (Important for CORS)
+app.options('/api/predict-demand', (req, res) => {
+  res.sendStatus(200);
+});
+
+// Demand Prediction API Route
+app.get('/api/predict-demand', async (req, res) => {
   try {
-    const { year, month, day_of_week, is_weekend, is_holiday_season, avg_lead_time, sum_previous_bookings, avg_adr, total_children } = req.query;
+    const {
+      year, month, day_of_week, is_weekend,
+      is_holiday_season, avg_lead_time,
+      sum_previous_bookings, avg_adr, total_children
+    } = req.query;
 
-    if (!year || !month || !day_of_week || !is_weekend || !is_holiday_season || !avg_lead_time || !sum_previous_bookings || !avg_adr || !total_children) {
+    // Validate that all required parameters are present
+    if (![year, month, day_of_week, is_weekend, is_holiday_season, avg_lead_time, sum_previous_bookings, avg_adr, total_children].every(param => param !== undefined)) {
       return res.status(400).json({ error: 'Missing required parameters for demand prediction.' });
     }
 
     // Construct the Railway API URL
-    const apiUrl = `https://web-production-f430d.up.railway.app/predict-demand?year=${year}&month=${month}&day_of_week=${day_of_week}&is_weekend=${is_weekend}&is_holiday_season=${is_holiday_season}&avg_lead_time=${avg_lead_time}&sum_previous_bookings=${sum_previous_bookings}&avg_adr=${avg_adr}&total_children=${total_children}`;
+    const apiUrl = `https://web-production-f430d.up.railway.app/api/predict-demand?year=${year}&month=${month}&day_of_week=${day_of_week}&is_weekend=${is_weekend}&is_holiday_season=${is_holiday_season}&avg_lead_time=${avg_lead_time}&sum_previous_bookings=${sum_previous_bookings}&avg_adr=${avg_adr}&total_children=${total_children}`;
 
     // Fetch data from the Railway API
     const response = await axios.get(apiUrl);
+
+    // Return the prediction response
     res.json(response.data);
   } catch (error) {
-    console.error('Error fetching data from Railway API:', error);
+    console.error('❌ Error fetching data from Railway API:', error);
     res.status(500).json({ error: 'Error fetching data from Railway API' });
   }
 });
-
-// Handle preflight requests (important for CORS)
-app.options('/api/predict-demand', (req, res) => {
-  res.header('Access-Control-Allow-Origin', 'https://hotel-on-call.vercel.app');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-  res.sendStatus(200);
-});
-
-
-
-
-
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
