@@ -117,13 +117,14 @@
       document.getElementById('result').innerText = 'Fetching prediction...';
 
       try {
-        const response = await fetch(apiUrl, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json'
-          },
-          credentials: 'include' // Ensures cookies are sent if required
-        });
+       const response = await fetch(apiUrl, {
+  method: 'GET',
+  headers: {
+    'Accept': 'application/json',
+  },
+  credentials: 'include' // Send credentials with the request
+});
+
         
         if (!response.ok) {
           throw new Error(`Server error: ${response.status} - ${response.statusText}`);
