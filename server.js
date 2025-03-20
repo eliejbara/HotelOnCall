@@ -560,7 +560,7 @@ app.post("/update-maintenance-status", (req, res) => {
 });
 
 
-app.post("/checkout", (req, res) => {
+app.post("/checkout", async (req, res) => {
     const { guestEmail, feedback } = req.body;
 
     if (!guestEmail) {
@@ -570,139 +570,96 @@ app.post("/checkout", (req, res) => {
 
     console.log(`🔍 Guest Email: ${guestEmail}`);
 
-    // Find guest's check-in record
-    db.query(
-        "SELECT guest_id, room_number FROM check_ins INNER JOIN users ON check_ins.guest_id = users.id WHERE users.email = $1",
-        [guestEmail],
-        (err, result) => {
-            if (err) {
-                console.error("❌ Error fetching check-in record:", err);
-                return res.status(500).json({ success: false, message: "Database error." });
-            }
+    try {
+        // Find guest's check-in record
+        const guestCheckInResult = await db.query(
+            "SELECT guest_id, room_number FROM check_ins INNER JOIN users ON check_ins.guest_id = users.id WHERE users.email = $1",
+            [guestEmail]
+        );
 
-            if (result.rowCount === 0) {
-                console.error(`❌ No active check-in found for guest email: ${guestEmail}`);
-                return res.json({ success: false, message: "No active check-in found." });
-            }
-
-            const { guest_id, room_number } = result.rows[0];
-            console.log(`Guest found: guest_id = ${guest_id}, room_number = ${room_number}`);
-
-            // Fetch cleaning requests to get the time slots
-            db.query(
-                "SELECT time_slot FROM cleaning_requests WHERE guest_email = (SELECT email FROM users WHERE id = $1)",
-                [guest_id],
-                (err, result) => {
-                    if (err) {
-                        console.error("❌ Error fetching cleaning requests:", err);
-                        return res.status(500).json({ success: false, message: "Database error while fetching cleaning requests." });
-                    }
-
-                    // If no cleaning requests, skip cleaning time update
-                    if (result.rowCount > 0) {
-                        const timeSlots = result.rows.map(row => row.time_slot);
-                        console.log("Time Slots to be updated:", timeSlots);
-
-                        // Make cleaning time slots available before deleting cleaning requests
-                        db.query(
-                            `UPDATE cleaning_times
-                            SET available = TRUE
-                            WHERE time_slot = ANY($1)`,
-                            [timeSlots], // Pass the array of time slots
-                            (err) => {
-                                if (err) {
-                                    console.error("❌ Error updating cleaning times:", err);
-                                    return res.status(500).json({ success: false, message: "Database error while updating cleaning times." });
-                                }
-
-                                console.log("✅ Cleaning times updated successfully.");
-                            }
-                        );
-                    } else {
-                        console.log("❌ No cleaning requests found, skipping cleaning times update.");
-                    }
-
-                    // Delete the guest's orders before checkout
-                    db.query("DELETE FROM orders WHERE guest_email = (SELECT email FROM users WHERE id = $1)", [guest_id], (err) => {
-                        if (err) {
-                            console.error("❌ Error deleting guest orders:", err);
-                            return res.status(500).json({ success: false, message: "Database error while deleting orders." });
-                        }
-
-                        // Delete the guest's cleaning requests before checkout
-                        db.query("DELETE FROM cleaning_requests WHERE guest_email = (SELECT email FROM users WHERE id = $1)", [guest_id], (err) => {
-                            if (err) {
-                                console.error("❌ Error deleting cleaning requests:", err);
-                                return res.status(500).json({ success: false, message: "Database error while deleting cleaning requests." });
-                            }
-
-                            // Delete the guest's maintenance requests before checkout
-                            db.query("DELETE FROM maintenance_requests WHERE guest_email = (SELECT email FROM users WHERE id = $1)", [guest_id], (err) => {
-                                if (err) {
-                                    console.error("❌ Error deleting maintenance requests:", err);
-                                    return res.status(500).json({ success: false, message: "Database error while deleting maintenance requests." });
-                                }
-
-                                // Insert checkout record into the checkouts table
-                                const checkoutTime = new Date();
-                                db.query(
-                                    "INSERT INTO checkouts (guest_id, room_number, checkout_time, feedback) VALUES ($1, $2, $3, $4)",
-                                    [guest_id, room_number, checkoutTime, feedback || null],
-                                    (err) => {
-                                        if (err) {
-                                            console.error("❌ Error inserting checkout record:", err);
-                                            return res.status(500).json({ success: false, message: "Database error while inserting checkout record." });
-                                        }
-
-                                        // Remove check-in record and make room available again
-                                        db.query("DELETE FROM check_ins WHERE guest_id = $1", [guest_id], (err) => {
-                                            if (err) {
-                                                console.error("❌ Error during checkout:", err);
-                                                return res.status(500).json({ success: false, message: "Database error during checkout." });
-                                            }
-
-                                            const nodemailer = require('nodemailer');
-                                            const transporter = nodemailer.createTransport({
-                                                service: 'gmail',
-                                                auth: {
-                                                    user: 'hoteloncall55@gmail.com',
-                                                    pass: 'fvwujhuikywpgibi'
-                                                }
-                                            });
-
-                                            const mailOptions = {
-                                                from: 'hoteloncall55@gmail.com',
-                                                to: guestEmail,
-                                                subject: 'Thank You for Staying With Us',
-                                                text: `Dear Esteemed Guest,
-                                                Thank you for choosing to spend your time with us at our luxurious retreat. As you prepare for departure, we trust that your stay was as memorable as it was indulgent. Our team is here to ensure that your check-out is smooth and effortless, while we take great pride in having served you with the highest level of excellence. We sincerely hope that the experience and memories created during your visit will beckon you back in the near future.
-                                                Warm regards,
-                                                HotelOnCall Team`
-                                            };
-
-                                            transporter.sendMail(mailOptions, (error, info) => {
-                                                if (error) {
-                                                    console.error("Error sending checkout email:", error);
-                                                } else {
-                                                    console.log("Checkout email sent:", info.response);
-                                                }
-                                                res.json({
-                                                    success: true,
-                                                    message: `Checkout successful! Room ${room_number} is now available.`,
-                                                    clearSession: true
-                                                });
-                                            });
-                                        });
-                                    }
-                                );
-                            });
-                        });
-                    });
-                });
-            });
+        if (guestCheckInResult.rowCount === 0) {
+            console.error(`❌ No active check-in found for guest email: ${guestEmail}`);
+            return res.json({ success: false, message: "No active check-in found." });
         }
-    );
+
+        const { guest_id, room_number } = guestCheckInResult.rows[0];
+        console.log(`Guest found: guest_id = ${guest_id}, room_number = ${room_number}`);
+
+        // Fetch cleaning requests to get the time slots
+        const cleaningRequestResult = await db.query(
+            "SELECT time_slot FROM cleaning_requests WHERE guest_email = (SELECT email FROM users WHERE id = $1)",
+            [guest_id]
+        );
+
+        // Only update cleaning times if there are cleaning requests
+        if (cleaningRequestResult.rowCount > 0) {
+            const timeSlots = cleaningRequestResult.rows.map(row => row.time_slot);
+            console.log("Time Slots to be updated:", timeSlots);
+
+            // Make cleaning time slots available before deleting cleaning requests
+            await db.query(
+                `UPDATE cleaning_times SET available = TRUE WHERE time_slot = ANY($1)`,
+                [timeSlots]
+            );
+            console.log("✅ Cleaning times updated successfully.");
+        } else {
+            console.log("❌ No cleaning requests found, skipping cleaning times update.");
+        }
+
+        // Delete the guest's orders before checkout
+        await db.query("DELETE FROM orders WHERE guest_email = (SELECT email FROM users WHERE id = $1)", [guest_id]);
+
+        // Delete the guest's cleaning requests before checkout
+        await db.query("DELETE FROM cleaning_requests WHERE guest_email = (SELECT email FROM users WHERE id = $1)", [guest_id]);
+
+        // Delete the guest's maintenance requests before checkout
+        await db.query("DELETE FROM maintenance_requests WHERE guest_email = (SELECT email FROM users WHERE id = $1)", [guest_id]);
+
+        // Insert checkout record into the checkouts table
+        const checkoutTime = new Date();
+        await db.query(
+            "INSERT INTO checkouts (guest_id, room_number, checkout_time, feedback) VALUES ($1, $2, $3, $4)",
+            [guest_id, room_number, checkoutTime, feedback || null]
+        );
+
+        // Remove check-in record and make room available again
+        await db.query("DELETE FROM check_ins WHERE guest_id = $1", [guest_id]);
+
+        // Send thank you email to the guest
+        const nodemailer = require('nodemailer');
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: 'hoteloncall55@gmail.com',
+                pass: 'fvwujhuikywpgibi'
+            }
+        });
+
+        const mailOptions = {
+            from: 'hoteloncall55@gmail.com',
+            to: guestEmail,
+            subject: 'Thank You for Staying With Us',
+            text: `Dear Esteemed Guest,
+            Thank you for choosing to spend your time with us at our luxurious retreat. As you prepare for departure, we trust that your stay was as memorable as it was indulgent. Our team is here to ensure that your check-out is smooth and effortless, while we take great pride in having served you with the highest level of excellence. We sincerely hope that the experience and memories created during your visit will beckon you back in the near future.
+            Warm regards,
+            HotelOnCall Team`
+        };
+
+        await transporter.sendMail(mailOptions);
+        console.log("✅ Checkout email sent successfully.");
+
+        // Respond to the client
+        res.json({
+            success: true,
+            message: `Checkout successful! Room ${room_number} is now available.`,
+            clearSession: true
+        });
+    } catch (err) {
+        console.error("❌ Error during checkout:", err);
+        res.status(500).json({ success: false, message: "Database error during checkout." });
+    }
 });
+
 
 
 
