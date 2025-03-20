@@ -1214,11 +1214,16 @@ app.post("/finalize-checkout", express.json(), async (req, res) => {
 
 
 
-app.get('/api/demand-prediction', async (req, res) => {
+app.get('/demand_prediction', async (req, res) => {
+  // Manually setting headers as an extra measure
+  res.header('Access-Control-Allow-Origin', 'https://hotel-on-call.vercel.app');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+
   try {
     const { year, month, day_of_week, is_weekend, is_holiday_season, avg_lead_time, sum_previous_bookings, avg_adr, total_children } = req.query;
 
-    // Make sure all parameters are provided
     if (!year || !month || !day_of_week || !is_weekend || !is_holiday_season || !avg_lead_time || !sum_previous_bookings || !avg_adr || !total_children) {
       return res.status(400).json({ error: 'Missing required parameters for demand prediction.' });
     }
@@ -1233,6 +1238,15 @@ app.get('/api/demand-prediction', async (req, res) => {
     console.error('Error fetching data from Railway API:', error);
     res.status(500).json({ error: 'Error fetching data from Railway API' });
   }
+});
+
+// Handle preflight requests (important for CORS)
+app.options('/demand-prediction', (req, res) => {
+  res.header('Access-Control-Allow-Origin', 'https://hotel-on-call.vercel.app');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  res.sendStatus(200);
 });
 
 
