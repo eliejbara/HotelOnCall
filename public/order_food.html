@@ -107,46 +107,37 @@
         
         
         async function placeOrder() {
-    if (!guestEmail) {
-        alert("Error: You must be logged in to place an order.");
-        return;
-    }
-    if (cart.length === 0) {
-        alert("Your cart is empty.");
-        return;
-    }
+            let guestEmail = localStorage.getItem("loggedInGuestEmail"); // ✅ Ensure correct key
 
-    try {
-        const response = await fetch("/place-order", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ guestEmail, orderItems: cart })
-        });
-        const result = await response.json();
-        alert(result.message);
+            console.log("📦 Sending Order Request:", { guestEmail, cart }); // Debugging
 
-        if (result.success) {
-            // Display the placed order details in the UI
-            const orderDetailsDiv = document.createElement("div");
-            orderDetailsDiv.innerHTML = `
-                <h3>Your Order Details</h3>
-                <ul>
-                    ${result.insertedItems.map(item => `
-                        <li>${item.menu_item} - Quantity: ${item.quantity} - Total: $${parseFloat(item.total_price).toFixed(2)}</li>
-                    `).join('')}
-                </ul>
-                <p><strong>Total Amount: $${parseFloat(result.totalAmount).toFixed(2)}</strong></p>
-            `;
-            document.getElementById("orderStatus").appendChild(orderDetailsDiv);
+            if (!guestEmail) {
+                alert("Error: You must be logged in to place an order.");
+                return;
+            }
 
-            // Clear the cart after order is placed
-            cart = [];
-            renderCart();
+            if (cart.length === 0) {
+                alert("Your cart is empty.");
+                return;
+            }
+            try {
+                const response = await fetch("/place-order", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ guestEmail, orderItems: cart })
+                });
+                const result = await response.json();
+                console.log("✅ Server Response:", result); // Debugging
+                alert(result.message);
+                if (result.success) {
+                    cart = [];
+                    renderCart();
+                }
+            } catch (error) {
+                console.error("Error placing order:", error);
+            }
         }
-    } catch (error) {
-        console.error("Error placing order:", error);
-    }
-}
+
 
 
 
