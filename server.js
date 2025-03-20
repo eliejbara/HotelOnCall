@@ -20,6 +20,23 @@ app.use(cors());
 // ✅ Serve static files from the absolute path of "public" (Only fix)
 app.use(express.static(path.join(__dirname, "public")));
 
+// New route for guest prediction (Flask API integration)
+app.get('/api/guest-prediction', async (req, res) => {
+  // Get the 'date' query parameter (should be in YYYY-MM-DD format)
+  const { date } = req.query;
+  if (!date) {
+      return res.status(400).json({ error: 'Date parameter is required (YYYY-MM-DD)' });
+  }
+  try {
+      // Forward the request to the Flask API running on port 5000
+      const response = await axios.get(`${process.env.FLASK_API_URL}/predict?date=${date}`);
+      res.json(response.data);
+  } catch (error) {
+      console.error("Error fetching prediction:", error);
+      res.status(500).json({ error: 'Error fetching prediction from AI service' });
+  }
+});
+
 
 // PostgreSQL Connection (using Neon)
 const db = new Pool({
@@ -1191,6 +1208,29 @@ app.post("/finalize-checkout", express.json(), async (req, res) => {
     }
   });
 
+
+
+
+app.get('/api/demand-prediction', async (req, res) => {
+  try {
+    const { year, month, day_of_week, is_weekend, is_holiday_season, avg_lead_time, sum_previous_bookings, avg_adr, total_children } = req.query;
+
+    // Make sure all parameters are provided
+    if (!year || !month || !day_of_week || !is_weekend || !is_holiday_season || !avg_lead_time || !sum_previous_bookings || !avg_adr || !total_children) {
+      return res.status(400).json({ error: 'Missing required parameters for demand prediction.' });
+    }
+
+    // Construct the Railway API URL
+    const apiUrl = `https://web-production-f430d.up.railway.app/demand_prediction?year=${year}&month=${month}&day_of_week=${day_of_week}&is_weekend=${is_weekend}&is_holiday_season=${is_holiday_season}&avg_lead_time=${avg_lead_time}&sum_previous_bookings=${sum_previous_bookings}&avg_adr=${avg_adr}&total_children=${total_children}`;
+
+    // Fetch data from the Railway API
+    const response = await axios.get(apiUrl);
+    res.json(response.data);
+  } catch (error) {
+    console.error('Error fetching data from Railway API:', error);
+    res.status(500).json({ error: 'Error fetching data from Railway API' });
+  }
+});
 
 
 
