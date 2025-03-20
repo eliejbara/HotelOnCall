@@ -8,7 +8,7 @@ const path = require("path");
 const axios = require("axios");
 const nodemailer = require("nodemailer");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-const { spawn } = require('child_process');
+
 
 
 const app = express();
@@ -1210,7 +1210,6 @@ app.post("/finalize-checkout", express.json(), async (req, res) => {
 
 
 
-// CORS configuration to allow the frontend to access the API
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', 'https://hotel-on-call.vercel.app');
   res.header('Access-Control-Allow-Credentials', 'true');
@@ -1220,12 +1219,12 @@ app.use((req, res, next) => {
 });
 
 // Handle preflight requests (Important for CORS)
-app.options('/api/predict-demand', (req, res) => {
+app.options('/api/guest-predict-demand', (req, res) => {
   res.sendStatus(200);
 });
 
-// Demand Prediction API Route
-app.get('/api/predict-demand', async (req, res) => {
+// Guest Demand Prediction API Route
+app.get('/api/guest-predict-demand', async (req, res) => {
   try {
     const {
       year, month, day_of_week, is_weekend,
@@ -1238,38 +1237,20 @@ app.get('/api/predict-demand', async (req, res) => {
       return res.status(400).json({ error: 'Missing required parameters for demand prediction.' });
     }
 
-    // Call the Python script guest_prediction.py with the necessary parameters
-    const python = spawn('python', ['guest_prediction.py', year, month, day_of_week, is_weekend, is_holiday_season, avg_lead_time, sum_previous_bookings, avg_adr, total_children]);
+    // Construct the Railway API URL
+    const apiUrl = `https://web-production-f430d.up.railway.app/api/guest-predict-demand?year=${year}&month=${month}&day_of_week=${day_of_week}&is_weekend=${is_weekend}&is_holiday_season=${is_holiday_season}&avg_lead_time=${avg_lead_time}&sum_previous_bookings=${sum_previous_bookings}&avg_adr=${avg_adr}&total_children=${total_children}`;
 
-    let data = '';
-    python.stdout.on('data', (chunk) => {
-      data += chunk.toString();
-    });
+    // Fetch data from the Railway API
+    const response = await axios.get(apiUrl);
 
-    python.stderr.on('data', (err) => {
-      console.error('Python error:', err.toString());
-    });
-
-    python.on('close', (code) => {
-      if (code === 0) {
-        try {
-          const prediction = JSON.parse(data);
-          res.json(prediction);
-        } catch (error) {
-          console.error('Error parsing prediction:', error);
-          res.status(500).json({ error: 'Error processing prediction data.' });
-        }
-      } else {
-        console.error(`Python process exited with code ${code}`);
-        res.status(500).json({ error: 'Error in prediction process.' });
-      }
-    });
-
+    // Return the prediction response
+    res.json(response.data);
   } catch (error) {
     console.error('❌ Error fetching data from Railway API:', error);
     res.status(500).json({ error: 'Error fetching data from Railway API' });
   }
 });
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
