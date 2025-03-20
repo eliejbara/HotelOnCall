@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hotel Management Dashboard - Room Demand Prediction</title>
   <style>
     body {
@@ -88,44 +89,69 @@
     <button type="submit">Predict Room Demand</button>
   </form>
   <div id="result"></div>
-  
-<script>
-  document.getElementById('predict-btn').addEventListener('click', function() {
-    const year = document.getElementById('year').value;
-    const month = document.getElementById('month').value;
-    const day_of_week = document.getElementById('day_of_week').value;
-    const is_weekend = document.getElementById('is_weekend').value;
-    const is_holiday_season = document.getElementById('is_holiday_season').value;
-    const avg_lead_time = document.getElementById('avg_lead_time').value;
-    const sum_previous_bookings = document.getElementById('sum_previous_bookings').value;
-    const avg_adr = document.getElementById('avg_adr').value;
-    const total_children = document.getElementById('total_children').value;
 
-    fetch(`https://web-production-f430d.up.railway.app/api/predict-demand?year=${year}&month=${month}&day_of_week=${day_of_week}&is_weekend=${is_weekend}&is_holiday_season=${is_holiday_season}&avg_lead_time=${avg_lead_time}&sum_previous_bookings=${sum_previous_bookings}&avg_adr=${avg_adr}&total_children=${total_children}`, {
-      method: 'GET',
-      credentials: 'include', // Ensure credentials are sent with the request
-    })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error(`Server error: ${response.status}`);
-      }
-      return response.json();
-    })
-    .then(data => {
-      console.log('Prediction:', data);
-      if (data.predicted_room_demand) {
-        alert(`Predicted Room Demand: ${data.predicted_room_demand}`);
+  <script>
+    // Ensure that the DOM is fully loaded before executing the script
+    document.addEventListener('DOMContentLoaded', function() {
+      const form = document.getElementById('predictionForm');
+      
+      if (form) {
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+
+          const dateInput = document.getElementById('date').value;
+          const avgLeadTime = document.getElementById('avg_lead_time').value;
+          const sumPrevBookings = document.getElementById('sum_previous_bookings').value;
+          const avgAdr = document.getElementById('avg_adr').value;
+          const totalChildren = document.getElementById('total_children').value;
+
+          const dt = new Date(dateInput);
+          if (isNaN(dt)) {
+            document.getElementById('result').innerText = 'Invalid date format. Please use YYYY-MM-DD format.';
+            return;
+          }
+          const year = dt.getFullYear();
+          const month = dt.getMonth() + 1;
+          const jsDay = dt.getDay();
+          const dayOfWeek = (jsDay === 0) ? 6 : jsDay - 1;
+          const isWeekend = (dayOfWeek >= 5) ? 1 : 0;
+          const isHolidaySeason = (month === 7 || month === 8 || month === 12) ? 1 : 0;
+
+          const apiUrl = `https://web-production-f430d.up.railway.app/api/predict-demand?year=${year}&month=${month}&day_of_week=${dayOfWeek}&is_weekend=${isWeekend}&is_holiday_season=${isHolidaySeason}&avg_lead_time=${avgLeadTime}&sum_previous_bookings=${sumPrevBookings}&avg_adr=${avgAdr}&total_children=${totalChildren}`;
+
+          console.log('API URL:', apiUrl);
+          document.getElementById('result').innerText = 'Fetching prediction...';
+
+          try {
+            const response = await fetch(apiUrl, {
+              method: 'GET',
+              headers: {
+                'Accept': 'application/json'
+              },
+              credentials: 'include' // Ensures cookies are sent if required
+            });
+            
+            if (!response.ok) {
+              throw new Error(`Server error: ${response.status} - ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            console.log('API Response:', data);
+            
+            if (data.predicted_room_demand !== undefined) {
+              document.getElementById('result').innerText = `Predicted room demand for ${dateInput}: ${data.predicted_room_demand}`;
+            } else {
+              document.getElementById('result').innerText = 'No prediction available or server error.';
+            }
+          } catch (error) {
+            console.error('Error fetching prediction:', error);
+            document.getElementById('result').innerText = 'Error fetching prediction. Please try again later.';
+          }
+        });
       } else {
-        alert('Error: No prediction data received');
+        console.error('Prediction form element not found!');
       }
-    })
-    .catch(error => {
-      console.error('Error fetching prediction:', error);
-      alert('Error fetching prediction: ' + error.message);
     });
-  });
-</script>
-
-
+  </script>
 </body>
 </html>
