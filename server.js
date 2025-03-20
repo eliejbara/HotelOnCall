@@ -1214,7 +1214,7 @@ app.post("/finalize-checkout", express.json(), async (req, res) => {
 
 
 
-app.get('/predict_demand', async (req, res) => {
+app.get('/api/predict-demand', async (req, res) => {
   // Manually setting headers as an extra measure
   res.header('Access-Control-Allow-Origin', 'https://hotel-on-call.vercel.app');
   res.header('Access-Control-Allow-Credentials', 'true');
@@ -1241,7 +1241,7 @@ app.get('/predict_demand', async (req, res) => {
 });
 
 // Handle preflight requests (important for CORS)
-app.options('/predict_demand', (req, res) => {
+app.options('/api/predict-demand', (req, res) => {
   res.header('Access-Control-Allow-Origin', 'https://hotel-on-call.vercel.app');
   res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
