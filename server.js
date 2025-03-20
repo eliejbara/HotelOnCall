@@ -15,7 +15,10 @@ const app = express();
 
 // Middleware
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: 'https://hotel-on-call.vercel.app', // Replace with your actual frontend URL
+  credentials: true
+}));
 
 // ✅ Serve static files from the absolute path of "public" (Only fix)
 app.use(express.static(path.join(__dirname, "public")));
