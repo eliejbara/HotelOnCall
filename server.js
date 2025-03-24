@@ -1239,7 +1239,7 @@ app.get('/api/demand-prediction', async (req, res) => {
 
     // Use the DEMAND_API_URL environment variable (make sure it’s set in Vercel)
     const baseUrl = process.env.DEMAND_API_URL.replace(/\/+$/, ""); // Remove trailing slashes if any
-    const apiUrl = `${baseUrl}/api/guest-predict-demand?year=${year}&month=${month}&day_of_week=${day_of_week}&is_weekend=${is_weekend}&is_holiday_season=${is_holiday_season}&avg_lead_time=${avg_lead_time}&sum_previous_bookings=${sum_previous_bookings}&avg_adr=${avg_adr}&total_children=${total_children}`;
+    const apiUrl = `${baseUrl}/predict_demand?year=${year}&month=${month}&day_of_week=${day_of_week}&is_weekend=${is_weekend}&is_holiday_season=${is_holiday_season}&avg_lead_time=${avg_lead_time}&sum_previous_bookings=${sum_previous_bookings}&avg_adr=${avg_adr}&total_children=${total_children}`;
 
     // Fetch data from your AI repo
     const response = await axios.get(apiUrl);
