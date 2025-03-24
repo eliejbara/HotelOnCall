@@ -1237,19 +1237,19 @@ app.get('/api/guest-predict-demand', async (req, res) => {
       return res.status(400).json({ error: 'Missing required parameters for demand prediction.' });
     }
 
-    // Construct the Railway API URL
-    const apiUrl = `https://web-production-f430d.up.railway.app/api/guest-predict-demand?year=${year}&month=${month}&day_of_week=${day_of_week}&is_weekend=${is_weekend}&is_holiday_season=${is_holiday_season}&avg_lead_time=${avg_lead_time}&sum_previous_bookings=${sum_previous_bookings}&avg_adr=${avg_adr}&total_children=${total_children}`;
+    // Use the DEMAND_API_URL environment variable (make sure it’s set in Vercel)
+    const baseUrl = process.env.DEMAND_API_URL.replace(/\/+$/, ""); // Remove trailing slashes if any
+    const apiUrl = `${baseUrl}/api/guest-predict-demand?year=${year}&month=${month}&day_of_week=${day_of_week}&is_weekend=${is_weekend}&is_holiday_season=${is_holiday_season}&avg_lead_time=${avg_lead_time}&sum_previous_bookings=${sum_previous_bookings}&avg_adr=${avg_adr}&total_children=${total_children}`;
 
-    // Fetch data from the Railway API
+    // Fetch data from your AI repo
     const response = await axios.get(apiUrl);
-
-    // Return the prediction response
     res.json(response.data);
   } catch (error) {
-    console.error('❌ Error fetching data from Railway API:', error);
-    res.status(500).json({ error: 'Error fetching data from Railway API' });
+    console.error('❌ Error fetching data from AI service:', error);
+    res.status(500).json({ error: 'Error fetching demand prediction from AI service' });
   }
 });
+
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
