@@ -1224,7 +1224,7 @@ app.options('/api/guest-predict-demand', (req, res) => {
 });
 
 // Guest Demand Prediction API Route
-app.get('/api/guest-predict-demand', async (req, res) => {
+app.get('/api/demand-prediction', async (req, res) => {
   try {
     const {
       year, month, day_of_week, is_weekend,
