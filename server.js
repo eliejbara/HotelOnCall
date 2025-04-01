@@ -1,6 +1,3 @@
-const passport = require('passport');
-
-
 require('dotenv').config();
 
 const express = require("express");
