@@ -9,7 +9,10 @@ const axios = require("axios");
 const nodemailer = require("nodemailer");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
-
+const passport = require("passport");
+const { Strategy: GoogleStrategy } = require("passport-google-oauth20");
+const session = require("express-session");
+const pgSession = require("connect-pg-simple")(session);
 
 const app = express();
 
@@ -63,6 +66,91 @@ db.connect((err) => {
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
+
+
+// Configure session store with PostgreSQL
+app.use(session({
+  store: new pgSession({
+    pool, // Use PostgreSQL connection
+    tableName: 'session', // PostgreSQL table for session storage
+  }),
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: true,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production', // Secure cookies in production
+    httpOnly: true, // Prevent client-side access
+    maxAge: 24 * 60 * 60 * 1000, // 1 day
+  }
+}));
+
+// Initialize Passport.js
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Google OAuth Strategy
+passport.use(new GoogleStrategy({
+  clientID: process.env.GOOGLE_CLIENT_ID,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  callbackURL: "https://hotel-on-call.vercel.app/auth/google/callback", // Production URL
+},
+async (accessToken, refreshToken, profile, done) => {
+  try {
+    const email = profile.emails[0].value;  // Extract the email
+    const client = await pool.connect();
+    const result = await client.query("SELECT * FROM users WHERE email = $1", [email]);
+
+    if (result.rows.length > 0) {
+      client.release();
+      return done(null, result.rows[0]);
+    } else {
+      // Create new user if they don't exist
+      const newUser = { email, password: '', userType: 'guest' };
+      await client.query(
+        "INSERT INTO users (email, password, userType) VALUES ($1, $2, $3)",
+        [newUser.email, newUser.password, newUser.userType]
+      );
+      client.release();
+      return done(null, newUser);
+    }
+  } catch (error) {
+    return done(error);
+  }
+}));
+
+passport.serializeUser((user, done) => {
+  done(null, user.email);
+});
+
+passport.deserializeUser(async (email, done) => {
+  try {
+    const client = await pool.connect();
+    const result = await client.query("SELECT * FROM users WHERE email = $1", [email]);
+    client.release();
+    done(null, result.rows[0]);
+  } catch (error) {
+    done(error);
+  }
+});
+
+app.get('/auth/google',
+  passport.authenticate('google', { scope: ['profile', 'email'] })
+);
+
+app.get('/auth/google/callback', 
+  passport.authenticate('google', { failureRedirect: '/index' }),
+  (req, res) => {
+    console.log('User authenticated, session:', req.session);
+    req.session.userEmail = req.user.email;
+    console.log('Google User Email:', req.user.email);
+    if (req.user.userType === 'guest') {
+      res.redirect(`/index.html?success=true&redirectTo=guest_services.html&email=${req.user.email}`);
+    } else {
+      res.redirect(`/index.html?success=true&redirectTo=staff_selection.html&email=${req.user.email}`);
+    }
+  }
+);
+
 
  // ** User Registration **
 app.post("/register", async (req, res) => {
