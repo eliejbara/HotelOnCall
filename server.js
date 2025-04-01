@@ -12,6 +12,8 @@ const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const passport = require("passport");
 const { Strategy: GoogleStrategy } = require("passport-google-oauth20");
 const session = require("express-session");
+const pgSession = require("connect-pg-simple")(session);
+
 
 const app = express();
 
@@ -70,18 +72,19 @@ app.get("/", (req, res) => {
 // Configure session store with PostgreSQL
 app.use(session({
   store: new pgSession({
-    pool, // Use PostgreSQL connection
-    tableName: 'session', // PostgreSQL table for session storage
+    pool: db, 
+    tableName: 'session',
   }),
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: true,
   cookie: {
-    secure: process.env.NODE_ENV === 'production', // Secure cookies in production
-    httpOnly: true, // Prevent client-side access
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 1 day
   }
 }));
+
 
 // Initialize Passport.js
 app.use(passport.initialize());
@@ -91,31 +94,31 @@ app.use(passport.session());
 passport.use(new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  callbackURL: "https://hotel-on-call.vercel.app/auth/google/callback", // Production URL
+  callbackURL: "https://hotel-on-call.vercel.app/auth/google/callback",
 },
 async (accessToken, refreshToken, profile, done) => {
   try {
-    const email = profile.emails[0].value;  // Extract the email
-    const client = await pool.connect();
-    const result = await client.query("SELECT * FROM users WHERE email = $1", [email]);
+    const email = profile.emails[0].value;
+    
+    // ✅ Directly use db.query (manages connections automatically)
+    let result = await db.query("SELECT * FROM users WHERE email = $1", [email]);
 
     if (result.rows.length > 0) {
-      client.release();
       return done(null, result.rows[0]);
     } else {
-      // Create new user if they don't exist
       const newUser = { email, password: '', userType: 'guest' };
-      await client.query(
-        "INSERT INTO users (email, password, userType) VALUES ($1, $2, $3)",
+      result = await db.query(
+        "INSERT INTO users (email, password, userType) VALUES ($1, $2, $3) RETURNING *",
         [newUser.email, newUser.password, newUser.userType]
       );
-      client.release();
-      return done(null, newUser);
+      return done(null, result.rows[0]); // ✅ Ensure we return the inserted user
     }
   } catch (error) {
+    console.error("Google Auth Error:", error);
     return done(error);
   }
 }));
+
 
 passport.serializeUser((user, done) => {
   done(null, user.email);
@@ -123,14 +126,19 @@ passport.serializeUser((user, done) => {
 
 passport.deserializeUser(async (email, done) => {
   try {
-    const client = await pool.connect();
-    const result = await client.query("SELECT * FROM users WHERE email = $1", [email]);
-    client.release();
-    done(null, result.rows[0]);
+    const result = await db.query("SELECT * FROM users WHERE email = $1", [email]);
+    
+    if (result.rows.length > 0) {
+      done(null, result.rows[0]); // ✅ Return user object
+    } else {
+      done(null, false); // User not found
+    }
   } catch (error) {
+    console.error("Error deserializing user:", error);
     done(error);
   }
 });
+
 
 app.get('/auth/google',
   passport.authenticate('google', { scope: ['profile', 'email'] })
