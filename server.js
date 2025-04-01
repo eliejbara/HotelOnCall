@@ -37,6 +37,10 @@ app.get('/api/guest-prediction', async (req, res) => {
 });
 
 
+const passport = require('passport');
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const session = require('express-session');
+
 // PostgreSQL Connection (using Neon)
 const db = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -63,6 +67,75 @@ db.connect((err) => {
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
+
+
+// Session Middleware
+app.use(session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: true
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+passport.use(new GoogleStrategy({
+    clientID: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callbackURL: "https://your-vercel-app.vercel.app/auth/google/callback" // Update with Vercel domain
+  },
+  async (accessToken, refreshToken, profile, done) => {
+    try {
+      const email = profile.emails[0].value;
+
+      const userCheck = await db.query("SELECT * FROM users WHERE email = $1", [email]);
+
+      if (userCheck.rows.length > 0) {
+        return done(null, userCheck.rows[0]); // Existing user
+      } else {
+        // Insert new user
+        const newUser = await db.query(
+          "INSERT INTO users (email, password, userType) VALUES ($1, $2, $3) RETURNING *",
+          [email, '', 'guest']
+        );
+        return done(null, newUser.rows[0]); // Return new user
+      }
+    } catch (error) {
+      return done(error);
+    }
+  }
+));
+
+passport.serializeUser((user, done) => {
+    done(null, user.email);
+});
+
+passport.deserializeUser(async (email, done) => {
+    try {
+        const user = await db.query("SELECT * FROM users WHERE email = $1", [email]);
+        done(null, user.rows[0]);
+    } catch (error) {
+        done(error);
+    }
+});
+
+// Google Auth Routes
+app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+
+app.get('/auth/google/callback', 
+    passport.authenticate('google', { failureRedirect: '/index' }),
+    (req, res) => {
+        console.log('User authenticated, session:', req.session);
+        req.session.userEmail = req.user.email;
+
+        if (req.user.userType === 'guest') {
+            res.redirect(`/index.html?success=true&redirectTo=guest_services.html&email=${req.user.email}`);
+        } else {
+            res.redirect(`/index.html?success=true&redirectTo=staff_selection.html&email=${req.user.email}`);
+        }
+    }
+);
+
 
  // ** User Registration **
 app.post("/register", async (req, res) => {
