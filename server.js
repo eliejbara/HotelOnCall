@@ -12,7 +12,6 @@ const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const passport = require("passport");
 const { Strategy: GoogleStrategy } = require("passport-google-oauth20");
 const session = require("express-session");
-const pgSession = require("connect-pg-simple")(session);
 
 const app = express();
 
