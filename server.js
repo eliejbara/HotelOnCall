@@ -90,7 +90,6 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Google OAuth Strategy
 passport.use(new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
@@ -99,19 +98,17 @@ passport.use(new GoogleStrategy({
 async (accessToken, refreshToken, profile, done) => {
   try {
     const email = profile.emails[0].value;
-    
-    // ✅ Directly use db.query (manages connections automatically)
-    let result = await db.query("SELECT * FROM users WHERE email = $1", [email]);
+    const result = await db.query("SELECT * FROM users WHERE email = $1", [email]);
 
     if (result.rows.length > 0) {
       return done(null, result.rows[0]);
     } else {
       const newUser = { email, password: '', userType: 'guest' };
-      result = await db.query(
+      const result = await db.query(
         "INSERT INTO users (email, password, userType) VALUES ($1, $2, $3) RETURNING *",
         [newUser.email, newUser.password, newUser.userType]
       );
-      return done(null, result.rows[0]); // ✅ Ensure we return the inserted user
+      return done(null, result.rows[0]);
     }
   } catch (error) {
     console.error("Google Auth Error:", error);
