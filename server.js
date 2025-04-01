@@ -9,10 +9,6 @@ const axios = require("axios");
 const nodemailer = require("nodemailer");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
-const passport = require("passport");
-const { Strategy: GoogleStrategy } = require("passport-google-oauth20");
-const session = require("express-session");
-const pgSession = require("connect-pg-simple")(session);
 
 
 const app = express();
@@ -67,94 +63,6 @@ db.connect((err) => {
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
-
-
-// Configure session store with PostgreSQL
-app.use(session({
-  store: new pgSession({
-    pool: db, 
-    tableName: 'session',
-  }),
-  secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: true,
-  cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000, // 1 day
-  }
-}));
-
-
-// Initialize Passport.js
-app.use(passport.initialize());
-app.use(passport.session());
-
-passport.use(new GoogleStrategy({
-  clientID: process.env.GOOGLE_CLIENT_ID,
-  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  callbackURL: "https://hotel-on-call.vercel.app/auth/google/callback",
-},
-async (accessToken, refreshToken, profile, done) => {
-  try {
-    const email = profile.emails[0].value;
-    const result = await db.query("SELECT * FROM users WHERE email = $1", [email]);
-
-    if (result.rows.length > 0) {
-      return done(null, result.rows[0]);
-    } else {
-      const newUser = { email, password: '', userType: 'guest' };
-      const result = await db.query(
-        "INSERT INTO users (email, password, userType) VALUES ($1, $2, $3) RETURNING *",
-        [newUser.email, newUser.password, newUser.userType]
-      );
-      return done(null, result.rows[0]);
-    }
-  } catch (error) {
-    console.error("Google Auth Error:", error);
-    return done(error);
-  }
-}));
-
-
-passport.serializeUser((user, done) => {
-  done(null, user.email);
-});
-
-passport.deserializeUser(async (email, done) => {
-  try {
-    const result = await db.query("SELECT * FROM users WHERE email = $1", [email]);
-    
-    if (result.rows.length > 0) {
-      done(null, result.rows[0]); // ✅ Return user object
-    } else {
-      done(null, false); // User not found
-    }
-  } catch (error) {
-    console.error("Error deserializing user:", error);
-    done(error);
-  }
-});
-
-
-app.get('/auth/google',
-  passport.authenticate('google', { scope: ['profile', 'email'] })
-);
-
-app.get('/auth/google/callback', 
-  passport.authenticate('google', { failureRedirect: '/index' }),
-  (req, res) => {
-    console.log('User authenticated, session:', req.session);
-    req.session.userEmail = req.user.email;
-    console.log('Google User Email:', req.user.email);
-    if (req.user.userType === 'guest') {
-      res.redirect(`/index.html?success=true&redirectTo=guest_services.html&email=${req.user.email}`);
-    } else {
-      res.redirect(`/index.html?success=true&redirectTo=staff_selection.html&email=${req.user.email}`);
-    }
-  }
-);
-
 
  // ** User Registration **
 app.post("/register", async (req, res) => {
