@@ -61,8 +61,20 @@ db.connect((err) => {
     process.exit(1);
   } else {
     console.log("✅ PostgreSQL Connected to Neon Database");
+
+    app.use(session({
+      store: new PgSession({ pool: db }), // ✅ Uses db after initialization
+      secret: process.env.SESSION_SECRET,
+      resave: false,
+      saveUninitialized: false,
+      cookie: { secure: "auto", maxAge: 24 * 60 * 60 * 1000 }
+    }));
+
+    app.use(passport.initialize());
+    app.use(passport.session());
   }
 });
+
 
 // ** Serve index.html as default page **
 app.get("/", (req, res) => {
@@ -70,16 +82,7 @@ app.get("/", (req, res) => {
 });
 
 
-app.use(session({
-  store: new PgSession({ pool: db }), // Store sessions in PostgreSQL
-  secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  cookie: { secure: "auto", maxAge: 24 * 60 * 60 * 1000 }
-}));
 
-app.use(passport.initialize());
-app.use(passport.session());
 
 
 
