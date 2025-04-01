@@ -1,3 +1,8 @@
+const passport = require('passport');
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const session = require('express-session');
+const PgSession = require("connect-pg-simple")(session);
+
 require('dotenv').config();
 
 const express = require("express");
