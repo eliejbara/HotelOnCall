@@ -1,6 +1,7 @@
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const session = require('express-session');
+const PgSession = require("connect-pg-simple")(session);
 
 require('dotenv').config();
 
@@ -70,9 +71,11 @@ app.get("/", (req, res) => {
 
 
 app.use(session({
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: true
+  store: new PgSession({ pool: db }), // Store sessions in PostgreSQL
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: { secure: "auto", maxAge: 24 * 60 * 60 * 1000 }
 }));
 
 app.use(passport.initialize());
