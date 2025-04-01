@@ -1,3 +1,7 @@
+const passport = require('passport');
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const session = require('express-session');
+
 require('dotenv').config();
 
 const express = require("express");
@@ -63,6 +67,82 @@ db.connect((err) => {
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
+
+
+app.use(session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: true
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+
+
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL: "https://hotel-on-call.vercel.app/auth/google/callback",
+    },
+    async (accessToken, refreshToken, profile, done) => {
+      try {
+        const email = profile.emails[0].value;
+        const userResult = await db.query("SELECT * FROM users WHERE email = $1", [email]);
+
+        if (userResult.rows.length > 0) {
+          return done(null, userResult.rows[0]);
+        } else {
+          const newUser = {
+            email: email,
+            password: '',
+            userType: 'guest',
+          };
+
+          await db.query(
+            "INSERT INTO users (email, password, userType) VALUES ($1, $2, $3)",
+            [newUser.email, newUser.password, newUser.userType]
+          );
+
+          return done(null, newUser);
+        }
+      } catch (error) {
+        return done(error);
+      }
+    }
+  )
+);
+
+passport.serializeUser((user, done) => {
+  done(null, user.email);
+});
+
+passport.deserializeUser(async (email, done) => {
+  try {
+    const result = await db.query("SELECT * FROM users WHERE email = $1", [email]);
+    done(null, result.rows[0]);
+  } catch (err) {
+    done(err);
+  }
+});
+
+app.get(
+  '/auth/google',
+  passport.authenticate('google', { scope: ['profile', 'email'] })
+);
+
+app.get(
+  '/auth/google/callback',
+  passport.authenticate('google', { failureRedirect: '/index' }),
+  (req, res) => {
+    req.session.userEmail = req.user.email;
+    const redirectTo = req.user.userType === 'guest' ? 'guest_services.html' : 'staff_selection.html';
+    res.redirect(`/index.html?success=true&redirectTo=${redirectTo}&email=${req.user.email}`);
+  }
+);
+
 
  // ** User Registration **
 app.post("/register", async (req, res) => {
