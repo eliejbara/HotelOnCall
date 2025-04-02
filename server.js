@@ -135,11 +135,10 @@ app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'em
 app.get('/auth/google/callback', 
     passport.authenticate('google', { failureRedirect: '/index' }),
     async (req, res) => {
-        console.log('✅ User authenticated, session:', req.session);
+        console.log('✅ User authenticated:', req.user);
         req.session.userEmail = req.user.email;
 
         try {
-            // Fetch user details
             const userResult = await db.query("SELECT id, userType FROM users WHERE email = $1", [req.user.email]);
             const user = userResult.rows[0];
 
@@ -148,21 +147,20 @@ app.get('/auth/google/callback',
                 return res.redirect('/index.html?success=false&error=user_not_found');
             }
 
-            console.log('📌 User details:', user);
+            console.log('📌 User details from DB:', user);
 
-            if (user.userType === 'guest') {
-                // Check if guest has checked in
+            if (user.userType.trim() === 'guest') {  // Ensure proper string comparison
                 const checkinResult = await db.query("SELECT * FROM check_ins WHERE guest_id = $1", [user.id]);
-
+                
                 if (checkinResult.rows.length > 0) {
-                    console.log("✅ Guest has checked in. Redirecting to guest services.");
+                    console.log("✅ Guest checked in → Redirecting to guest services.");
                     return res.redirect(`/index.html?success=true&redirectTo=guest_services.html&userType=guest&email=${req.user.email}`);
                 } else {
-                    console.log("⚠️ Guest has NOT checked in. Redirecting to check-in page.");
+                    console.log("⚠️ Guest NOT checked in → Redirecting to check-in.");
                     return res.redirect(`/index.html?success=true&redirectTo=checkin.html&userType=guest&email=${req.user.email}`);
                 }
             } else {
-                // Redirect staff to staff selection page
+                console.log("🛑 Redirecting user as staff.");
                 return res.redirect(`/index.html?success=true&redirectTo=staff_selection.html&userType=staff&email=${req.user.email}`);
             }
         } catch (error) {
@@ -171,6 +169,7 @@ app.get('/auth/google/callback',
         }
     }
 );
+
 
 
 
