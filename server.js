@@ -135,41 +135,42 @@ app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'em
 app.get('/auth/google/callback', 
     passport.authenticate('google', { failureRedirect: '/index' }),
     async (req, res) => {
-        console.log('✅ User authenticated:', req.user);
+        console.log('✅ User authenticated, session:', req.session);
+        req.session.userEmail = req.user.email;
+
         try {
+            // Fetch user details
             const userResult = await db.query("SELECT id, userType FROM users WHERE email = $1", [req.user.email]);
             const user = userResult.rows[0];
 
             if (!user) {
                 console.error("❌ User not found after authentication");
-                return res.json({ success: false, message: "User not found after authentication" });
+                return res.redirect('/index.html?success=false&error=user_not_found');
             }
 
-            console.log('📌 User details from DB:', user);
+            console.log('📌 User details:', user);
 
-            // Handle user redirection based on their type
-            if (user.userType.trim() === 'guest') {
+            if (user.userType === 'guest') {
+                // Check if guest has checked in
                 const checkinResult = await db.query("SELECT * FROM check_ins WHERE guest_id = $1", [user.id]);
+
                 if (checkinResult.rows.length > 0) {
-                    console.log("✅ Guest checked in → Redirecting to guest services.");
-                    return res.json({ success: true, redirectTo: `/guest_services.html?email=${req.user.email}` });
+                    console.log("✅ Guest has checked in. Redirecting to guest services.");
+                    return res.redirect(`/index.html?success=true&redirectTo=guest_services.html&userType=guest&email=${req.user.email}`);
                 } else {
-                    console.log("⚠️ Guest NOT checked in → Redirecting to check-in.");
-                    return res.json({ success: true, redirectTo: `/checkin.html?email=${req.user.email}` });
+                    console.log("⚠️ Guest has NOT checked in. Redirecting to check-in page.");
+                    return res.redirect(`/index.html?success=true&redirectTo=checkin.html&userType=guest&email=${req.user.email}`);
                 }
             } else {
-                console.log("🛑 Redirecting user as staff.");
-                return res.json({ success: true, redirectTo: `/staff_selection.html?email=${req.user.email}` });
+                // Redirect staff to staff selection page
+                return res.redirect(`/index.html?success=true&redirectTo=staff_selection.html&userType=staff&email=${req.user.email}`);
             }
         } catch (error) {
-            console.error("❌ Error during Google OAuth callback:", error);
-            return res.json({ success: false, message: "Database error occurred during Google OAuth callback" });
+            console.error("❌ Error fetching userType:", error);
+            res.redirect('/index.html?success=false&error=database_error');
         }
     }
 );
-
-
-
 
 
 
