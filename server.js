@@ -149,19 +149,19 @@ app.get('/auth/google/callback',
 
             console.log('📌 User details from DB:', user);
 
-            if (user.userType.trim() === 'guest') {  // Ensure proper string comparison
+            if (user.userType.trim() === 'guest') {
                 const checkinResult = await db.query("SELECT * FROM check_ins WHERE guest_id = $1", [user.id]);
                 
                 if (checkinResult.rows.length > 0) {
                     console.log("✅ Guest checked in → Redirecting to guest services.");
-                    return res.redirect(`/index.html?success=true&redirectTo=guest_services.html&userType=guest&email=${req.user.email}`);
+                    return res.redirect(`/guest_services.html?success=true&email=${req.user.email}`);
                 } else {
                     console.log("⚠️ Guest NOT checked in → Redirecting to check-in.");
-                    return res.redirect(`/index.html?success=true&redirectTo=checkin.html&userType=guest&email=${req.user.email}`);
+                    return res.redirect(`/checkin.html?success=true&email=${req.user.email}`);
                 }
             } else {
                 console.log("🛑 Redirecting user as staff.");
-                return res.redirect(`/index.html?success=true&redirectTo=staff_selection.html&userType=staff&email=${req.user.email}`);
+                return res.redirect(`/staff_selection.html?success=true&email=${req.user.email}`);
             }
         } catch (error) {
             console.error("❌ Error fetching userType:", error);
@@ -169,6 +169,7 @@ app.get('/auth/google/callback',
         }
     }
 );
+
 
 
 
