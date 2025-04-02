@@ -139,20 +139,39 @@ app.get('/auth/google/callback',
         req.session.userEmail = req.user.email;
 
         try {
-            // Explicitly fetch userType from the database
-            const userResult = await db.query("SELECT userType FROM users WHERE email = $1", [req.user.email]);
-            const userType = userResult.rows[0]?.userType || 'guest'; // Default to 'guest' if somehow undefined
+            // Fetch user details
+            const userResult = await db.query("SELECT id, userType FROM users WHERE email = $1", [req.user.email]);
+            const user = userResult.rows[0];
 
-            console.log('📌 Fetched UserType from DB:', userType); // Log it in the backend
+            if (!user) {
+                console.error("❌ User not found after authentication");
+                return res.redirect('/index.html?success=false&error=user_not_found');
+            }
 
-            // Redirect including userType in the URL so the frontend can log it
-            res.redirect(`/index.html?success=true&redirectTo=${userType === 'guest' ? 'guest_services.html' : 'staff_selection.html'}&userType=${userType}&email=${req.user.email}`);
+            console.log('📌 User details:', user);
+
+            if (user.userType === 'guest') {
+                // Check if guest has checked in
+                const checkinResult = await db.query("SELECT * FROM check_ins WHERE guest_id = $1", [user.id]);
+
+                if (checkinResult.rows.length > 0) {
+                    console.log("✅ Guest has checked in. Redirecting to guest services.");
+                    return res.redirect(`/index.html?success=true&redirectTo=guest_services.html&userType=guest&email=${req.user.email}`);
+                } else {
+                    console.log("⚠️ Guest has NOT checked in. Redirecting to check-in page.");
+                    return res.redirect(`/index.html?success=true&redirectTo=checkin.html&userType=guest&email=${req.user.email}`);
+                }
+            } else {
+                // Redirect staff to staff selection page
+                return res.redirect(`/index.html?success=true&redirectTo=staff_selection.html&userType=staff&email=${req.user.email}`);
+            }
         } catch (error) {
             console.error("❌ Error fetching userType:", error);
             res.redirect('/index.html?success=false&error=database_error');
         }
     }
 );
+
 
 
 
