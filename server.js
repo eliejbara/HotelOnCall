@@ -82,7 +82,7 @@ app.use(passport.session());
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: "https://your-vercel-app.vercel.app/auth/google/callback" // Update with Vercel domain
+    callbackURL: "https://hotel-on-call.vercel.app/auth/google/callback" 
   },
   async (accessToken, refreshToken, profile, done) => {
     try {
