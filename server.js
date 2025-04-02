@@ -88,23 +88,33 @@ passport.use(new GoogleStrategy({
     try {
       const email = profile.emails[0].value;
 
+      // Query the database for an existing user
       const userCheck = await db.query("SELECT * FROM users WHERE email = $1", [email]);
 
       if (userCheck.rows.length > 0) {
+        // Existing user found, log user details
+        console.log("✅ Existing user found in DB:", userCheck.rows[0]); // Log existing user
+        // Send user type info in session or redirect with user type
         return done(null, userCheck.rows[0]); // Existing user
       } else {
-        // Insert new user
+        // Insert new user with 'guest' as the default userType
         const newUser = await db.query(
           "INSERT INTO users (email, password, userType) VALUES ($1, $2, $3) RETURNING *",
           [email, '', 'guest']
         );
+
+        // Log new user details
+        console.log("✅ New user inserted into DB:", newUser.rows[0]); // Log newly inserted user with 'guest' type
+        // Send user type info in session or redirect with user type
         return done(null, newUser.rows[0]); // Return new user
       }
     } catch (error) {
+      console.error("❌ Error during user authentication:", error); // Log any errors
       return done(error);
     }
   }
 ));
+
 
 passport.serializeUser((user, done) => {
     done(null, user.email);
