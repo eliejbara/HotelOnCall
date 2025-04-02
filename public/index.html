@@ -86,32 +86,44 @@
     });
 
     // After Google redirects back, check if the URL contains login success
+
     window.onload = function() {
-        const urlParams = new URLSearchParams(window.location.search);
+    const urlParams = new URLSearchParams(window.location.search);
 
-        // Extract userType and log it in the browser console
-        const userType = urlParams.get("userType");
-        const email = urlParams.get("email");
+    // Extract error message from URL (if any)
+    const errorMessage = urlParams.get("error");
 
-        if (userType && email) {
-            console.log(`🔍 Google Login Successful!`);
-            console.log(`📩 Logged-in Email: ${email}`);
-            console.log(`🛠️ User Type from Server: ${userType}`);
+    // Show error message if available
+    if (errorMessage) {
+        const messageElement = document.getElementById("message");
+        messageElement.innerText = `Error: ${errorMessage}`;
+        messageElement.style.color = 'red'; // You can style it to make it more noticeable
+    }
+
+    // Other existing Google login success handling
+    const userType = urlParams.get("userType");
+    const email = urlParams.get("email");
+
+    if (userType && email) {
+        console.log(`🔍 Google Login Successful!`);
+        console.log(`📩 Logged-in Email: ${email}`);
+        console.log(`🛠️ User Type from Server: ${userType}`);
+    }
+
+    // Handle redirects
+    if (urlParams.has("success") && urlParams.get("success") === "true") {
+        const redirectTo = urlParams.get("redirectTo");
+
+        if (email) {
+            localStorage.setItem("loggedInUserEmail", email);
+            localStorage.setItem("loggedInUserType", userType);
         }
 
-        // Handle redirects
-        if (urlParams.has("success") && urlParams.get("success") === "true") {
-            const redirectTo = urlParams.get("redirectTo");
+        alert("✅ Google Login successful! Redirecting...");
+        window.location.href = redirectTo;
+    }
+};
 
-            if (email) {
-                localStorage.setItem("loggedInUserEmail", email);
-                localStorage.setItem("loggedInUserType", userType);
-            }
-
-            alert("✅ Google Login successful! Redirecting...");
-            window.location.href = redirectTo;
-        }
-    };
   </script>
 
 </body>
