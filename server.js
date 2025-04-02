@@ -136,39 +136,38 @@ app.get('/auth/google/callback',
     passport.authenticate('google', { failureRedirect: '/index' }),
     async (req, res) => {
         console.log('✅ User authenticated:', req.user);
-        req.session.userEmail = req.user.email;
-
         try {
             const userResult = await db.query("SELECT id, userType FROM users WHERE email = $1", [req.user.email]);
             const user = userResult.rows[0];
 
             if (!user) {
                 console.error("❌ User not found after authentication");
-                return res.redirect('/index.html?success=false&error=user_not_found');
+                return res.json({ success: false, message: "User not found after authentication" });
             }
 
             console.log('📌 User details from DB:', user);
 
+            // Handle user redirection based on their type
             if (user.userType.trim() === 'guest') {
                 const checkinResult = await db.query("SELECT * FROM check_ins WHERE guest_id = $1", [user.id]);
-                
                 if (checkinResult.rows.length > 0) {
                     console.log("✅ Guest checked in → Redirecting to guest services.");
-                    return res.redirect(`/guest_services.html?success=true&email=${req.user.email}`);
+                    return res.json({ success: true, redirectTo: `/guest_services.html?email=${req.user.email}` });
                 } else {
                     console.log("⚠️ Guest NOT checked in → Redirecting to check-in.");
-                    return res.redirect(`/checkin.html?success=true&email=${req.user.email}`);
+                    return res.json({ success: true, redirectTo: `/checkin.html?email=${req.user.email}` });
                 }
             } else {
                 console.log("🛑 Redirecting user as staff.");
-                return res.redirect(`/staff_selection.html?success=true&email=${req.user.email}`);
+                return res.json({ success: true, redirectTo: `/staff_selection.html?email=${req.user.email}` });
             }
         } catch (error) {
-            console.error("❌ Error fetching userType:", error);
-            res.redirect('/index.html?success=false&error=database_error');
+            console.error("❌ Error during Google OAuth callback:", error);
+            return res.json({ success: false, message: "Database error occurred during Google OAuth callback" });
         }
     }
 );
+
 
 
 
