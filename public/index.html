@@ -66,7 +66,6 @@
       if (result.success) {
           alert("✅ Login successful! Redirecting...");
           if (userType === "guest") {
-              // ✅ **Fix: Store guest email in localStorage**
               localStorage.setItem("loggedInGuestEmail", email);
           }
           else if (userType === "staff") {
@@ -90,33 +89,29 @@
     window.onload = function() {
         const urlParams = new URLSearchParams(window.location.search);
 
-        // Check for 'userType' in the query parameters and log it
+        // Extract userType and log it in the browser console
         const userType = urlParams.get("userType");
-        if (userType) {
-            console.log("User Type from URL:", userType); // This will log to the browser's console
+        const email = urlParams.get("email");
 
-            // You can also display user-specific messages based on the 'userType'
-            if (userType === "guest") {
-                console.log("Welcome, guest!");
-            } else if (userType === "staff") {
-                console.log("Welcome, staff!");
-            }
+        if (userType && email) {
+            console.log(`🔍 Google Login Successful!`);
+            console.log(`📩 Logged-in Email: ${email}`);
+            console.log(`🛠️ User Type from Server: ${userType}`);
         }
 
-        // Handling other URL parameters (success, email, etc.)
+        // Handle redirects
         if (urlParams.has("success") && urlParams.get("success") === "true") {
-            const email = urlParams.get("email");
             const redirectTo = urlParams.get("redirectTo");
 
             if (email) {
-                localStorage.setItem("loggedInGuestEmail", email);
+                localStorage.setItem("loggedInUserEmail", email);
+                localStorage.setItem("loggedInUserType", userType);
             }
-            
+
             alert("✅ Google Login successful! Redirecting...");
             window.location.href = redirectTo;
         }
     };
-
   </script>
 
 </body>
