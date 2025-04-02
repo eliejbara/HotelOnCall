@@ -27,12 +27,12 @@
         <input type="email" id="email" placeholder="Email" required>
         <input type="password" id="password" placeholder="Password" required>
         <button type="submit">Login</button>
+        <div class="google-login">
+          <button type="button" class="google-btn" id="googleLoginBtn">Login with Google</button>
+        </div>
+        <p>Don't have an account? <a href="register.html">Register</a> <span class="separator">•</span> Forgot your password? <a href="forgot_password.html">Recover</a></p>
       </form>
-      <div class="google-login">
-        <button type="button" class="google-btn" id="googleLoginBtn">Login with Google</button>
-      </div>
       <p id="message"></p>
-      <p>Don't have an account? <a href="register.html">Register</a> <span class="separator">•</span> Forgot your password? <a href="forgot_password.html">Recover</a></p>
     </div>
   </main>
 
@@ -59,14 +59,18 @@
       });
 
       const result = await response.json();
-      console.log("🔍 Server Response:", result);
+      console.log("🔍 Server Response:", result); // Debugging log
 
       document.getElementById("message").innerText = result.message;
 
       if (result.success) {
           alert("✅ Login successful! Redirecting...");
-          localStorage.setItem("loggedInUserEmail", email);
-          localStorage.setItem("loggedInUserType", userType);
+          if (userType === "guest") {
+              localStorage.setItem("loggedInGuestEmail", email);
+          }
+          else if (userType === "staff") {
+              localStorage.setItem("staffEmail", email);
+          }
           window.location.href = result.redirectTo;
       } else {
           console.log("❌ Login failed:", result.message);
@@ -81,24 +85,31 @@
         window.location.href = "/auth/google";
     });
 
-    // Handle Google OAuth redirect
+    // After Google redirects back, check if the URL contains login success
     window.onload = function() {
         const urlParams = new URLSearchParams(window.location.search);
+
+        // Extract userType and log it in the browser console
         const userType = urlParams.get("userType");
         const email = urlParams.get("email");
 
-        if (urlParams.has("success") && urlParams.get("success") === "true") {
+        if (userType && email) {
             console.log(`🔍 Google Login Successful!`);
             console.log(`📩 Logged-in Email: ${email}`);
             console.log(`🛠️ User Type from Server: ${userType}`);
-            
+        }
+
+        // Handle redirects
+        if (urlParams.has("success") && urlParams.get("success") === "true") {
+            const redirectTo = urlParams.get("redirectTo");
+
             if (email) {
                 localStorage.setItem("loggedInUserEmail", email);
                 localStorage.setItem("loggedInUserType", userType);
             }
-            
+
             alert("✅ Google Login successful! Redirecting...");
-            window.location.href = urlParams.get("redirectTo");
+            window.location.href = redirectTo;
         }
     };
   </script>
