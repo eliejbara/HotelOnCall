@@ -30,7 +30,7 @@
         <div class="google-login">
           <button type="button" class="google-btn" id="googleLoginBtn">Login with Google</button>
         </div>
-      <p>Don't have an account? <a href="register.html">Register</a> <span class="separator">•</span> Forgot your password? <a href="forgot_password.html">Recover</a></p>
+        <p>Don't have an account? <a href="register.html">Register</a> <span class="separator">•</span> Forgot your password? <a href="forgot_password.html">Recover</a></p>
       </form>
       <p id="message"></p>
     </div>
@@ -44,63 +44,78 @@
 
   <script>
     document.getElementById("loginForm").addEventListener("submit", async function(event) {
-    event.preventDefault();
-    
-    const userType = document.getElementById("userType").value;
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
+      event.preventDefault();
+      
+      const userType = document.getElementById("userType").value;
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
 
-    console.log("🔍 Attempting login with:", { email, userType });
+      console.log("🔍 Attempting login with:", { email, userType });
 
-    const response = await fetch("/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userType, email, password })
+      const response = await fetch("/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userType, email, password })
+      });
+
+      const result = await response.json();
+      console.log("🔍 Server Response:", result); // Debugging log
+
+      document.getElementById("message").innerText = result.message;
+
+      if (result.success) {
+          alert("✅ Login successful! Redirecting...");
+          if (userType === "guest") {
+              // ✅ **Fix: Store guest email in localStorage**
+              localStorage.setItem("loggedInGuestEmail", email);
+          }
+          else if (userType === "staff") {
+              localStorage.setItem("staffEmail", email);
+          }
+          window.location.href = result.redirectTo;
+      } else {
+          console.log("❌ Login failed:", result.message);
+          if (result.redirectTo) {
+              alert("⚠️ User not registered! Redirecting to Registration Page...");
+              window.location.href = result.redirectTo;
+          }
+      }
     });
 
-    const result = await response.json();
-    console.log("🔍 Server Response:", result); // Debugging log
+    document.getElementById("googleLoginBtn").addEventListener("click", function() {
+        window.location.href = "/auth/google";
+    });
 
-    document.getElementById("message").innerText = result.message;
+    // After Google redirects back, check if the URL contains login success
+    window.onload = function() {
+        const urlParams = new URLSearchParams(window.location.search);
 
-    if (result.success) {
-        alert("✅ Login successful! Redirecting...");
-        if (userType === "guest") {
-            // ✅ **Fix: Store guest email in localStorage**
-            localStorage.setItem("loggedInGuestEmail", email);
+        // Check for 'userType' in the query parameters and log it
+        const userType = urlParams.get("userType");
+        if (userType) {
+            console.log("User Type from URL:", userType); // This will log to the browser's console
+
+            // You can also display user-specific messages based on the 'userType'
+            if (userType === "guest") {
+                console.log("Welcome, guest!");
+            } else if (userType === "staff") {
+                console.log("Welcome, staff!");
+            }
         }
-        else if (userType === "staff") {
-            localStorage.setItem("staffEmail", email);
-        }
-        window.location.href = result.redirectTo;
-    } else {
-        console.log("❌ Login failed:", result.message);
-        if (result.redirectTo) {
-            alert("⚠️ User not registered! Redirecting to Registration Page...");
-            window.location.href = result.redirectTo;
-        }
-    }
-});
 
-document.getElementById("googleLoginBtn").addEventListener("click", function() {
-    window.location.href = "/auth/google";
-});
+        // Handling other URL parameters (success, email, etc.)
+        if (urlParams.has("success") && urlParams.get("success") === "true") {
+            const email = urlParams.get("email");
+            const redirectTo = urlParams.get("redirectTo");
 
-// After Google redirects back, check if the URL contains login success
-window.onload = function() {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has("success") && urlParams.get("success") === "true") {
-        const email = urlParams.get("email");
-        const redirectTo = urlParams.get("redirectTo");
-
-        if (email) {
-            localStorage.setItem("loggedInGuestEmail", email);
+            if (email) {
+                localStorage.setItem("loggedInGuestEmail", email);
+            }
+            
+            alert("✅ Google Login successful! Redirecting...");
+            window.location.href = redirectTo;
         }
-        
-        alert("✅ Google Login successful! Redirecting...");
-        window.location.href = redirectTo;
-    }
-};
+    };
 
   </script>
 
