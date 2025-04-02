@@ -132,8 +132,6 @@ app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'em
 app.get('/auth/google/callback',
     passport.authenticate('google', { failureRedirect: '/index' }),
     async (req, res) => {
-        console.log('✅ User authenticated, session:', req.session);
-
         try {
             const userResult = await db.query("SELECT id, userType FROM users WHERE email = $1", [req.user.email]);
             const user = userResult.rows[0];
@@ -143,21 +141,19 @@ app.get('/auth/google/callback',
                 return res.redirect('/index.html?success=false&error=user_not_found');
             }
 
-            console.log('📌 User details from DB:', user);
-
+            // Instead of logging, pass the message directly in the redirect URL
             if (user.userType === 'guest') {
-                // If guest, check if they've checked in
                 const checkinResult = await db.query("SELECT * FROM check_ins WHERE guest_id = $1", [user.id]);
 
                 if (checkinResult.rows.length > 0) {
-                    console.log("✅ Guest has checked in. Redirecting to guest services.");
+                    // Guest has checked in
                     return res.redirect(`/index.html?success=true&redirectTo=guest_services.html&userType=guest&email=${req.user.email}`);
                 } else {
-                    console.log("⚠️ Guest has NOT checked in. Redirecting to check-in page.");
+                    // Guest has NOT checked in
                     return res.redirect(`/index.html?success=true&redirectTo=checkin.html&userType=guest&email=${req.user.email}`);
                 }
             } else {
-                console.log("✅ Staff user found. Redirecting to staff selection.");
+                // Staff user found
                 return res.redirect(`/index.html?success=true&redirectTo=staff_selection.html&userType=staff&email=${req.user.email}`);
             }
         } catch (error) {
@@ -166,6 +162,7 @@ app.get('/auth/google/callback',
         }
     }
 );
+
 
 
 
