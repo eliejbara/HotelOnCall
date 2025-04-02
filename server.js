@@ -134,17 +134,26 @@ app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'em
 
 app.get('/auth/google/callback', 
     passport.authenticate('google', { failureRedirect: '/index' }),
-    (req, res) => {
-        console.log('User authenticated, session:', req.session);
+    async (req, res) => {
+        console.log('✅ User authenticated, session:', req.session);
         req.session.userEmail = req.user.email;
-        console.log('UserType:', req.user.userType);
-        if (req.user.userType === 'guest') {
-            res.redirect(`/index.html?success=true&redirectTo=guest_services.html&userType=guest&email=${req.user.email}`);
-        } else {
-            res.redirect(`/index.html?success=true&redirectTo=staff_selection.html&userType=staff&email=${req.user.email}`);
+
+        try {
+            // Explicitly fetch userType from the database
+            const userResult = await db.query("SELECT userType FROM users WHERE email = $1", [req.user.email]);
+            const userType = userResult.rows[0]?.userType || 'guest'; // Default to 'guest' if somehow undefined
+
+            console.log('📌 Fetched UserType from DB:', userType); // Log it in the backend
+
+            // Redirect including userType in the URL so the frontend can log it
+            res.redirect(`/index.html?success=true&redirectTo=${userType === 'guest' ? 'guest_services.html' : 'staff_selection.html'}&userType=${userType}&email=${req.user.email}`);
+        } catch (error) {
+            console.error("❌ Error fetching userType:", error);
+            res.redirect('/index.html?success=false&error=database_error');
         }
     }
 );
+
 
 
 
