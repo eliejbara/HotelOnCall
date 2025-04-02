@@ -127,14 +127,15 @@ app.get('/auth/google/callback',
     (req, res) => {
         console.log('User authenticated, session:', req.session);
         req.session.userEmail = req.user.email;
-
+        console.log('UserType:', req.user.userType);
         if (req.user.userType === 'guest') {
-            res.redirect(`/index.html?success=true&redirectTo=guest_services.html&email=${req.user.email}`);
+            res.redirect(`/index.html?success=true&redirectTo=guest_services.html&userType=guest&email=${req.user.email}`);
         } else {
-            res.redirect(`/index.html?success=true&redirectTo=staff_selection.html&email=${req.user.email}`);
+            res.redirect(`/index.html?success=true&redirectTo=staff_selection.html&userType=staff&email=${req.user.email}`);
         }
     }
 );
+
 
 
  // ** User Registration **
