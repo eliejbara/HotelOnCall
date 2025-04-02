@@ -43,6 +43,7 @@
   </footer>
 
   <script>
+    // Handle the form submission for normal login
     document.getElementById("loginForm").addEventListener("submit", async function(event) {
       event.preventDefault();
       
@@ -81,6 +82,7 @@
       }
     });
 
+    // Handle Google login button click
     document.getElementById("googleLoginBtn").addEventListener("click", function() {
         window.location.href = "/auth/google";
     });
@@ -93,14 +95,28 @@
         const userType = urlParams.get("userType");
         const email = urlParams.get("email");
 
-        if (userType && email) {
-            console.log(`🔍 Google Login Successful!`);
-            console.log(`📩 Logged-in Email: ${email}`);
-            console.log(`🛠️ User Type from Server: ${userType}`);
+        // Display appropriate feedback based on URL parameters
+        if (urlParams.has("success")) {
+            const success = urlParams.get("success");
+            const redirectTo = urlParams.get("redirectTo");
+
+            if (success === "true") {
+                if (userType === "guest") {
+                    // If guest, show relevant information
+                    document.body.innerHTML = `<h1>Welcome Guest!</h1><p>Your check-in status: ${redirectTo === 'checkin.html' ? 'Not checked in yet. Please complete your check-in.' : 'Checked in. Enjoy your stay!'}</p>`;
+                } else if (userType === "staff") {
+                    // If staff, show relevant information
+                    document.body.innerHTML = `<h1>Welcome Staff!</h1><p>You can now proceed to the staff selection page.</p>`;
+                }
+            } else if (urlParams.has("error")) {
+                // Handle errors
+                const error = urlParams.get("error");
+                document.body.innerHTML = `<h1>Error: ${error}</h1><p>Please try again later.</p>`;
+            }
         }
 
-        // Handle redirects
-        if (urlParams.has("success") && urlParams.get("success") === "true") {
+        // Additional check for Google login success and redirect
+        if (urlParams.get("success") === "true") {
             const redirectTo = urlParams.get("redirectTo");
 
             if (email) {
