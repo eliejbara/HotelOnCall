@@ -82,52 +82,61 @@ app.use(passport.session());
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: "https://hotel-on-call.vercel.app/auth/google/callback" 
-  },
-  async (accessToken, refreshToken, profile, done) => {
+    callbackURL: "https://hotel-on-call.vercel.app/auth/google/callback"
+},
+async (accessToken, refreshToken, profile, done) => {
     try {
-      const email = profile.emails[0].value;
+        const email = profile.emails[0].value;
 
-      // Query the database for an existing user
-      const userCheck = await db.query("SELECT * FROM users WHERE email = $1", [email]);
+        // Query the database for an existing user
+        const userCheck = await db.query("SELECT * FROM users WHERE email = $1", [email]);
+        
+        if (userCheck.rows.length > 0) {
+            // Existing user found
+            const user = userCheck.rows[0];
+            
+            // Debugging log to confirm what's being retrieved from the DB
+            console.log("🔍 User retrieved from DB:", user);
+            console.log("🛠️ userType in DB:", user.userType); // Check userType before returning
 
-      if (userCheck.rows.length > 0) {
-        // Existing user found, log user details
-        console.log("✅ Existing user found in DB:", userCheck.rows[0]); // Log existing user
-        // Send user type info in session or redirect with user type
-        return done(null, userCheck.rows[0]); // Existing user
-      } else {
-        // Insert new user with 'guest' as the default userType
-        const newUser = await db.query(
-          "INSERT INTO users (email, password, userType) VALUES ($1, $2, $3) RETURNING *",
-          [email, '', 'guest']
-        );
+            // If the user has 'staff', but you want to ensure the userType is correct, update it here
+            if (user.userType === 'staff') {
+                console.log("⚠️ User is a staff member. Returning staff.");
+            } else {
+                console.log("✅ User is a guest.");
+            }
 
-        // Log new user details
-        console.log("✅ New user inserted into DB:", newUser.rows[0]); // Log newly inserted user with 'guest' type
-        // Send user type info in session or redirect with user type
-        return done(null, newUser.rows[0]); // Return new user
-      }
+            return done(null, user); // Existing user with correct userType
+        } else {
+            // Insert new user with 'guest' as default userType
+            const newUser = await db.query(
+                "INSERT INTO users (email, password, userType) VALUES ($1, $2, $3) RETURNING *",
+                [email, '', 'guest'] // Default type as 'guest'
+            );
+            console.log("✅ New user inserted:", newUser.rows[0]);
+            return done(null, newUser.rows[0]); // Newly inserted user
+        }
     } catch (error) {
-      console.error("❌ Error during user authentication:", error); // Log any errors
-      return done(error);
+        console.error("❌ Error during user authentication:", error);
+        return done(error);
     }
-  }
-));
+}));
+
 
 
 passport.serializeUser((user, done) => {
-    done(null, user.email);
+    done(null, user.email); // Storing email in session
 });
 
 passport.deserializeUser(async (email, done) => {
     try {
         const user = await db.query("SELECT * FROM users WHERE email = $1", [email]);
-        done(null, user.rows[0]);
+        done(null, user.rows[0]); // Returning the user object with userType
     } catch (error) {
         done(error);
     }
 });
+
 
 // Google Auth Routes
 app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
@@ -139,7 +148,7 @@ app.get('/auth/google/callback',
         req.session.userEmail = req.user.email;
 
         try {
-            // Fetch user details
+            // Fetch user details from the database
             const userResult = await db.query("SELECT id, userType FROM users WHERE email = $1", [req.user.email]);
             const user = userResult.rows[0];
 
@@ -150,8 +159,9 @@ app.get('/auth/google/callback',
 
             console.log('📌 User details:', user);
 
+            // Handle redirection based on userType
             if (user.userType === 'guest') {
-                // Check if guest has checked in
+                // Check if the guest has checked in
                 const checkinResult = await db.query("SELECT * FROM check_ins WHERE guest_id = $1", [user.id]);
 
                 if (checkinResult.rows.length > 0) {
@@ -163,6 +173,7 @@ app.get('/auth/google/callback',
                 }
             } else {
                 // Redirect staff to staff selection page
+                console.log("✅ Staff user. Redirecting to staff selection.");
                 return res.redirect(`/index.html?success=true&redirectTo=staff_selection.html&userType=staff&email=${req.user.email}`);
             }
         } catch (error) {
@@ -171,6 +182,7 @@ app.get('/auth/google/callback',
         }
     }
 );
+
 
 
 
