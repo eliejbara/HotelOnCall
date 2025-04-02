@@ -82,35 +82,38 @@ app.use(passport.session());
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: "https://hotel-on-call.vercel.app/auth/google/callback"
-},
-async (accessToken, refreshToken, profile, done) => {
+    callbackURL: "https://hotel-on-call.vercel.app/auth/google/callback" 
+  },
+  async (accessToken, refreshToken, profile, done) => {
     try {
-        const email = profile.emails[0].value;
+      const email = profile.emails[0].value;
 
-        // Query the database for an existing user
-        const userCheck = await db.query("SELECT * FROM users WHERE email = $1", [email]);
+      // Query the database for an existing user
+      const userCheck = await db.query("SELECT * FROM users WHERE email = $1", [email]);
 
-        if (userCheck.rows.length > 0) {
-            // Existing user found
-            const user = userCheck.rows[0];
-            console.log("✅ Existing user found in DB:", user);
-            return done(null, user); // Existing user with userType
-        } else {
-            // Insert new user with 'guest' as default userType
-            const newUser = await db.query(
-                "INSERT INTO users (email, password, userType) VALUES ($1, $2, $3) RETURNING *",
-                [email, '', 'guest'] // Default type as 'guest'
-            );
-            console.log("✅ New user inserted into DB:", newUser.rows[0]);
-            return done(null, newUser.rows[0]); // Newly inserted user
-        }
+      if (userCheck.rows.length > 0) {
+        // Existing user found, log user details
+        console.log("✅ Existing user found in DB:", userCheck.rows[0]); // Log existing user
+        // Send user type info in session or redirect with user type
+        return done(null, userCheck.rows[0]); // Existing user
+      } else {
+        // Insert new user with 'guest' as the default userType
+        const newUser = await db.query(
+          "INSERT INTO users (email, password, userType) VALUES ($1, $2, $3) RETURNING *",
+          [email, '', 'guest']
+        );
+
+        // Log new user details
+        console.log("✅ New user inserted into DB:", newUser.rows[0]); // Log newly inserted user with 'guest' type
+        // Send user type info in session or redirect with user type
+        return done(null, newUser.rows[0]); // Return new user
+      }
     } catch (error) {
-        console.error("❌ Error during user authentication:", error);
-        return done(error);
+      console.error("❌ Error during user authentication:", error); // Log any errors
+      return done(error);
     }
-}));
-
+  }
+));
 
 
 passport.serializeUser((user, done) => {
@@ -129,10 +132,14 @@ passport.deserializeUser(async (email, done) => {
 // Google Auth Routes
 app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
-app.get('/auth/google/callback',
+app.get('/auth/google/callback', 
     passport.authenticate('google', { failureRedirect: '/index' }),
     async (req, res) => {
+        console.log('✅ User authenticated, session:', req.session);
+        req.session.userEmail = req.user.email;
+
         try {
+            // Fetch user details
             const userResult = await db.query("SELECT id, userType FROM users WHERE email = $1", [req.user.email]);
             const user = userResult.rows[0];
 
@@ -141,29 +148,29 @@ app.get('/auth/google/callback',
                 return res.redirect('/index.html?success=false&error=user_not_found');
             }
 
-            // Instead of logging, pass the message directly in the redirect URL
+            console.log('📌 User details:', user);
+
             if (user.userType === 'guest') {
+                // Check if guest has checked in
                 const checkinResult = await db.query("SELECT * FROM check_ins WHERE guest_id = $1", [user.id]);
 
                 if (checkinResult.rows.length > 0) {
-                    // Guest has checked in
+                    console.log("✅ Guest has checked in. Redirecting to guest services.");
                     return res.redirect(`/index.html?success=true&redirectTo=guest_services.html&userType=guest&email=${req.user.email}`);
                 } else {
-                    // Guest has NOT checked in
+                    console.log("⚠️ Guest has NOT checked in. Redirecting to check-in page.");
                     return res.redirect(`/index.html?success=true&redirectTo=checkin.html&userType=guest&email=${req.user.email}`);
                 }
             } else {
-                // Staff user found
+                // Redirect staff to staff selection page
                 return res.redirect(`/index.html?success=true&redirectTo=staff_selection.html&userType=staff&email=${req.user.email}`);
             }
         } catch (error) {
             console.error("❌ Error fetching userType:", error);
-            return res.redirect('/index.html?success=false&error=database_error');
+            res.redirect('/index.html?success=false&error=database_error');
         }
     }
 );
-
-
 
 
 
