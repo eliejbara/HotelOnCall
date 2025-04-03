@@ -67,9 +67,11 @@
           alert("✅ Login successful! Redirecting...");
           if (userType === "guest") {
               localStorage.setItem("email", email); // Updated to use "email"
+              localStorage.setItem("loggedInGuestEmail", email);
           }
           else if (userType === "staff") {
               localStorage.setItem("email", email); // Updated to use "email"
+              localStorage.setItem("staffEmail", email);
           }
           window.location.href = result.redirectTo;
       } else {
@@ -106,6 +108,12 @@
                 // ✅ Save userType in localStorage
                 localStorage.setItem("userType", data.userType);
                 localStorage.setItem("email", email); // Updated to use "email"
+                if (userType === "guest") {
+                  localStorage.setItem("loggedInGuestEmail", email);
+                }
+                else if (userType === "staff") {
+                  localStorage.setItem("staffEmail", email);
+                }
 
                 console.log(`💾 Saved userType: ${data.userType} in localStorage`);
 
