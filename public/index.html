@@ -103,6 +103,12 @@
             if (data.success) {
                 console.log(`🛠️ User Type from Server: ${data.userType}`);
                 
+                // ✅ Save userType in localStorage
+                localStorage.setItem("userType", data.userType);
+                localStorage.setItem("loggedInEmail", email);
+
+                console.log(`💾 Saved userType: ${data.userType} in localStorage`);
+
                 // ✅ Redirect the user if `redirectTo` is present
                 if (redirectTo) {
                     console.log(`🔀 Redirecting user to: ${redirectTo}`);
@@ -116,6 +122,7 @@
         }
     }
 };
+
 
 
   </script>
