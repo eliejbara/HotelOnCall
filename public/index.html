@@ -86,32 +86,31 @@
     });
 
     // After Google redirects back, check if the URL contains login success
-    window.onload = function() {
-        const urlParams = new URLSearchParams(window.location.search);
 
-        // Extract userType and log it in the browser console
-        const userType = urlParams.get("userType");
-        const email = urlParams.get("email");
+    window.onload = async function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const email = urlParams.get("email");
 
-        if (userType && email) {
-            console.log(`🔍 Google Login Successful!`);
-            console.log(`📩 Logged-in Email: ${email}`);
-            console.log(`🛠️ User Type from Server: ${userType}`);
-        }
+    if (email) {
+        console.log(`🔍 Google Login Successful!`);
+        console.log(`📩 Logged-in Email: ${email}`);
 
-        // Handle redirects
-        if (urlParams.has("success") && urlParams.get("success") === "true") {
-            const redirectTo = urlParams.get("redirectTo");
-
-            if (email) {
-                localStorage.setItem("loggedInUserEmail", email);
-                localStorage.setItem("loggedInUserType", userType);
+        try {
+            // Fetch userType from server
+            const response = await fetch(`/getUserType?email=${email}`);
+            const data = await response.json();
+            
+            if (data.success) {
+                console.log(`🛠️ User Type from Server: ${data.userType}`);
+            } else {
+                console.error(`❌ Error fetching userType: ${data.message}`);
             }
-
-            alert("✅ Google Login successful! Redirecting...");
-            window.location.href = redirectTo;
+        } catch (error) {
+            console.error(`❌ Failed to fetch userType:`, error);
         }
-    };
+    }
+};
+
   </script>
 
 </body>
