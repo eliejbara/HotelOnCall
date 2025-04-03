@@ -86,10 +86,10 @@
     });
 
     // After Google redirects back, check if the URL contains login success
-
     window.onload = async function() {
     const urlParams = new URLSearchParams(window.location.search);
     const email = urlParams.get("email");
+    const redirectTo = urlParams.get("redirectTo"); // Get the redirect target
 
     if (email) {
         console.log(`🔍 Google Login Successful!`);
@@ -102,6 +102,12 @@
             
             if (data.success) {
                 console.log(`🛠️ User Type from Server: ${data.userType}`);
+                
+                // ✅ Redirect the user if `redirectTo` is present
+                if (redirectTo) {
+                    console.log(`🔀 Redirecting user to: ${redirectTo}`);
+                    window.location.href = redirectTo;
+                }
             } else {
                 console.error(`❌ Error fetching userType: ${data.message}`);
             }
@@ -110,6 +116,7 @@
         }
     }
 };
+
 
   </script>
 
