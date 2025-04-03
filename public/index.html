@@ -43,7 +43,8 @@
   </footer>
 
 
-  <script>
+<script>
+  // Handle normal login form submission
   document.getElementById("loginForm").addEventListener("submit", async function(event) {
     event.preventDefault();
     
@@ -66,8 +67,8 @@
 
     if (result.success) {
         alert("✅ Login successful! Redirecting...");
-        localStorage.setItem("email", email); // Updated to use "email"
-        window.location.href = result.redirectTo; // Use redirectTo from the server's response
+        localStorage.setItem("email", email); // Store email in localStorage
+        window.location.href = result.redirectTo; // Use the redirect URL from the server's response
     } else {
         console.log("❌ Login failed:", result.message);
         if (result.redirectTo) {
@@ -77,37 +78,38 @@
     }
   });
 
+  // Handle Google login button click
   document.getElementById("googleLoginBtn").addEventListener("click", function() {
-      window.location.href = "/auth/google"; // Redirect to Google OAuth
+    window.location.href = "/auth/google"; // Redirect to Google OAuth
   });
 
-  // After Google redirects back, check if the URL contains login success
+  // After Google redirects back, handle redirection based on userType and check-in status
   window.onload = async function() {
     const urlParams = new URLSearchParams(window.location.search);
     const email = urlParams.get("email");
-    const redirectTo = urlParams.get("redirectTo"); // Get the redirect target
+    const redirectTo = urlParams.get("redirectTo"); // Get the redirection target
 
     if (email) {
         console.log(`🔍 Google Login Successful!`);
         console.log(`📩 Logged-in Email: ${email}`);
 
         try {
-            // Fetch userType from the server using the logged-in email
+            // Fetch userType from the server
             const response = await fetch(`/getUserType?email=${email}`);
             const data = await response.json();
-
+            
             if (data.success) {
                 console.log(`🛠️ User Type from Server: ${data.userType}`);
-
+                
                 // Save userType and email in localStorage
                 localStorage.setItem("userType", data.userType);
-                localStorage.setItem("email", email); // Save the email for further use
+                localStorage.setItem("email", email);
 
                 console.log(`💾 Saved userType: ${data.userType} in localStorage`);
 
-                // Use the same redirect mechanism like normal login
+                // Check the user type and redirect accordingly
                 if (data.userType === 'guest') {
-                    // Check if guest has already checked in
+                    // Check if guest has checked in
                     const checkinResult = await fetch(`/checkinStatus?email=${email}`);
                     const checkinData = await checkinResult.json();
 
@@ -119,9 +121,8 @@
                         window.location.href = "/checkin.html"; // Redirect to check-in page
                     }
                 } else {
-                    // For staff or other types, redirect to the appropriate page
                     console.log("✅ Staff or manager user. Redirecting to staff selection.");
-                    window.location.href = "/staff_selection.html"; // Adjust this based on your requirements
+                    window.location.href = "/staff_selection.html"; // Redirect to staff selection
                 }
             } else {
                 console.error(`❌ Error fetching userType: ${data.message}`);
@@ -133,6 +134,7 @@
     }
 };
 </script>
+
 
 
 </body>
