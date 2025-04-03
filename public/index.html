@@ -66,10 +66,10 @@
       if (result.success) {
           alert("✅ Login successful! Redirecting...");
           if (userType === "guest") {
-              localStorage.setItem("loggedInGuestEmail", email);
+              localStorage.setItem("email", email); // Updated to use "email"
           }
           else if (userType === "staff") {
-              localStorage.setItem("staffEmail", email);
+              localStorage.setItem("email", email); // Updated to use "email"
           }
           window.location.href = result.redirectTo;
       } else {
@@ -105,7 +105,7 @@
                 
                 // ✅ Save userType in localStorage
                 localStorage.setItem("userType", data.userType);
-                localStorage.setItem("loggedInEmail", email);
+                localStorage.setItem("email", email); // Updated to use "email"
 
                 console.log(`💾 Saved userType: ${data.userType} in localStorage`);
 
@@ -122,9 +122,6 @@
         }
     }
 };
-
-
-
   </script>
 
 </body>
