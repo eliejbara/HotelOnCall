@@ -148,13 +148,13 @@ app.get('/auth/google/callback',
         req.session.userEmail = req.user.email;
 
         try {
-            // Call /getUserType endpoint to get the userType by email
+            // Call /getUserType endpoint internally to get userType by email
             const response = await fetch(`https://hotel-on-call.vercel.app/getUserType?email=${req.user.email}`);
             const data = await response.json();
 
             if (!data.success) {
                 console.error("❌ Error fetching userType from /getUserType:", data.message);
-                return res.json({ success: false, message: "User not found!", redirectTo: "/index.html" });
+                return res.redirect('/index.html?success=false&error=user_not_found');
             }
 
             // Save userType to session from /getUserType response
@@ -167,26 +167,25 @@ app.get('/auth/google/callback',
                 const checkinResult = await db.query("SELECT * FROM check_ins WHERE guest_id = $1", [req.user.id]);
 
                 if (checkinResult.rows.length > 0) {
-                    console.log("✅ Guest has checked in. Returning guest services URL.");
+                    console.log("✅ Guest has checked in. Redirecting to guest services.");
                     redirectUrl = "/guest_services.html";
                 } else {
-                    console.log("⚠️ Guest has NOT checked in. Returning check-in page URL.");
+                    console.log("⚠️ Guest has NOT checked in. Redirecting to check-in page.");
                     redirectUrl = "/checkin.html";
                 }
             } else {
-                console.log("✅ Staff user. Returning staff selection page URL.");
+                console.log("✅ Staff user. Redirecting to staff selection.");
                 redirectUrl = "/staff_selection.html";
             }
 
-            // Send back the redirection URL along with success message
-            return res.json({ success: true, message: "Login successful!", redirectTo: redirectUrl, email: req.user.email });
+            // Pass userType and email in the URL for client-side storage
+            return res.redirect(`/index.html?success=true&redirectTo=${redirectUrl}&userType=${data.userType}&email=${req.user.email}`);
         } catch (error) {
             console.error("❌ Error fetching userType:", error);
-            return res.json({ success: false, message: "Error fetching userType", redirectTo: "/index.html" });
+            res.redirect('/index.html?success=false&error=database_error');
         }
     }
 );
-
 
 
 
