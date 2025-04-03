@@ -148,7 +148,7 @@ app.get('/auth/google/callback',
         req.session.userEmail = req.user.email;
 
         try {
-            // Call /getUserType endpoint internally to get userType by email
+            // Call /getUserType endpoint to get the userType by email
             const response = await fetch(`https://hotel-on-call.vercel.app/getUserType?email=${req.user.email}`);
             const data = await response.json();
 
@@ -178,15 +178,15 @@ app.get('/auth/google/callback',
                 redirectUrl = "/staff_selection.html";
             }
 
-            // **✅ Return the response in the same way as the login route with JSON**
+            // Send back the redirection URL along with success message
             return res.json({ success: true, message: "Login successful!", redirectTo: redirectUrl, email: req.user.email });
-
         } catch (error) {
             console.error("❌ Error fetching userType:", error);
             return res.json({ success: false, message: "Error fetching userType", redirectTo: "/index.html" });
         }
     }
 );
+
 
 
 
