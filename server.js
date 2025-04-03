@@ -154,7 +154,7 @@ app.get('/auth/google/callback',
 
             if (!data.success) {
                 console.error("❌ Error fetching userType from /getUserType:", data.message);
-                return res.redirect('/index.html?success=false&error=user_not_found');
+                return res.json({ success: false, message: "User not found!", redirectTo: "/index.html" });
             }
 
             // Save userType to session from /getUserType response
@@ -167,22 +167,23 @@ app.get('/auth/google/callback',
                 const checkinResult = await db.query("SELECT * FROM check_ins WHERE guest_id = $1", [req.user.id]);
 
                 if (checkinResult.rows.length > 0) {
-                    console.log("✅ Guest has checked in. Redirecting to guest services.");
+                    console.log("✅ Guest has checked in. Returning guest services URL.");
                     redirectUrl = "/guest_services.html";
                 } else {
-                    console.log("⚠️ Guest has NOT checked in. Redirecting to check-in page.");
+                    console.log("⚠️ Guest has NOT checked in. Returning check-in page URL.");
                     redirectUrl = "/checkin.html";
                 }
             } else {
-                console.log("✅ Staff user. Redirecting to staff selection.");
+                console.log("✅ Staff user. Returning staff selection page URL.");
                 redirectUrl = "/staff_selection.html";
             }
 
-            // Pass userType and email in the URL for client-side storage
-            return res.redirect(`/index.html?success=true&redirectTo=${redirectUrl}&userType=${data.userType}&email=${req.user.email}`);
+            // **✅ Return the response in the same way as the login route with JSON**
+            return res.json({ success: true, message: "Login successful!", redirectTo: redirectUrl, email: req.user.email });
+
         } catch (error) {
             console.error("❌ Error fetching userType:", error);
-            res.redirect('/index.html?success=false&error=database_error');
+            return res.json({ success: false, message: "Error fetching userType", redirectTo: "/index.html" });
         }
     }
 );
