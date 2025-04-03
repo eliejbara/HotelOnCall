@@ -110,9 +110,11 @@
                 localStorage.setItem("email", email); // Updated to use "email"
                 if (userType === "guest") {
                   localStorage.setItem("loggedInGuestEmail", email);
+                  localStorage.setItem("email", email);
                 }
                 else if (userType === "staff") {
                   localStorage.setItem("staffEmail", email);
+                  localStorage.setItem("email", email);
                 }
 
                 console.log(`💾 Saved userType: ${data.userType} in localStorage`);
