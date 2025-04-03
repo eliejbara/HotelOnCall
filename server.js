@@ -145,8 +145,10 @@ app.get('/auth/google/callback',
     passport.authenticate('google', { failureRedirect: '/index' }),
     async (req, res) => {
         console.log('✅ User authenticated, session:', req.session);
-        req.session.userEmail = req.user.email;
 
+        // Clear previous session user data and update session with the new user
+        req.session.userEmail = req.user.email;
+        
         try {
             // Call /getUserType endpoint internally to get userType by email
             const response = await fetch(`https://hotel-on-call.vercel.app/getUserType?email=${req.user.email}`);
@@ -160,12 +162,13 @@ app.get('/auth/google/callback',
             // Save userType to session from /getUserType response
             req.session.userType = data.userType;
 
+            // Determine redirect based on userType
             let redirectUrl = '';
 
             if (data.userType === 'guest') {
                 // Check if the guest has checked in
                 const checkinResult = await db.query("SELECT * FROM check_ins WHERE guest_id = $1", [req.user.id]);
-
+                
                 if (checkinResult.rows.length > 0) {
                     console.log("✅ Guest has checked in. Redirecting to guest services.");
                     redirectUrl = "/guest_services.html";
@@ -182,10 +185,11 @@ app.get('/auth/google/callback',
             return res.redirect(`/index.html?success=true&redirectTo=${redirectUrl}&userType=${data.userType}&email=${req.user.email}`);
         } catch (error) {
             console.error("❌ Error fetching userType:", error);
-            res.redirect('/index.html?success=false&error=database_error');
+            return res.redirect('/index.html?success=false&error=database_error');
         }
     }
 );
+
 
 
 
