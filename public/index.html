@@ -42,100 +42,87 @@
     <p>ehj00@mail.aub.edu | nwd06@mail.aub.edu | ahn25@mail.aub.edu | kms36@mail.aub.edu | rmt29@mail.aub.edu</p>
   </footer>
 
+  <script>
+    document.getElementById("loginForm").addEventListener("submit", async function(event) {
+      event.preventDefault();
+      
+      const userType = document.getElementById("userType").value;
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
 
-<script>
-  // Handle normal login form submission
-  document.getElementById("loginForm").addEventListener("submit", async function(event) {
-    event.preventDefault();
-    
-    const userType = document.getElementById("userType").value;
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
+      console.log("🔍 Attempting login with:", { email, userType });
 
-    console.log("🔍 Attempting login with:", { email, userType });
+      const response = await fetch("/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userType, email, password })
+      });
 
-    const response = await fetch("/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userType, email, password })
+      const result = await response.json();
+      console.log("🔍 Server Response:", result); // Debugging log
+
+      document.getElementById("message").innerText = result.message;
+
+      if (result.success) {
+          alert("✅ Login successful! Redirecting...");
+          if (userType === "guest") {
+              localStorage.setItem("email", email); // Updated to use "email"
+          }
+          else if (userType === "staff") {
+              localStorage.setItem("email", email); // Updated to use "email"
+          }
+          window.location.href = result.redirectTo;
+      } else {
+          console.log("❌ Login failed:", result.message);
+          if (result.redirectTo) {
+              alert("⚠️ User not registered! Redirecting to Registration Page...");
+              window.location.href = result.redirectTo;
+          }
+      }
     });
 
-    const result = await response.json();
-    console.log("🔍 Server Response:", result); // Debugging log
+    document.getElementById("googleLoginBtn").addEventListener("click", function() {
+        window.location.href = "/auth/google";
+    });
 
-    document.getElementById("message").innerText = result.message;
-
-    if (result.success) {
-        alert("✅ Login successful! Redirecting...");
-        localStorage.setItem("email", email); // Store email in localStorage
-        window.location.href = result.redirectTo; // Use the redirect URL from the server's response
-    } else {
-        console.log("❌ Login failed:", result.message);
-        if (result.redirectTo) {
-            alert("⚠️ User not registered! Redirecting to Registration Page...");
-            window.location.href = result.redirectTo;
-        }
-    }
-  });
-
-  // Handle Google login button click
-  document.getElementById("googleLoginBtn").addEventListener("click", function() {
-    window.location.href = "/auth/google"; // Redirect to Google OAuth
-  });
-
-  // After Google redirects back, handle redirection based on userType and check-in status
-  window.onload = async function() {
+    // After Google redirects back, check if the URL contains login success
+    window.onload = async function() {
     const urlParams = new URLSearchParams(window.location.search);
     const email = urlParams.get("email");
-    const redirectTo = urlParams.get("redirectTo"); // Get the redirection target
+    const redirectTo = urlParams.get("redirectTo"); // Get the redirect target
 
     if (email) {
         console.log(`🔍 Google Login Successful!`);
         console.log(`📩 Logged-in Email: ${email}`);
 
         try {
-            // Fetch userType from the server
+            // Fetch userType from server
             const response = await fetch(`/getUserType?email=${email}`);
             const data = await response.json();
             
             if (data.success) {
                 console.log(`🛠️ User Type from Server: ${data.userType}`);
                 
-                // Save userType and email in localStorage
+                // ✅ Save userType in localStorage
                 localStorage.setItem("userType", data.userType);
-                localStorage.setItem("email", email);
+                localStorage.setItem("email", email); // Updated to use "email"
 
                 console.log(`💾 Saved userType: ${data.userType} in localStorage`);
 
-                // Check the user type and redirect accordingly
-                if (data.userType === 'guest') {
-                    // Check if guest has checked in
-                    const checkinResult = await fetch(`/checkinStatus?email=${email}`);
-                    const checkinData = await checkinResult.json();
-
-                    if (checkinData.success && checkinData.checkedIn) {
-                        console.log("✅ Guest has checked in. Redirecting to guest services.");
-                        window.location.href = "/guest_services.html"; // Redirect to guest services
-                    } else {
-                        console.log("⚠️ Guest has NOT checked in. Redirecting to check-in page.");
-                        window.location.href = "/checkin.html"; // Redirect to check-in page
-                    }
-                } else {
-                    console.log("✅ Staff or manager user. Redirecting to staff selection.");
-                    window.location.href = "/staff_selection.html"; // Redirect to staff selection
+                // ✅ Redirect the user if `redirectTo` is present
+                if (redirectTo) {
+                    console.log(`🔀 Redirecting user to: ${redirectTo}`);
+                    window.location.href = redirectTo;
                 }
             } else {
                 console.error(`❌ Error fetching userType: ${data.message}`);
-                alert(`❌ Failed to fetch user type. Please try again.`);
             }
         } catch (error) {
             console.error(`❌ Failed to fetch userType:`, error);
         }
     }
 };
-</script>
-
-
+  </script>
 
 </body>
 </html>
