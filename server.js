@@ -159,29 +159,36 @@ app.get('/auth/google/callback',
 
             console.log('📌 User details:', user);
 
-            // Handle redirection based on userType
+            // **✅ Save userType in session storage**
+            req.session.userType = user.userType;
+
+            let redirectUrl = '';
+
             if (user.userType === 'guest') {
                 // Check if the guest has checked in
                 const checkinResult = await db.query("SELECT * FROM check_ins WHERE guest_id = $1", [user.id]);
 
                 if (checkinResult.rows.length > 0) {
                     console.log("✅ Guest has checked in. Redirecting to guest services.");
-                    return res.redirect(`/index.html?success=true&redirectTo=guest_services.html&userType=guest&email=${req.user.email}`);
+                    redirectUrl = "/guest_services.html";
                 } else {
                     console.log("⚠️ Guest has NOT checked in. Redirecting to check-in page.");
-                    return res.redirect(`/index.html?success=true&redirectTo=checkin.html&userType=guest&email=${req.user.email}`);
+                    redirectUrl = "/checkin.html";
                 }
             } else {
-                // Redirect staff to staff selection page
                 console.log("✅ Staff user. Redirecting to staff selection.");
-                return res.redirect(`/index.html?success=true&redirectTo=staff_selection.html&userType=staff&email=${req.user.email}`);
+                redirectUrl = "/staff_selection.html";
             }
+
+            // **✅ Pass userType and email in the URL for client-side storage**
+            return res.redirect(`/index.html?success=true&redirectTo=${redirectUrl}&userType=${user.userType}&email=${req.user.email}`);
         } catch (error) {
             console.error("❌ Error fetching userType:", error);
             res.redirect('/index.html?success=false&error=database_error');
         }
     }
 );
+
 
 
 app.get("/getUserType", async (req, res) => {
