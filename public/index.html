@@ -85,10 +85,10 @@
 
   document.getElementById("googleLoginBtn").addEventListener("click", function() {
     window.location.href = "/auth/google";
-  });
+});
 
-  // After Google redirects back, check if the URL contains login success
-  window.onload = async function() {
+// After Google redirects back, check if the URL contains login success
+window.onload = async function() {
     const urlParams = new URLSearchParams(window.location.search);
     const email = urlParams.get("email");
     const redirectTo = urlParams.get("redirectTo");
@@ -122,11 +122,10 @@
 
                 console.log(`💾 Saved userType: ${userType} in localStorage`);
 
-                // Redirect the user if `redirectTo` is present
-                if (redirectTo) {
-                    console.log(`🔀 Redirecting user to: ${redirectTo}`);
-                    window.location.href = redirectTo;
-                }
+                // Redirect the user to the appropriate page based on userType
+                let finalRedirectUrl = redirectTo || getRedirectUrlForUserType(userType);
+                console.log(`🔀 Redirecting user to: ${finalRedirectUrl}`);
+                window.location.href = finalRedirectUrl;
             } else {
                 console.error(`❌ Error fetching userType: ${data.message}`);
             }
@@ -137,6 +136,21 @@
         console.log("❌ No email in the URL query parameters.");
     }
 };
+
+// Helper function to get the redirection URL based on user type
+function getRedirectUrlForUserType(userType) {
+    switch (userType) {
+        case 'guest':
+            return '/checkin.html';  // Redirect to check-in if the guest is not checked in
+        case 'staff':
+            return '/staff_selection.html';  // Redirect to staff selection
+        case 'manager':
+            return '/manager_dashboard.html';  // Redirect to manager dashboard
+        default:
+            return '/index.html';  // Default redirect
+    }
+}
+
 
 </script>
 
