@@ -122,10 +122,12 @@ window.onload = async function() {
 
                 console.log(`💾 Saved userType: ${userType} in localStorage`);
 
-                // Redirect the user to the appropriate page based on userType
-                let finalRedirectUrl = redirectTo || getRedirectUrlForUserType(userType);
-                console.log(`🔀 Redirecting user to: ${finalRedirectUrl}`);
-                window.location.href = finalRedirectUrl;
+                
+              // Redirect the user to the appropriate page based on userType
+              const finalRedirectUrl = getRedirectUrlForUserType(userType);
+              console.log(`🔀 Redirecting user to: ${finalRedirectUrl}`);
+              window.location.href = finalRedirectUrl;
+
             } else {
                 console.error(`❌ Error fetching userType: ${data.message}`);
             }
