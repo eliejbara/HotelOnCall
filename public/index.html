@@ -42,57 +42,60 @@
     <p>ehj00@mail.aub.edu | nwd06@mail.aub.edu | ahn25@mail.aub.edu | kms36@mail.aub.edu | rmt29@mail.aub.edu</p>
   </footer>
 
-  <script>
-    document.getElementById("loginForm").addEventListener("submit", async function(event) {
-      event.preventDefault();
-      
-      const userType = document.getElementById("userType").value;
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
+<script>
+  document.getElementById("loginForm").addEventListener("submit", async function(event) {
+    event.preventDefault();
+    
+    const userType = document.getElementById("userType").value;
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
 
-      console.log("🔍 Attempting login with:", { email, userType });
+    console.log("🔍 Attempting login with:", { email, userType });
 
-      const response = await fetch("/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userType, email, password })
-      });
-
-      const result = await response.json();
-      console.log("🔍 Server Response:", result); // Debugging log
-
-      document.getElementById("message").innerText = result.message;
-
-      if (result.success) {
-          alert("✅ Login successful! Redirecting...");
-          if (userType === "guest") {
-              localStorage.setItem("email", email); // Updated to use "email"
-              localStorage.setItem("loggedInGuestEmail", email);
-          }
-          else if (userType === "staff") {
-              localStorage.setItem("email", email); // Updated to use "email"
-              localStorage.setItem("staffEmail", email);
-          }
-          window.location.href = result.redirectTo;
-      } else {
-          console.log("❌ Login failed:", result.message);
-          if (result.redirectTo) {
-              alert("⚠️ User not registered! Redirecting to Registration Page...");
-              window.location.href = result.redirectTo;
-          }
-      }
+    const response = await fetch("/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userType, email, password })
     });
 
-    document.getElementById("googleLoginBtn").addEventListener("click", function() {
-        window.location.href = "/auth/google";
-    });
+    const result = await response.json();
+    console.log("🔍 Server Response:", result); // Debugging log
 
-    // After Google redirects back, check if the URL contains login success
-    window.onload = async function() {
+    document.getElementById("message").innerText = result.message;
+
+    if (result.success) {
+        alert("✅ Login successful! Redirecting...");
+        if (userType === "guest") {
+            localStorage.setItem("email", email); // Updated to use "email"
+            localStorage.setItem("loggedInGuestEmail", email);
+        }
+        else if (userType === "staff") {
+            localStorage.setItem("email", email); // Updated to use "email"
+            localStorage.setItem("staffEmail", email);
+        }
+        window.location.href = result.redirectTo;
+    } else {
+        console.log("❌ Login failed:", result.message);
+        if (result.redirectTo) {
+            alert("⚠️ User not registered! Redirecting to Registration Page...");
+            window.location.href = result.redirectTo;
+        }
+    }
+  });
+
+  document.getElementById("googleLoginBtn").addEventListener("click", function() {
+    window.location.href = "/auth/google";
+  });
+
+  // After Google redirects back, check if the URL contains login success
+  window.onload = async function() {
     const urlParams = new URLSearchParams(window.location.search);
     const email = urlParams.get("email");
     const userType = urlParams.get("userType");
     const redirectTo = urlParams.get("redirectTo");
+
+    // Log the userType value
+    console.log("🔍 UserType from URL:", userType);
 
     if (email && userType) {
         console.log(`🔍 Google Login Successful!`);
@@ -132,9 +135,9 @@
     } else {
         console.log("❌ No email or userType in the URL query parameters.");
     }
-};
+  };
+</script>
 
-  </script>
 
 </body>
 </html>
