@@ -153,28 +153,24 @@ passport.deserializeUser(async (email, done) => {
 // Google Auth Routes
 app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
-app.get('/auth/google/callback',
+app.get('/auth/google/callback', 
     passport.authenticate('google', { failureRedirect: '/index' }),
     async (req, res) => {
         console.log('✅ User authenticated, session:', req.session);
 
-        // Ensure session variables are set
+        // Update session with the user email and type
         req.session.userEmail = req.user.email;
-        req.session.userType = req.user.userType;
+        req.session.userType = req.user.userType;  // Make sure this field is available in req.user
 
         try {
-            // Wait for the userType to be fully available from session
-            const userType = req.session.userType;  
-            console.log("🔍 UserType from session:", userType);
-
-            if (!userType) {
-                throw new Error("User type not available in session");
-            }
-
+            // Fetch user type from the database to determine the correct redirect
+            const userType = req.session.userType;  // Use session data instead of querying again
             let redirectUrl = '';
+          console.log("🔍 UserType from URL:", userType);
 
+            
             if (userType === 'guest') {
-                // Check if the guest has checked in
+                // Guest-specific logic (e.g., check if checked in)
                 const checkinResult = await db.query("SELECT * FROM check_ins WHERE guest_id = $1", [req.user.id]);
 
                 if (checkinResult.rows.length > 0) {
@@ -188,8 +184,7 @@ app.get('/auth/google/callback',
                 redirectUrl = "/manager_dashboard.html"; // for manager
             }
 
-            // Redirect with user info and target page
-            console.log(`🔀 Redirecting user to: ${redirectUrl}`);
+            // Save user info in localStorage via the URL query params
             return res.redirect(`/index.html?success=true&redirectTo=${redirectUrl}&userType=${userType}&email=${req.user.email}`);
         } catch (error) {
             console.error("❌ Error during Google login callback:", error);
