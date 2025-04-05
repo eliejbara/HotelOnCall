@@ -158,49 +158,39 @@ app.get('/auth/google/callback',
     async (req, res) => {
         console.log('✅ User authenticated, session:', req.session);
 
-        // Clear previous session user data and update session with the new user
+        // Update session with the user email and type
         req.session.userEmail = req.user.email;
-        
+        req.session.userType = req.user.userType;  // Make sure this field is available in req.user
+
         try {
-            // Call /getUserType endpoint internally to get userType by email
-            const response = await fetch(`https://hotel-on-call.vercel.app/getUserType?email=${req.user.email}`);
-            const data = await response.json();
-
-            if (!data.success) {
-                console.error("❌ Error fetching userType from /getUserType:", data.message);
-                return res.redirect('/index.html?success=false&error=user_not_found');
-            }
-
-            // Save userType to session from /getUserType response
-            req.session.userType = data.userType;
-
-            // Determine redirect based on userType
+            // Fetch user type from the database to determine the correct redirect
+            const userType = req.session.userType;  // Use session data instead of querying again
             let redirectUrl = '';
-
-            if (data.userType === 'guest') {
-                // Check if the guest has checked in
+            
+            if (userType === 'guest') {
+                // Guest-specific logic (e.g., check if checked in)
                 const checkinResult = await db.query("SELECT * FROM check_ins WHERE guest_id = $1", [req.user.id]);
-                
+
                 if (checkinResult.rows.length > 0) {
-                    console.log("✅ Guest has checked in. Redirecting to guest services.");
                     redirectUrl = "/guest_services.html";
                 } else {
-                    console.log("⚠️ Guest has NOT checked in. Redirecting to check-in page.");
                     redirectUrl = "/checkin.html";
                 }
-            } else {
-                console.log("✅ Staff user. Redirecting to staff selection.");
+            } else if (userType === 'staff') {
                 redirectUrl = "/staff_selection.html";
+            } else {
+                redirectUrl = "/manager_dashboard.html"; // for manager
             }
 
-            // Pass userType and email in the URL for client-side storage
-            return res.redirect(`/index.html?success=true&redirectTo=${redirectUrl}&userType=${data.userType}&email=${req.user.email}`);
+            // Save user info in localStorage via the URL query params
+            return res.redirect(`/index.html?success=true&redirectTo=${redirectUrl}&userType=${userType}&email=${req.user.email}`);
         } catch (error) {
-            console.error("❌ Error fetching userType:", error);
-            return res.redirect('/index.html?success=false&error=database_error');
+            console.error("❌ Error during Google login callback:", error);
+            return res.redirect('/index.html?success=false&error=server_error');
         }
     }
 );
+
 
 
 
