@@ -40,6 +40,7 @@ app.get('/api/guest-prediction', async (req, res) => {
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const session = require('express-session');
+const pgSession = require('connect-pg-simple')(session);
 
 // PostgreSQL Connection (using Neon)
 const db = new Pool({
@@ -71,10 +72,21 @@ app.get("/", (req, res) => {
 
 // Session Middleware
 app.use(session({
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: true
+  store: new pgSession({
+    pool: db, 
+    tableName: 'session'
+  }),
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 30 * 24 * 60 * 60 * 1000
+  }
 }));
+
+
+
 
 app.use(passport.initialize());
 app.use(passport.session());
