@@ -91,36 +91,36 @@
   window.onload = async function() {
     const urlParams = new URLSearchParams(window.location.search);
     const email = urlParams.get("email");
-    const userType = urlParams.get("userType");
     const redirectTo = urlParams.get("redirectTo");
 
-    // Log the userType value
-    console.log("🔍 UserType from URL:", userType);
-    console.log("🔍 email from URL:", email);
+    // Log the email to ensure it is captured
+    console.log("🔍 Logged-in Email from URL:", email);
 
-    if (email && userType) {
+    if (email) {
         console.log(`🔍 Google Login Successful!`);
         console.log(`📩 Logged-in Email: ${email}`);
 
         try {
-            // Fetch userType from the server if not already set
+            // Fetch userType from the server using the email
             const response = await fetch(`/getUserType?email=${email}`);
             const data = await response.json();
             
             if (data.success) {
-                console.log(`🛠️ User Type from Server: ${data.userType}`);
+                const userType = data.userType;  // Get userType from the response
+
+                console.log(`🛠️ User Type from Server: ${userType}`);
                 
-                // Save userType in localStorage
-                localStorage.setItem("userType", data.userType);
+                // Save userType and email in localStorage
+                localStorage.setItem("userType", userType);
                 localStorage.setItem("email", email);
 
-                if (data.userType === "guest") {
+                if (userType === "guest") {
                     localStorage.setItem("loggedInGuestEmail", email);
-                } else if (data.userType === "staff") {
+                } else if (userType === "staff") {
                     localStorage.setItem("staffEmail", email);
                 }
 
-                console.log(`💾 Saved userType: ${data.userType} in localStorage`);
+                console.log(`💾 Saved userType: ${userType} in localStorage`);
 
                 // Redirect the user if `redirectTo` is present
                 if (redirectTo) {
@@ -134,9 +134,10 @@
             console.error(`❌ Failed to fetch userType:`, error);
         }
     } else {
-        console.log("❌ No email or userType in the URL query parameters.");
+        console.log("❌ No email in the URL query parameters.");
     }
-  };
+};
+
 </script>
 
 
