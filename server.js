@@ -166,6 +166,8 @@ app.get('/auth/google/callback',
             // Fetch user type from the database to determine the correct redirect
             const userType = req.session.userType;  // Use session data instead of querying again
             let redirectUrl = '';
+          console.log("🔍 UserType from URL:", userType);
+
             
             if (userType === 'guest') {
                 // Guest-specific logic (e.g., check if checked in)
