@@ -173,11 +173,8 @@ app.get('/auth/google/callback',
                 const guestId = req.user.id?.trim();
                 console.log("🔍 Checking check-ins for guest_id:", guestId);
 
-                const checkinResult = await db.query(
-                    "SELECT 1 FROM check_ins WHERE guest_id = $1 LIMIT 1",
-                    [guestId]
-                );
-
+                const checkinResult = await db.query("SELECT * FROM check_ins WHERE guest_id = $1", [guestId]);
+              
                 if (checkinResult.rows.length > 0) {
                     console.log("✅ Guest is already checked in.");
                     redirectUrl = "/guest_services.html";
