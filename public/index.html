@@ -113,30 +113,56 @@ window.onload = async function () {
     console.log("👤 User Type from URL:", userType);
     console.log("🔀 RedirectTo from backend:", redirectTo);
 
-    if (email && redirectTo && userType) {
-        try {
-            // Save to localStorage if needed
-            localStorage.setItem("userType", userType);
-            localStorage.setItem("email", email);
+if (email && userType) {
+    try {
+        // Save to localStorage if needed
+        localStorage.setItem("userType", userType);
+        localStorage.setItem("email", email);
 
-            if (userType === "guest") {
-                localStorage.setItem("loggedInGuestEmail", email);
-            } else if (userType === "staff") {
-                localStorage.setItem("staffEmail", email);
-            }
-
-            setTimeout(() => {
-                window.location.href = redirectTo;
-            }, 3000); // Optional delay for user to read message
-        } catch (error) {
-            console.error(`❌ Failed to process login redirect:`, error);
+        if (userType === "guest") {
+            localStorage.setItem("loggedInGuestEmail", email);
+        } else if (userType === "staff") {
+            localStorage.setItem("staffEmail", email);
         }
-    } else {
+
+        const finalRedirectUrl = await getRedirectUrlForUserType(userType, email);
+        console.log(`🔀 Redirecting user to: ${finalRedirectUrl}`);
+
+        setTimeout(() => {
+            window.location.href = finalRedirectUrl;
+        }, 3000); // Optional delay for user to read message
+    } catch (error) {
+        console.error(`❌ Failed to process login redirect:`, error);
+    }
+} else {
         console.log("❌ Missing info in URL parameters.");
     }
 };
 
 
+async function getRedirectUrlForUserType(userType, email) {
+    if (userType === 'guest') {
+        try {
+            const response = await fetch(`/checkIfCheckedIn?email=${email}`);
+            const data = await response.json();
+
+            if (data.checkedIn) {
+                return '/guest/services.html';
+            } else {
+                return '/checkin.html';
+            }
+        } catch (error) {
+            console.error("Error checking check-in status:", error);
+            return '/checkin.html'; // fallback
+        }
+    } else if (userType === 'staff') {
+        return '/staff_selection.html';
+    } else if (userType === 'manager') {
+        return '/manager_dashboard.html';
+    } else {
+        return '/index.html';
+    }
+}
 
 
 </script>
