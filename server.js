@@ -160,32 +160,44 @@ app.get('/auth/google/callback',
 
         // Update session with the user email and type
         req.session.userEmail = req.user.email;
-        req.session.userType = req.user.userType;  // Make sure this field is available in req.user
+        req.session.userType = req.user.userType; // Ensure this is set during passport authentication
 
         try {
-            // Fetch user type from the database to determine the correct redirect
-            const userType = req.session.userType;  // Use session data instead of querying again
+            const userType = req.session.userType;
             let redirectUrl = '';
-          console.log("🔍 UserType from URL:", userType);
+            console.log("🔍 UserType from session:", userType);
 
-            
             if (userType === 'guest') {
-                // Guest-specific logic (e.g., check if checked in)
-                const checkinResult = await db.query("SELECT * FROM check_ins WHERE guest_id = $1", [req.user.id]);
+                // Ensure guestId is well-formatted
+                const guestId = req.user.id?.trim();
+                console.log("🔍 Checking check-ins for guest_id:", guestId);
+
+                // Safer and more efficient query
+                const checkinResult = await db.query(
+                    "SELECT 1 FROM check_ins WHERE guest_id = $1 LIMIT 1",
+                    [guestId]
+                );
 
                 if (checkinResult.rows.length > 0) {
+                    console.log("✅ Guest is already checked in.");
                     redirectUrl = "/guest_services.html";
                 } else {
+                    console.log("⬅️ No check-in found. Redirecting to check-in page.");
                     redirectUrl = "/checkin.html";
                 }
+
             } else if (userType === 'staff') {
+                console.log("👨‍🔧 Staff login detected. Redirecting to staff selection.");
                 redirectUrl = "/staff_selection.html";
+
             } else {
-                redirectUrl = "/manager_dashboard.html"; // for manager
+                console.log("👔 Manager login detected. Redirecting to dashboard.");
+                redirectUrl = "/manager_dashboard.html";
             }
 
-            // Save user info in localStorage via the URL query params
+            // Redirect with query params to pass user info
             return res.redirect(`/index.html?success=true&redirectTo=${redirectUrl}&userType=${userType}&email=${req.user.email}&userId=${req.user.id}`);
+
         } catch (error) {
             console.error("❌ Error during Google login callback:", error);
             return res.redirect('/index.html?success=false&error=server_error');
