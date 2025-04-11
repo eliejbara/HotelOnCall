@@ -184,8 +184,11 @@ app.get('/auth/google/callback',
                 redirectUrl = "/manager_dashboard.html"; // for manager
             }
 
-            // Save user info in localStorage via the URL query params
-            return res.redirect(`/index.html?success=true&redirectTo=${redirectUrl}&userType=${userType}&email=${req.user.email}&userId=${req.user.id}`);
+          // Add this before redirection
+          const checkinRowsCount = checkinResult.rows.length;
+          // Include it in the redirect URL
+          return res.redirect(`/index.html?success=true&redirectTo=${redirectUrl}&userType=${userType}&email=${req.user.email}&userId=${req.user.id}&checkinRows=${checkinRowsCount}`);
+
         } catch (error) {
             console.error("❌ Error during Google login callback:", error);
             return res.redirect('/index.html?success=false&error=server_error');
