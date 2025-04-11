@@ -29,6 +29,7 @@
         <button type="submit">Login</button>
         <div class="google-login">
           <button type="button" class="google-btn" id="googleLoginBtn">Login with Google</button>
+          <p id="googleMessage" style="color: green;"></p>
         </div>
         <p>Don't have an account? <a href="register.html">Register</a> <span class="separator">•</span> Forgot your password? <a href="forgot_password.html">Recover</a></p>
       </form>
@@ -95,11 +96,14 @@ window.onload = async function() {
     const userId = urlParams.get("userId");
     const message = urlParams.get("message");
 
-    // ✅ Log and act on the message (alreadyCheckedIn or notCheckedIn)
-    if (message === 'alreadyCheckedIn') {
-        console.log('✅ You are already checked in. Redirecting to services...');
-    } else if (message === 'notCheckedIn') {
-        console.log('🛎️ You need to check in first. Redirecting to check-in page...');
+    // ✅ Show message visually
+    const messageElement = document.getElementById("googleMessage");
+    if (messageElement) {
+        if (message === 'alreadyCheckedIn') {
+            messageElement.innerText = "✅ You are already checked in. Redirecting to services...";
+        } else if (message === 'notCheckedIn') {
+            messageElement.innerText = "🛎️ You need to check in first. Redirecting to check-in page...";
+        }
     }
 
     console.log("🔍 Logged-in Email from URL:", email);
@@ -116,8 +120,6 @@ window.onload = async function() {
             if (data.success) {
                 const userType = data.userType;
 
-                console.log(`🛠️ User Type from Server: ${userType}`);
-                
                 localStorage.setItem("userType", userType);
                 localStorage.setItem("email", email);
 
@@ -126,8 +128,6 @@ window.onload = async function() {
                 } else if (userType === "staff") {
                     localStorage.setItem("staffEmail", email);
                 }
-
-                console.log(`💾 Saved userType: ${userType} in localStorage`);
 
                 const finalRedirectUrl = getRedirectUrlForUserType(userType);
                 console.log(`🔀 Redirecting user to: ${finalRedirectUrl}`);
@@ -143,6 +143,7 @@ window.onload = async function() {
         console.log("❌ No email in the URL query parameters.");
     }
 };
+
 
 
 // Helper function to get the redirection URL based on user type
