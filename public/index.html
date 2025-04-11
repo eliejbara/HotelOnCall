@@ -92,28 +92,32 @@ window.onload = async function() {
     const urlParams = new URLSearchParams(window.location.search);
     const email = urlParams.get("email");
     const redirectTo = urlParams.get("redirectTo");
+    const userId = urlParams.get("userId");
+    const message = urlParams.get("message");
 
-    // Log the email to ensure it is captured
+    // ✅ Log and act on the message (alreadyCheckedIn or notCheckedIn)
+    if (message === 'alreadyCheckedIn') {
+        console.log('✅ You are already checked in. Redirecting to services...');
+    } else if (message === 'notCheckedIn') {
+        console.log('🛎️ You need to check in first. Redirecting to check-in page...');
+    }
+
     console.log("🔍 Logged-in Email from URL:", email);
-      const userId = urlParams.get("userId");
-    console.log("🆔 User ID from URL:", userId);  // ✅ Browser log
-
+    console.log("🆔 User ID from URL:", userId);
 
     if (email) {
         console.log(`🔍 Google Login Successful!`);
         console.log(`📩 Logged-in Email: ${email}`);
 
         try {
-            // Fetch userType from the server using the email
             const response = await fetch(`/getUserType?email=${email}`);
             const data = await response.json();
             
             if (data.success) {
-                const userType = data.userType;  // Get userType from the response
+                const userType = data.userType;
 
                 console.log(`🛠️ User Type from Server: ${userType}`);
                 
-                // Save userType and email in localStorage
                 localStorage.setItem("userType", userType);
                 localStorage.setItem("email", email);
 
@@ -125,11 +129,9 @@ window.onload = async function() {
 
                 console.log(`💾 Saved userType: ${userType} in localStorage`);
 
-                
-              // Redirect the user to the appropriate page based on userType
-              const finalRedirectUrl = getRedirectUrlForUserType(userType);
-              console.log(`🔀 Redirecting user to: ${finalRedirectUrl}`);
-              window.location.href = finalRedirectUrl;
+                const finalRedirectUrl = getRedirectUrlForUserType(userType);
+                console.log(`🔀 Redirecting user to: ${finalRedirectUrl}`);
+                window.location.href = finalRedirectUrl;
 
             } else {
                 console.error(`❌ Error fetching userType: ${data.message}`);
@@ -141,6 +143,7 @@ window.onload = async function() {
         console.log("❌ No email in the URL query parameters.");
     }
 };
+
 
 // Helper function to get the redirection URL based on user type
 function getRedirectUrlForUserType(userType) {
