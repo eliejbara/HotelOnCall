@@ -130,7 +130,13 @@ window.onload = async function() {
                 }
 
                 const finalRedirectUrl = getRedirectUrlForUserType(userType);
-                console.log(`🔀 Redirecting user to: ${finalRedirectUrl}`);
+               
+              console.log(`🔀 Redirecting user to: ${finalRedirectUrl}`);
+
+              setTimeout(() => {
+                window.location.href = finalRedirectUrl;
+              }, 3000);
+
                 window.location.href = finalRedirectUrl;
 
             } else {
