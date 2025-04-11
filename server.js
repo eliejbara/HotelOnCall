@@ -194,7 +194,7 @@ app.get('/auth/google/callback',
             }
 
             // Redirect with message
-            return res.redirect(`/index.html?success=true&redirectTo=${redirectUrl}&userType=${userType}&email=${req.user.email}&userId=${req.user.id}&message=${message}`);
+            return res.redirect(`/index.html?success=true&redirectTo=${redirectUrl}&userType=${req.user.userType}&email=${req.user.email}&userId=${req.user.id}&message=${message}`);
         } catch (error) {
             console.error("❌ Error during Google login callback:", error);
             return res.redirect('/index.html?success=false&error=server_error');
