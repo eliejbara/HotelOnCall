@@ -102,47 +102,40 @@ window.onload = async function() {
 
 
 
-    if (email) {
-        console.log(`🔍 Google Login Successful!`);
-        console.log(`📩 Logged-in Email: ${email}`);
+  if (email) {
+    console.log(`🔍 Google Login Successful!`);
+    console.log(`📩 Logged-in Email: ${email}`);
 
-        try {
-            // Fetch userType from the server using the email
-            const response = await fetch(`/getUserType?email=${email}`);
-            const data = await response.json();
-            
-            if (data.success) {
-                const userType = data.userType;  // Get userType from the response
+    // ✅ NEW: Check if redirectTo is already passed from the backend
+    if (redirectTo) {
+        console.log(`🧭 Redirect URL from backend: ${redirectTo}`);
+        const decodedRedirectUrl = decodeURIComponent(redirectTo);
+        localStorage.setItem("userType", urlParams.get("userType"));
+        localStorage.setItem("email", email);
 
-                console.log(`🛠️ User Type from Server: ${userType}`);
-                
-                // Save userType and email in localStorage
-                localStorage.setItem("userType", userType);
-                localStorage.setItem("email", email);
-
-                if (userType === "guest") {
-                    localStorage.setItem("loggedInGuestEmail", email);
-                } else if (userType === "staff") {
-                    localStorage.setItem("staffEmail", email);
-                }
-
-                console.log(`💾 Saved userType: ${userType} in localStorage`);
-
-                
-              // Redirect the user to the appropriate page based on userType
-              const finalRedirectUrl = getRedirectUrlForUserType(userType);
-              console.log(`🔀 Redirecting user to: ${finalRedirectUrl}`);
-              window.location.href = finalRedirectUrl;
-
-            } else {
-                console.error(`❌ Error fetching userType: ${data.message}`);
-            }
-        } catch (error) {
-            console.error(`❌ Failed to fetch userType:`, error);
+        // Store extras if you want
+        const userType = urlParams.get("userType");
+        if (userType === "guest") {
+            localStorage.setItem("loggedInGuestEmail", email);
+        } else if (userType === "staff") {
+            localStorage.setItem("staffEmail", email);
         }
+
+        // Optional: log checkin rows
+        const checkinRows = urlParams.get("checkinRows");
+        console.log("📦 Check-in Query Rows (from backend):", checkinRows);
+
+        // ✅ Redirect to the correct page
+        window.location.href = decodedRedirectUrl;
     } else {
-        console.log("❌ No email in the URL query parameters.");
+        // fallback (shouldn't happen unless redirectTo is missing)
+        console.warn("⚠️ Missing redirectTo, falling back...");
+        const userType = urlParams.get("userType") || "guest";
+        const fallbackUrl = getRedirectUrlForUserType(userType);
+        window.location.href = fallbackUrl;
     }
+}
+
 };
 
 // Helper function to get the redirection URL based on user type
