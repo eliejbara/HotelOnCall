@@ -94,7 +94,6 @@ window.onload = async function () {
     const email = urlParams.get("email");
     const userId = urlParams.get("userId");
     const message = urlParams.get("message");
-    const userType = urlParams.get("userType");
     const redirectTo = urlParams.get("redirectTo"); // ✅ This is from the backend!
 
     // ✅ Show message visually
@@ -106,6 +105,8 @@ window.onload = async function () {
             messageElement.innerText = "🛎️ You need to check in first. Redirecting to check-in page...";
         }
     }
+
+    const userType = urlParams.get("userType");
 
     console.log("🔍 Logged-in Email from URL:", email);
     console.log("🆔 User ID from URL:", userId);
