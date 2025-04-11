@@ -95,6 +95,9 @@ window.onload = async function() {
 
     // Log the email to ensure it is captured
     console.log("🔍 Logged-in Email from URL:", email);
+      const userId = urlParams.get("userId");
+    console.log("🆔 User ID from URL:", userId);  // ✅ Browser log
+
 
     if (email) {
         console.log(`🔍 Google Login Successful!`);
