@@ -89,12 +89,13 @@
 });
 
 // After Google redirects back, check if the URL contains login success
-window.onload = async function() {
+window.onload = async function () {
     const urlParams = new URLSearchParams(window.location.search);
     const email = urlParams.get("email");
-    const redirectTo = urlParams.get("redirectTo");
     const userId = urlParams.get("userId");
     const message = urlParams.get("message");
+    const userType = urlParams.get("userType");
+    const redirectTo = urlParams.get("redirectTo"); // ✅ This is from the backend!
 
     // ✅ Show message visually
     const messageElement = document.getElementById("googleMessage");
@@ -108,63 +109,33 @@ window.onload = async function() {
 
     console.log("🔍 Logged-in Email from URL:", email);
     console.log("🆔 User ID from URL:", userId);
+    console.log("👤 User Type from URL:", userType);
+    console.log("🔀 RedirectTo from backend:", redirectTo);
 
-    if (email) {
-        console.log(`🔍 Google Login Successful!`);
-        console.log(`📩 Logged-in Email: ${email}`);
-
+    if (email && redirectTo && userType) {
         try {
-            const response = await fetch(`/getUserType?email=${email}`);
-            const data = await response.json();
-            
-            if (data.success) {
-                const userType = data.userType;
+            // Save to localStorage if needed
+            localStorage.setItem("userType", userType);
+            localStorage.setItem("email", email);
 
-                localStorage.setItem("userType", userType);
-                localStorage.setItem("email", email);
-
-                if (userType === "guest") {
-                    localStorage.setItem("loggedInGuestEmail", email);
-                } else if (userType === "staff") {
-                    localStorage.setItem("staffEmail", email);
-                }
-
-                const finalRedirectUrl = getRedirectUrlForUserType(userType);
-               
-              console.log(`🔀 Redirecting user to: ${finalRedirectUrl}`);
-
-              setTimeout(() => {
-                window.location.href = finalRedirectUrl;
-              }, 3000);
-
-                window.location.href = finalRedirectUrl;
-
-            } else {
-                console.error(`❌ Error fetching userType: ${data.message}`);
+            if (userType === "guest") {
+                localStorage.setItem("loggedInGuestEmail", email);
+            } else if (userType === "staff") {
+                localStorage.setItem("staffEmail", email);
             }
+
+            setTimeout(() => {
+                window.location.href = redirectTo;
+            }, 3000); // Optional delay for user to read message
         } catch (error) {
-            console.error(`❌ Failed to fetch userType:`, error);
+            console.error(`❌ Failed to process login redirect:`, error);
         }
     } else {
-        console.log("❌ No email in the URL query parameters.");
+        console.log("❌ Missing info in URL parameters.");
     }
 };
 
 
-
-// Helper function to get the redirection URL based on user type
-function getRedirectUrlForUserType(userType) {
-    switch (userType) {
-        case 'guest':
-            return '/checkin.html';  // Redirect to check-in if the guest is not checked in
-        case 'staff':
-            return '/staff_selection.html';  // Redirect to staff selection
-        case 'manager':
-            return '/manager_dashboard.html';  // Redirect to manager dashboard
-        default:
-            return '/index.html';  // Default redirect
-    }
-}
 
 
 </script>
