@@ -158,36 +158,36 @@ app.get('/auth/google/callback',
     async (req, res) => {
         console.log('✅ User authenticated, session:', req.session);
 
+        // Update session with the user email and type
         req.session.userEmail = req.user.email;
-        req.session.userType = req.user.userType;
+        req.session.userType = req.user.userType;  // Make sure this field is available in req.user
 
         try {
-            const userType = req.session.userType;
+            // Fetch user type from the database to determine the correct redirect
+            const userType = req.session.userType;  // Use session data instead of querying again
             let redirectUrl = '';
-            let checkinRowsCount = 0;  
+          console.log("🔍 UserType from URL:", userType);
 
-            console.log("🔍 UserType from URL:", userType);
-
+            
             if (userType === 'guest') {
-                const checkinResult = await db.query(
-                    "SELECT * FROM check_ins WHERE guest_id = $1", 
-                    [req.user.id]
-                );
+                // Guest-specific logic (e.g., check if checked in)
+                const checkinResult = await db.query("SELECT * FROM check_ins WHERE guest_id = $1", [req.user.id]);
 
-                checkinRowsCount = checkinResult.rows.length;
-
-                redirectUrl = checkinRowsCount > 0 
-                    ? "/guest_services.html" 
-                    : "/checkin.html";
-
+                if (checkinResult.rows.length > 0) {
+                    redirectUrl = "/guest_services.html";
+                } else {
+                    redirectUrl = "/checkin.html";
+                }
             } else if (userType === 'staff') {
                 redirectUrl = "/staff_selection.html";
             } else {
-                redirectUrl = "/manager_dashboard.html";
+                redirectUrl = "/manager_dashboard.html"; // for manager
             }
 
-            const encodedRedirectUrl = encodeURIComponent(redirectUrl);
-            return res.redirect(`/index.html?success=true&redirectTo=${encodedRedirectUrl}&userType=${userType}&email=${req.user.email}&userId=${req.user.id}&checkinRows=${checkinRowsCount}`);
+          // Add this before redirection
+          const checkinRowsCount = checkinResult.rows.length;
+          // Include it in the redirect URL
+          return res.redirect(`/index.html?success=true&redirectTo=${redirectUrl}&userType=${userType}&email=${req.user.email}&userId=${req.user.id}&checkinRows=${checkinRowsCount}`);
 
         } catch (error) {
             console.error("❌ Error during Google login callback:", error);
