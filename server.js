@@ -163,7 +163,7 @@ app.get('/auth/google/callback',
         req.session.userType = req.user.userType;
 
         try {
-            const userType = req.session.userType;
+            const userType = req.user.userType;
             let redirectUrl = '';
             let message = ''; // ✅ Declare this up front
 
