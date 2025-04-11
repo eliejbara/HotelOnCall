@@ -97,6 +97,9 @@ window.onload = async function() {
     console.log("🔍 Logged-in Email from URL:", email);
       const userId = urlParams.get("userId");
     console.log("🆔 User ID from URL:", userId);  // ✅ Browser log
+      const checkinRows = urlParams.get("checkinRows");
+    console.log("📦 Check-in Query Rows (from server):", checkinRows);
+
 
 
     if (email) {
