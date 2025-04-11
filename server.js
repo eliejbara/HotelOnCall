@@ -160,19 +160,19 @@ app.get('/auth/google/callback',
 
         // Update session with the user email and type
         req.session.userEmail = req.user.email;
-        req.session.userType = req.user.userType; // Ensure this is set during passport authentication
+        req.session.userType = req.user.userType;
 
         try {
             const userType = req.session.userType;
             let redirectUrl = '';
+            let message = ''; // ✅ Declare this up front
+
             console.log("🔍 UserType from session:", userType);
 
             if (userType === 'guest') {
-                // Ensure guestId is well-formatted
                 const guestId = req.user.id?.trim();
                 console.log("🔍 Checking check-ins for guest_id:", guestId);
 
-                // Safer and more efficient query
                 const checkinResult = await db.query(
                     "SELECT 1 FROM check_ins WHERE guest_id = $1 LIMIT 1",
                     [guestId]
@@ -181,9 +181,11 @@ app.get('/auth/google/callback',
                 if (checkinResult.rows.length > 0) {
                     console.log("✅ Guest is already checked in.");
                     redirectUrl = "/guest_services.html";
+                    message = "alreadyCheckedIn";
                 } else {
                     console.log("⬅️ No check-in found. Redirecting to check-in page.");
                     redirectUrl = "/checkin.html";
+                    message = "notCheckedIn";
                 }
 
             } else if (userType === 'staff') {
@@ -195,9 +197,8 @@ app.get('/auth/google/callback',
                 redirectUrl = "/manager_dashboard.html";
             }
 
-            // Redirect with query params to pass user info
-            return res.redirect(`/index.html?success=true&redirectTo=${redirectUrl}&userType=${userType}&email=${req.user.email}&userId=${req.user.id}`);
-
+            // Redirect with message
+            return res.redirect(`/index.html?success=true&redirectTo=${redirectUrl}&userType=${userType}&email=${req.user.email}&userId=${req.user.id}&message=${message}`);
         } catch (error) {
             console.error("❌ Error during Google login callback:", error);
             return res.redirect('/index.html?success=false&error=server_error');
