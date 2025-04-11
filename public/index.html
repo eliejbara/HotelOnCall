@@ -129,12 +129,14 @@ window.onload = async function() {
                     localStorage.setItem("staffEmail", email);
                 }
 
-                const finalRedirectUrl = getRedirectUrlForUserType(userType);
                
+              const finalRedirectUrl = await getRedirectUrlForUserType(userType, email);
+              
               console.log(`🔀 Redirecting user to: ${finalRedirectUrl}`);
 
+
               setTimeout(() => {
-                window.location.href = finalRedirectUrl;
+              window.location.href = finalRedirectUrl;
               }, 3000);
 
                 window.location.href = finalRedirectUrl;
@@ -153,18 +155,30 @@ window.onload = async function() {
 
 
 // Helper function to get the redirection URL based on user type
-function getRedirectUrlForUserType(userType) {
-    switch (userType) {
-        case 'guest':
-            return '/checkin.html';  // Redirect to check-in if the guest is not checked in
-        case 'staff':
-            return '/staff_selection.html';  // Redirect to staff selection
-        case 'manager':
-            return '/manager_dashboard.html';  // Redirect to manager dashboard
-        default:
-            return '/index.html';  // Default redirect
+async function getRedirectUrlForUserType(userType, email) {
+    if (userType === 'guest') {
+        try {
+            const response = await fetch(`/checkIfCheckedIn?email=${email}`);
+            const data = await response.json();
+
+            if (data.checkedIn) {
+                return '/guest/services.html';
+            } else {
+                return '/checkin.html';
+            }
+        } catch (error) {
+            console.error("Error checking check-in status:", error);
+            return '/checkin.html'; // fallback
+        }
+    } else if (userType === 'staff') {
+        return '/staff_selection.html';
+    } else if (userType === 'manager') {
+        return '/manager_dashboard.html';
+    } else {
+        return '/index.html';
     }
 }
+
 
 
 </script>
