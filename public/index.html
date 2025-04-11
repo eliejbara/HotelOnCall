@@ -162,7 +162,7 @@ async function getRedirectUrlForUserType(userType, email) {
             const data = await response.json();
 
             if (data.checkedIn) {
-                return '/guest/services.html';
+                return '/guest_services.html';
             } else {
                 return '/checkin.html';
             }
