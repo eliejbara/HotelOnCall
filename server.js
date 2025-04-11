@@ -170,10 +170,9 @@ app.get('/auth/google/callback',
             console.log("🔍 UserType from session:", userType);
 
             if (userType === 'guest') {
-                const guestId = req.user.id?.trim();
-                console.log("🔍 Checking check-ins for guest_id:", guestId);
+                console.log("🔍 Checking check-ins for guest_id:", req.user.id);
 
-                const checkinResult = await db.query("SELECT * FROM check_ins WHERE guest_id = $1", [guestId]);
+                const checkinResult = await db.query("SELECT * FROM check_ins WHERE guest_id = $1", [req.user.id]);
               
                 if (checkinResult.rows.length > 0) {
                     console.log("✅ Guest is already checked in.");
