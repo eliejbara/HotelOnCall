@@ -229,6 +229,33 @@ app.get("/getUserType", async (req, res) => {
 });
 
 
+app.get('/checkIfCheckedIn', async (req, res) => {
+    const email = req.query.email;
+
+    try {
+        const userResult = await db.query("SELECT * FROM users WHERE email = $1", [email]);
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ checkedIn: false, message: "User not found" });
+        }
+
+        const user = userResult.rows[0];
+
+        const checkinResult = await db.query("SELECT * FROM check_ins WHERE guest_id = $1", [user.id]);
+        if (checkinResult.rows.length > 0) {
+            // Guest is checked in
+            return res.json({ checkedIn: true });
+        } else {
+            // Not checked in yet
+            return res.json({ checkedIn: false });
+        }
+    } catch (error) {
+        console.error("❌ Error in /checkIfCheckedIn:", error);
+        res.status(500).json({ checkedIn: false, message: "Internal server error" });
+    }
+});
+
+
+
 
 
  // ** User Registration **
