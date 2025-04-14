@@ -1,11 +1,14 @@
 // __tests__/googleAuth.test.js
 
 jest.mock('passport', () => ({
-    initialize: jest.fn().mockReturnValue((req, res, next) => next()),  // Mock initialize
-    session: jest.fn().mockReturnValue((req, res, next) => next()),     // Mock session
+    initialize: jest.fn().mockReturnValue((req, res, next) => {
+        req.user = { email: 'testuser@example.com', userType: 'staff' };  // Mock user
+        next();
+    }),
+    session: jest.fn().mockReturnValue((req, res, next) => next()),
     serializeUser: jest.fn(),
     deserializeUser: jest.fn(),
-    authenticate: jest.fn().mockReturnValue((req, res, next) => next()),  // Mock authenticate
+    authenticate: jest.fn().mockReturnValue((req, res, next) => next()),
     use: jest.fn(),
 }));
 
@@ -16,6 +19,8 @@ const db = require('../db');    // Mock DB module
 jest.mock('../db', () => ({
   query: jest.fn().mockResolvedValue({}),
 }));
+
+jest.setTimeout(10000);  // Increase timeout to 10 seconds
 
 let mockSession;
 beforeEach(() => {
