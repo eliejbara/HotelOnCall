@@ -1,8 +1,12 @@
 // __tests__/googleAuth.test.js
+
 jest.mock('passport', () => ({
+    initialize: jest.fn().mockReturnValue((req, res, next) => next()),  // Mock initialize
+    session: jest.fn().mockReturnValue((req, res, next) => next()),     // Mock session
     serializeUser: jest.fn(),
     deserializeUser: jest.fn(),
-    authenticate: jest.fn().mockReturnValue((req, res, next) => next()),  // Mock the authenticate method
+    authenticate: jest.fn().mockReturnValue((req, res, next) => next()),  // Mock authenticate
+    use: jest.fn(),
 }));
 
 const request = require('supertest');
