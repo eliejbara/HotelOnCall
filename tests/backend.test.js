@@ -1,155 +1,176 @@
 const request = require('supertest');
-const app = 'https://hotel-on-call-backend.up.railway.app'; // Replace with your backend URL if different
+const app = 'https://hotel-on-call.vercel.app'; // Your Vercel-deployed backend URL
 
 const guestData = {
-  username: 'guest_test_' + Date.now(),
+  username: 'guest123',
+  roomId: '101',
   checkinDate: '2025-04-13',
   checkoutDate: '2025-04-15',
 };
 
-const orderItems = [
-  { foodId: '1', quantity: 2 },
-  { foodId: '3', quantity: 1 },
-];
-
-const maintenanceIssue = 'Leaky faucet';
-const cleaningType = 'Full cleaning';
-
-let guestId = '';
-let roomId = '';
+let roomId = '101';
 let orderId = '';
 let maintenanceRequestId = '';
 let cleaningRequestId = '';
 
-describe('HotelOnCall Backend Tests', () => {
-  it('should check in a guest', async () => {
-    const checkRooms = await request(app)
+describe('Guest Endpoints', () => {
+  it('should get available rooms', async () => {
+    const res = await request(app)
       .get('/available-rooms')
       .query({ checkinDate: guestData.checkinDate, checkoutDate: guestData.checkoutDate });
 
-    expect(checkRooms.status).toBe(200);
-    expect(Array.isArray(checkRooms.body.rooms)).toBe(true);
-    expect(checkRooms.body.rooms.length).toBeGreaterThan(0);
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body.rooms)).toBe(true);
+    if (res.body.rooms.length > 0) {
+      roomId = res.body.rooms[0].id;
+    }
+  });
 
-    roomId = checkRooms.body.rooms[0].id;
-
-    const checkin = await request(app)
+  it('should check in guest', async () => {
+    const res = await request(app)
       .post('/checkin')
       .send({
         username: guestData.username,
-        roomId,
+        roomId: roomId,
         checkinDate: guestData.checkinDate,
         checkoutDate: guestData.checkoutDate,
       });
 
-    expect(checkin.status).toBe(200);
-    expect(checkin.body).toHaveProperty('message', 'Check-in successful');
-    guestId = guestData.username;
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe('Check-in successful');
   });
 
-  it('should place a food order', async () => {
-    const response = await request(app)
+  it('should fetch guest room details', async () => {
+    const res = await request(app)
+      .get('/guest-room')
+      .query({ guestId: guestData.username });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('roomNumber');
+  });
+
+  it('should place food order', async () => {
+    const res = await request(app)
       .post('/place-order')
-      .send({ guestId, foodItems: orderItems });
+      .send({
+        guestId: guestData.username,
+        foodItems: [
+          { foodId: '1', quantity: 2 },
+          { foodId: '2', quantity: 1 },
+        ],
+      });
 
-    expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty('message', 'Order placed successfully');
-    if (response.body.orderId) orderId = response.body.orderId;
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe('Order placed successfully');
+    if (res.body.orderId) orderId = res.body.orderId;
   });
 
-  it('should check the order status', async () => {
-    if (!orderId) return console.warn('Order ID not captured. Skipping.');
-    const response = await request(app)
+  it('should get order status', async () => {
+    const res = await request(app)
       .get('/check-order')
-      .query({ orderId });
+      .query({ orderId: orderId });
 
-    expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty('status');
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('status');
   });
 
   it('should request maintenance', async () => {
-    const response = await request(app)
+    const res = await request(app)
       .post('/request-maintenance')
-      .send({ guestId, roomId, issue: maintenanceIssue });
+      .send({
+        guestId: guestData.username,
+        roomId: roomId,
+        issue: 'Leaking faucet',
+      });
 
-    expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty('message', 'Maintenance request successful');
-    if (response.body.requestId) maintenanceRequestId = response.body.requestId;
-  });
-
-  it('should fetch maintenance requests', async () => {
-    const response = await request(app).get('/maintenance-requests');
-    expect(response.status).toBe(200);
-    expect(Array.isArray(response.body.requests)).toBe(true);
-  });
-
-  it('should update maintenance status', async () => {
-    if (!maintenanceRequestId) return console.warn('No maintenance request ID. Skipping.');
-    const response = await request(app)
-      .post('/update-maintenance-status')
-      .send({ requestId: maintenanceRequestId, status: 'Completed' });
-
-    expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty('message', 'Maintenance status updated');
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe('Maintenance request successful');
+    if (res.body.requestId) maintenanceRequestId = res.body.requestId;
   });
 
   it('should request cleaning', async () => {
-    const response = await request(app)
+    const res = await request(app)
       .post('/request-cleaning')
-      .send({ guestId, roomId, requestType: cleaningType });
+      .send({
+        guestId: guestData.username,
+        roomId: roomId,
+        requestType: 'Full cleaning',
+      });
 
-    expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty('message', 'Cleaning request successful');
-    if (response.body.requestId) cleaningRequestId = response.body.requestId;
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe('Cleaning request successful');
+    if (res.body.requestId) cleaningRequestId = res.body.requestId;
   });
 
-  it('should fetch cleaning requests', async () => {
-    const response = await request(app).get('/cleaning-requests');
-    expect(response.status).toBe(200);
-    expect(Array.isArray(response.body.requests)).toBe(true);
-  });
-
-  it('should update cleaning status', async () => {
-    if (!cleaningRequestId) return console.warn('No cleaning request ID. Skipping.');
-    const response = await request(app)
-      .post('/update-cleaning-status')
-      .send({ requestId: cleaningRequestId, status: 'Completed' });
-
-    expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty('message', 'Cleaning status updated');
-  });
-
-  it('should fetch cook orders', async () => {
-    const response = await request(app).get('/cook/orders');
-    expect(response.status).toBe(200);
-    expect(Array.isArray(response.body.orders)).toBe(true);
-  });
-
-  it('should update order status as cook', async () => {
-    if (!orderId) return console.warn('No order ID for cook. Skipping.');
-    const response = await request(app)
-      .post('/cook/update-order')
-      .send({ orderId, status: 'Completed' });
-
-    expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty('message', 'Order status updated');
-  });
-
-  it('should get guest room details', async () => {
-    const response = await request(app)
-      .get('/guest-room')
-      .query({ guestId });
-
-    expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty('roomNumber');
-  });
-
-  it('should check out a guest', async () => {
-    const response = await request(app)
+  it('should check out guest', async () => {
+    const res = await request(app)
       .post('/checkout')
-      .send({ guestId, roomId });
+      .send({
+        guestId: guestData.username,
+        roomId: roomId,
+      });
 
-    expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty('message', 'Checkout successful');
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe('Checkout successful');
+  });
+});
+
+describe('Maintenance Staff Endpoints', () => {
+  it('should get maintenance requests', async () => {
+    const res = await request(app).get('/maintenance-requests');
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body.requests)).toBe(true);
+  });
+
+  it('should update maintenance request status', async () => {
+    const res = await request(app)
+      .post('/update-maintenance-status')
+      .send({
+        requestId: maintenanceRequestId || '1',
+        status: 'Completed',
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe('Maintenance status updated');
+  });
+});
+
+describe('Cleaner Endpoints', () => {
+  it('should get cleaning requests', async () => {
+    const res = await request(app).get('/cleaning-requests');
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body.requests)).toBe(true);
+  });
+
+  it('should update cleaning request status', async () => {
+    const res = await request(app)
+      .post('/update-cleaning-status')
+      .send({
+        requestId: cleaningRequestId || '1',
+        status: 'Completed',
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe('Cleaning status updated');
+  });
+});
+
+describe('Cook Endpoints', () => {
+  it('should get cook orders', async () => {
+    const res = await request(app).get('/cook/orders');
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body.orders)).toBe(true);
+  });
+
+  it('should update cook order status', async () => {
+    const res = await request(app)
+      .post('/cook/update-order')
+      .send({
+        orderId: orderId || '1',
+        status: 'Completed',
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe('Order status updated');
   });
 });
