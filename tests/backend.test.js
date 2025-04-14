@@ -1,6 +1,13 @@
 // Set NODE_ENV to test so your server can behave differently during tests
 process.env.NODE_ENV = 'test';
-jest.mock('passport');
+jest.mock('passport', () => {
+  return {
+    authenticate: () => (req, res, next) => next(),
+    initialize: () => (req, res, next) => next(),
+    session: () => (req, res, next) => next(),
+  };
+});
+
 
 // Prevent process.exit from actually terminating tests
 jest.spyOn(process, 'exit').mockImplementation(() => {});
