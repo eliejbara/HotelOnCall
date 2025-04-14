@@ -1,12 +1,16 @@
 // Set NODE_ENV to test so your server can behave differently during tests
 process.env.NODE_ENV = 'test';
-jest.mock('passport', () => {
-  return {
-    authenticate: () => (req, res, next) => next(),
-    initialize: () => (req, res, next) => next(),
-    session: () => (req, res, next) => next(),
-  };
-});
+jest.mock('passport', () => ({
+  authenticate: jest.fn(() => (req, res, next) => next()), // Mock authenticate properly
+  initialize: jest.fn(() => (req, res, next) => next()),
+  session: jest.fn(() => (req, res, next) => next()),
+  use: jest.fn(),
+  serializeUser: jest.fn(),
+  deserializeUser: jest.fn(),
+}));
+
+// Now your other test code follows...
+
 
 // __tests__/googleAuth.test.js
 
