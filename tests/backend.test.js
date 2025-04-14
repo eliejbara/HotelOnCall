@@ -1,22 +1,40 @@
-const request = require('supertest');
-const app = require('../server'); // Ensure your server file is named correctly
-const { Pool } = require('pg');
-const axios = require('axios');
+// Set NODE_ENV to test so your server can behave differently during tests
+process.env.NODE_ENV = 'test';
 
-// Mock PostgreSQL database
+// Prevent process.exit from actually terminating tests
+jest.spyOn(process, 'exit').mockImplementation(() => {});
+
+// ----- Mock Modules BEFORE requiring your server -----
+jest.mock('passport', () => ({
+  initialize: jest.fn(() => (req, res, next) => next()),
+  session: jest.fn(() => (req, res, next) => next()),
+  use: jest.fn(),
+  serializeUser: jest.fn(),
+  deserializeUser: jest.fn(),
+}));
+
+jest.mock('passport-google-oauth20', () => ({
+  Strategy: jest.fn(),
+}));
+
+// Mock the PostgreSQL database
 jest.mock('pg', () => ({
   Pool: jest.fn().mockImplementation(() => ({
     query: jest.fn(),
     connect: jest.fn(),
   })),
 }));
-jest.mock('passport-google-oauth20', () => ({
-  Strategy: jest.fn(),
-}));
 
+// Also mock axios for your prediction API tests
 jest.mock('axios');
 
-// Mock response data for predictions
+// Now require your server after setting up mocks
+const request = require('supertest');
+const app = require('../server'); // ensure this points to your server.js file
+const { Pool } = require('pg');
+const axios = require('axios');
+
+// Mock response data for the prediction API
 const mockPredictionData = { prediction: 'high' };
 
 describe('HotelOnCall Backend Routes', () => {
@@ -24,13 +42,17 @@ describe('HotelOnCall Backend Routes', () => {
 
   beforeEach(() => {
     db = new Pool();
+    // Clear out any previous mock calls for db.query
+    db.query.mockReset();
   });
 
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  // Test for User Registration
+  // =========================
+  // User Registration Tests
+  // =========================
   describe('POST /register', () => {
     it('should register a new user', async () => {
       const newUser = {
@@ -40,7 +62,7 @@ describe('HotelOnCall Backend Routes', () => {
       };
 
       db.query.mockResolvedValueOnce({ rows: [] }); // No existing user
-      db.query.mockResolvedValueOnce({}); // Insert new user
+      db.query.mockResolvedValueOnce({});            // Insert new user
 
       const res = await request(app)
         .post('/register')
@@ -58,9 +80,7 @@ describe('HotelOnCall Backend Routes', () => {
         userType: 'guest',
       };
 
-      db.query.mockResolvedValueOnce({
-        rows: [{ email: 'existinguser@example.com' }],
-      });
+      db.query.mockResolvedValueOnce({ rows: [{ email: 'existinguser@example.com' }] }); // Existing user
 
       const res = await request(app)
         .post('/register')
@@ -72,7 +92,9 @@ describe('HotelOnCall Backend Routes', () => {
     });
   });
 
-  // Test for User Login
+  // =========================
+  // User Login Tests
+  // =========================
   describe('POST /login', () => {
     it('should login an existing user', async () => {
       const user = {
@@ -127,10 +149,12 @@ describe('HotelOnCall Backend Routes', () => {
     });
   });
 
-  // Test for Google Prediction API
+  // =========================
+  // Google Prediction API Tests
+  // =========================
   describe('GET /api/guest-prediction', () => {
     it('should return guest prediction data', async () => {
-      axios.get = jest.fn().mockResolvedValueOnce({ data: mockPredictionData });
+      axios.get.mockResolvedValueOnce({ data: mockPredictionData });
 
       const res = await request(app).get('/api/guest-prediction?date=2025-05-01');
 
@@ -146,7 +170,9 @@ describe('HotelOnCall Backend Routes', () => {
     });
   });
 
-  // Test for Available Rooms
+  // =========================
+  // Available Rooms Tests
+  // =========================
   describe('GET /available-rooms', () => {
     it('should return available rooms', async () => {
       const mockRooms = [{ room_number: 101 }, { room_number: 102 }];
@@ -168,7 +194,9 @@ describe('HotelOnCall Backend Routes', () => {
     });
   });
 
-  // Test for Check Guest's Order Status
+  // =========================
+  // Check Guest's Order Status Tests
+  // =========================
   describe('GET /check-order/:guestEmail', () => {
     it('should return order status', async () => {
       const guestEmail = 'testuser@example.com';
@@ -194,7 +222,9 @@ describe('HotelOnCall Backend Routes', () => {
     });
   });
 
-  // Test for Place Food Order
+  // =========================
+  // Place Food Order Tests
+  // =========================
   describe('POST /place-order', () => {
     it('should place a food order', async () => {
       const orderData = {
@@ -227,12 +257,12 @@ describe('HotelOnCall Backend Routes', () => {
     });
   });
 
-  // Additional Routes
-
-  // Check-in test
+  // =========================
+  // Check-in Tests
+  // =========================
   describe('POST /checkin', () => {
     it('should check in successfully', async () => {
-      db.query.mockResolvedValueOnce({});
+      db.query.mockResolvedValueOnce({}); // simulate successful check-in DB query
       const res = await request(app)
         .post('/checkin')
         .send({ guestEmail: 'testuser@example.com', checkinDate: '2025-05-01' });
@@ -250,10 +280,12 @@ describe('HotelOnCall Backend Routes', () => {
     });
   });
 
-  // Checkout test
+  // =========================
+  // Checkout Tests
+  // =========================
   describe('POST /checkout', () => {
     it('should successfully checkout and clear data', async () => {
-      db.query.mockResolvedValueOnce({});
+      db.query.mockResolvedValueOnce({}); // simulate successful checkout DB query
       const res = await request(app)
         .post('/checkout')
         .send({ guestEmail: 'testuser@example.com' });
@@ -271,36 +303,39 @@ describe('HotelOnCall Backend Routes', () => {
     });
   });
 
-  // Role-based redirection
+  // =========================
+  // Select Role Tests
+  // =========================
   describe('POST /select-role', () => {
     it('should redirect based on selected role', async () => {
       const res = await request(app)
         .post('/select-role')
         .send({ role: 'cook' });
-
       expect(res.status).toBe(200);
       expect(res.body.message).toBe('Redirecting to cook dashboard');
     });
   });
 
-  // Cook orders
+  // =========================
+  // Cook Orders Tests
+  // =========================
   describe('GET /cook/orders', () => {
     it('should get pending food orders', async () => {
       const mockOrders = [{ order_id: 1, status: 'Pending', item_name: 'Pizza', total_price: 20 }];
       db.query.mockResolvedValueOnce({ rows: mockOrders });
-
       const res = await request(app).get('/cook/orders');
-
       expect(res.status).toBe(200);
       expect(res.body).toEqual(mockOrders);
     });
   });
 
-  // Cook update order
+  // =========================
+  // Cook Update Order Tests
+  // =========================
   describe('POST /cook/update-order', () => {
     it('should update food order status', async () => {
       const orderData = { orderId: 1, status: 'Completed' };
-      db.query.mockResolvedValueOnce({});
+      db.query.mockResolvedValueOnce({}); // simulate update success
       const res = await request(app)
         .post('/cook/update-order')
         .send(orderData);
@@ -309,204 +344,211 @@ describe('HotelOnCall Backend Routes', () => {
     });
   });
 
-  // Guest room data
+  // =========================
+  // Guest Room Data Tests
+  // =========================
   describe('GET /guest-room', () => {
     it('should return guest room data', async () => {
       const mockRoom = { room_number: 101, status: 'Occupied' };
       db.query.mockResolvedValueOnce({ rows: [mockRoom] });
-
       const res = await request(app).get('/guest-room');
-
       expect(res.status).toBe(200);
       expect(res.body).toEqual(mockRoom);
     });
   });
 
-  // Maintenance request
+  // =========================
+  // Maintenance Request Tests
+  // =========================
   describe('POST /request-maintenance', () => {
     it('should successfully create a maintenance request', async () => {
       const maintenanceData = { guestEmail: 'testuser@example.com', issue: 'Leaky faucet' };
-      db.query.mockResolvedValueOnce({});
+      db.query.mockResolvedValueOnce({}); // simulate maintenance insert success
       const res = await request(app)
         .post('/request-maintenance')
         .send(maintenanceData);
-
       expect(res.status).toBe(200);
       expect(res.body.message).toBe('Maintenance request submitted');
     });
   });
 
-  // Guest maintenance status
+  // =========================
+  // Guest Maintenance Status Tests
+  // =========================
   describe('GET /guest-maintenance/:email', () => {
     it('should return maintenance status', async () => {
       const guestEmail = 'testuser@example.com';
       const mockRequest = { status: 'Pending', issue: 'Leaky faucet' };
       db.query.mockResolvedValueOnce({ rows: [mockRequest] });
-
       const res = await request(app).get(`/guest-maintenance/${guestEmail}`);
-
       expect(res.status).toBe(200);
       expect(res.body).toEqual(mockRequest);
     });
   });
 
-  // Maintenance requests
+  // =========================
+  // Maintenance Requests Tests
+  // =========================
   describe('GET /maintenance-requests', () => {
     it('should return pending maintenance tasks', async () => {
       const mockRequests = [{ issue: 'Leaky faucet', status: 'Pending' }];
       db.query.mockResolvedValueOnce({ rows: mockRequests });
-
       const res = await request(app).get('/maintenance-requests');
-
       expect(res.status).toBe(200);
       expect(res.body).toEqual(mockRequests);
     });
   });
 
-  // Update maintenance status
+  // =========================
+  // Update Maintenance Status Tests
+  // =========================
   describe('POST /update-maintenance-status', () => {
     it('should update maintenance status', async () => {
       const updateData = { requestId: 1, status: 'Resolved' };
-      db.query.mockResolvedValueOnce({});
+      db.query.mockResolvedValueOnce({}); // simulate update success
       const res = await request(app)
         .post('/update-maintenance-status')
         .send(updateData);
-
       expect(res.status).toBe(200);
       expect(res.body.message).toBe('Maintenance status updated');
     });
   });
 
-  // Cleaning availability
+  // =========================
+  // Cleaning Availability Tests
+  // =========================
   describe('GET /cleaning-availability', () => {
     it('should return cleaning availability', async () => {
       const mockAvailability = { available: true };
       db.query.mockResolvedValueOnce({ rows: [mockAvailability] });
-
       const res = await request(app).get('/cleaning-availability');
-
       expect(res.status).toBe(200);
       expect(res.body).toEqual(mockAvailability);
     });
   });
 
-  // Request cleaning
+  // =========================
+  // Request Cleaning Tests
+  // =========================
   describe('POST /request-cleaning', () => {
     it('should successfully create a cleaning request', async () => {
       const cleaningData = { guestEmail: 'testuser@example.com', roomNumber: 101 };
-      db.query.mockResolvedValueOnce({});
+      db.query.mockResolvedValueOnce({}); // simulate request insert success
       const res = await request(app)
         .post('/request-cleaning')
         .send(cleaningData);
-
       expect(res.status).toBe(200);
       expect(res.body.message).toBe('Cleaning request submitted');
     });
   });
 
-  // Guest cleaning status
+  // =========================
+  // Guest Cleaning Status Tests
+  // =========================
   describe('GET /guest-cleaning/:email', () => {
     it('should return cleaning status', async () => {
       const guestEmail = 'testuser@example.com';
       const mockStatus = { status: 'In Progress' };
       db.query.mockResolvedValueOnce({ rows: [mockStatus] });
-
       const res = await request(app).get(`/guest-cleaning/${guestEmail}`);
-
       expect(res.status).toBe(200);
       expect(res.body).toEqual(mockStatus);
     });
   });
 
-  // Update cleaning status
+  // =========================
+  // Update Cleaning Status Tests
+  // =========================
   describe('POST /update-cleaning-status', () => {
     it('should update cleaning status', async () => {
       const updateData = { requestId: 1, status: 'Completed' };
-      db.query.mockResolvedValueOnce({});
+      db.query.mockResolvedValueOnce({}); // simulate update success
       const res = await request(app)
         .post('/update-cleaning-status')
         .send(updateData);
-
       expect(res.status).toBe(200);
       expect(res.body.message).toBe('Cleaning status updated');
     });
   });
 
-  // Cleaning requests
+  // =========================
+  // Cleaning Requests Tests
+  // =========================
   describe('GET /cleaning-requests', () => {
     it('should return cleaning requests', async () => {
       const mockRequests = [{ room_number: 101, status: 'Pending' }];
       db.query.mockResolvedValueOnce({ rows: mockRequests });
-
       const res = await request(app).get('/cleaning-requests');
-
       expect(res.status).toBe(200);
       expect(res.body).toEqual(mockRequests);
     });
   });
 
-  // Reset password request
+  // =========================
+  // Reset Password Request Tests
+  // =========================
   describe('POST /reset-password-request', () => {
     it('should send reset password email', async () => {
-      db.query.mockResolvedValueOnce({});
+      db.query.mockResolvedValueOnce({}); // simulate success
       const res = await request(app)
         .post('/reset-password-request')
         .send({ email: 'testuser@example.com' });
-
       expect(res.status).toBe(200);
       expect(res.body.message).toBe('Password reset email sent');
     });
   });
 
-  // Verify reset code
+  // =========================
+  // Verify Reset Code Tests
+  // =========================
   describe('POST /verify-reset-code', () => {
     it('should verify reset code', async () => {
       const resetData = { email: 'testuser@example.com', code: '123456' };
-      db.query.mockResolvedValueOnce({});
+      db.query.mockResolvedValueOnce({}); // simulate success
       const res = await request(app)
         .post('/verify-reset-code')
         .send(resetData);
-
       expect(res.status).toBe(200);
       expect(res.body.message).toBe('Reset code verified');
     });
   });
 
-  // Feedback submission
+  // =========================
+  // Feedback Submission Tests
+  // =========================
   describe('POST /feedback', () => {
     it('should submit feedback', async () => {
       const feedbackData = { guestEmail: 'testuser@example.com', feedback: 'Great stay!' };
-      db.query.mockResolvedValueOnce({});
+      db.query.mockResolvedValueOnce({}); // simulate success
       const res = await request(app)
         .post('/feedback')
         .send(feedbackData);
-
       expect(res.status).toBe(200);
       expect(res.body.message).toBe('Feedback submitted');
     });
   });
 
-  // Statistics endpoint
+  // =========================
+  // Statistics Tests
+  // =========================
   describe('GET /statistics', () => {
     it('should return statistics data', async () => {
       const mockStats = { totalGuests: 100, totalRooms: 50 };
       db.query.mockResolvedValueOnce({ rows: [mockStats] });
-
       const res = await request(app).get('/statistics');
-
       expect(res.status).toBe(200);
       expect(res.body).toEqual(mockStats);
     });
   });
 
-  // Calculate bill endpoint
+  // =========================
+  // Calculate Bill Tests
+  // =========================
   describe('GET /calculate-bill', () => {
     it('should return a calculated bill', async () => {
       const mockBill = { amount: 100, taxes: 10, total: 110 };
       db.query.mockResolvedValueOnce({ rows: [mockBill] });
-
       const res = await request(app).get('/calculate-bill');
-
       expect(res.status).toBe(200);
       expect(res.body).toEqual(mockBill);
     });
