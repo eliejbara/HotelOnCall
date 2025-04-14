@@ -23,9 +23,12 @@ jobs:
         with:
           node-version: '18'  # Use a version compatible with mongoose, mongodb, etc.
 
-      # Step 3: Install dependencies
+     # Step 3: Install dependencies
       - name: Install Dependencies
         run: npm install
+
+      - name: Ensure Google OAuth package
+        run: npm install passport-google-oauth20
 
       # Step 4: Run tests
       - name: Run Tests
