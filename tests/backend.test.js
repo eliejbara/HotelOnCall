@@ -1,5 +1,8 @@
-// Set NODE_ENV to test so your server can behave differently during tests
-process.env.NODE_ENV = 'test';
+// __tests__/googleAuth.test.js
+
+jest.setTimeout(100000);  // Increase timeout to 100 seconds
+
+// Mocking the passport module before requiring the app
 jest.mock('passport', () => ({
   authenticate: jest.fn(() => (req, res, next) => next()), // Mock authenticate properly
   initialize: jest.fn(() => (req, res, next) => next()),
@@ -7,31 +10,6 @@ jest.mock('passport', () => ({
   use: jest.fn(),
   serializeUser: jest.fn(),
   deserializeUser: jest.fn(),
-}));
-
-// Now your other test code follows...
-
-
-// __tests__/googleAuth.test.js
-
-jest.setTimeout(100000);  // Increase timeout to 10 seconds
-
-// Your other test code follows...
-
-// Prevent process.exit from actually terminating tests
-jest.spyOn(process, 'exit').mockImplementation(() => {});
-
-// ----- Mock Modules BEFORE requiring your server -----
-jest.mock('passport', () => ({
-  initialize: jest.fn(() => (req, res, next) => next()),
-  session: jest.fn(() => (req, res, next) => next()),
-  use: jest.fn(),
-  serializeUser: jest.fn(),
-  deserializeUser: jest.fn(),
-}));
-
-jest.mock('passport-google-oauth20', () => ({
-  Strategy: jest.fn(),
 }));
 
 // Mock the PostgreSQL database
@@ -42,12 +20,25 @@ jest.mock('pg', () => ({
   })),
 }));
 
-// Also mock axios for your prediction API tests
+// Mock axios for your prediction API tests
 jest.mock('axios');
+
+// Mocking the session handling
+let mockSession;
+
+beforeEach(() => {
+  mockSession = {};
+  jest.clearAllMocks();
+  // Simulating session behavior for testing
+  app.use((req, res, next) => {
+    req.session = mockSession;
+    next();
+  });
+});
 
 // Now require your server after setting up mocks
 const request = require('supertest');
-const app = require('../server'); // ensure this points to your server.js file
+const app = require('../server'); // Ensure this points to your server.js file
 const { Pool } = require('pg');
 const axios = require('axios');
 
@@ -320,4 +311,3 @@ describe('HotelOnCall Backend Routes', () => {
     });
   });
 });
-
