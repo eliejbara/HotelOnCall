@@ -3,30 +3,30 @@ name: Run Backend Tests
 on:
   push:
     branches:
-      - main  # This triggers the action when you push to the main branch
+      - main
   pull_request:
     branches:
-      - main  # This triggers the action on pull requests to the main branch
+      - main
 
 jobs:
   test:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout the code from your repository
+      # Step 1: Checkout the code
       - name: Checkout Code
         uses: actions/checkout@v2
 
-      # Step 2: Set up Node.js environment
+      # Step 2: Set up Node.js
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: '14'  # Specify the Node.js version you are using
+          node-version: '18'  # Use a version compatible with mongoose, mongodb, etc.
 
       # Step 3: Install dependencies
       - name: Install Dependencies
         run: npm install
 
-      # Step 4: Run Tests using Jest
+      # Step 4: Run tests
       - name: Run Tests
-        run: npm test  # Ensure this is the command that runs your tests in package.json
+        run: npm test
