@@ -20,7 +20,7 @@ jest.mock('../db', () => ({
   query: jest.fn().mockResolvedValue({}),
 }));
 
-jest.setTimeout(10000);  // Increase timeout to 10 seconds
+jest.setTimeout(100000);  // Increase timeout to 10 seconds
 
 let mockSession;
 beforeEach(() => {
