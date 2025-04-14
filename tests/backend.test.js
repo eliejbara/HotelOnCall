@@ -1,176 +1,375 @@
 const request = require('supertest');
-const app = 'https://hotel-on-call.vercel.app'; // Your Vercel-deployed backend URL
+const app = require('../server'); // Ensure your server file is named correctly
+const { Pool } = require('pg');
+const { mockResponse } = require('mock-express-response'); // Mock response
 
-const guestData = {
-  username: 'guest123',
-  roomId: '101',
-  checkinDate: '2025-04-13',
-  checkoutDate: '2025-04-15',
-};
+// Mock PostgreSQL database
+jest.mock('pg', () => ({
+  Pool: jest.fn().mockImplementation(() => ({
+    query: jest.fn(),
+    connect: jest.fn(),
+  })),
+}));
 
-let roomId = '101';
-let orderId = '';
-let maintenanceRequestId = '';
-let cleaningRequestId = '';
+describe("HotelOnCall Backend Routes", () => {
+  let db;
 
-describe('Guest Endpoints', () => {
-  it('should get available rooms', async () => {
-    const res = await request(app)
-      .get('/available-rooms')
-      .query({ checkinDate: guestData.checkinDate, checkoutDate: guestData.checkoutDate });
-
-    expect(res.status).toBe(200);
-    expect(Array.isArray(res.body.rooms)).toBe(true);
-    if (res.body.rooms.length > 0) {
-      roomId = res.body.rooms[0].id;
-    }
+  beforeEach(() => {
+    db = new Pool();
   });
 
-  it('should check in guest', async () => {
-    const res = await request(app)
-      .post('/checkin')
-      .send({
-        username: guestData.username,
-        roomId: roomId,
-        checkinDate: guestData.checkinDate,
-        checkoutDate: guestData.checkoutDate,
-      });
-
-    expect(res.status).toBe(200);
-    expect(res.body.message).toBe('Check-in successful');
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
-  it('should fetch guest room details', async () => {
-    const res = await request(app)
-      .get('/guest-room')
-      .query({ guestId: guestData.username });
+  // Test for User Registration
+  describe("POST /register", () => {
+    it("should register a new user", async () => {
+      const newUser = {
+        email: 'testuser@example.com',
+        password: 'password123',
+        userType: 'guest',
+      };
 
-    expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty('roomNumber');
+      db.query.mockResolvedValueOnce({ rows: [] }); // No existing user
+      db.query.mockResolvedValueOnce({}); // Insert new user
+
+      const res = await request(app)
+        .post('/register')
+        .send(newUser);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.message).toBe("User registered successfully!");
+    });
+
+    it("should return error if user already exists", async () => {
+      const newUser = {
+        email: 'existinguser@example.com',
+        password: 'password123',
+        userType: 'guest',
+      };
+
+      db.query.mockResolvedValueOnce({ rows: [{ email: 'existinguser@example.com' }] }); // Existing user
+
+      const res = await request(app)
+        .post('/register')
+        .send(newUser);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toBe("User already exists!");
+    });
   });
 
-  it('should place food order', async () => {
-    const res = await request(app)
-      .post('/place-order')
-      .send({
-        guestId: guestData.username,
-        foodItems: [
-          { foodId: '1', quantity: 2 },
-          { foodId: '2', quantity: 1 },
+  // Test for User Login
+  describe("POST /login", () => {
+    it("should login an existing user", async () => {
+      const user = {
+        email: 'testuser@example.com',
+        password: 'password123',
+        userType: 'guest',
+      };
+
+      db.query.mockResolvedValueOnce({
+        rows: [
+          {
+            email: 'testuser@example.com',
+            password: 'hashedPassword',
+            userType: 'guest',
+          },
         ],
       });
 
-    expect(res.status).toBe(200);
-    expect(res.body.message).toBe('Order placed successfully');
-    if (res.body.orderId) orderId = res.body.orderId;
-  });
+      const res = await request(app)
+        .post('/login')
+        .send(user);
 
-  it('should get order status', async () => {
-    const res = await request(app)
-      .get('/check-order')
-      .query({ orderId: orderId });
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.message).toBe("Login successful!");
+    });
 
-    expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty('status');
-  });
+    it("should return error for invalid credentials", async () => {
+      const user = {
+        email: 'testuser@example.com',
+        password: 'wrongpassword',
+        userType: 'guest',
+      };
 
-  it('should request maintenance', async () => {
-    const res = await request(app)
-      .post('/request-maintenance')
-      .send({
-        guestId: guestData.username,
-        roomId: roomId,
-        issue: 'Leaking faucet',
+      db.query.mockResolvedValueOnce({
+        rows: [
+          {
+            email: 'testuser@example.com',
+            password: 'hashedPassword',
+            userType: 'guest',
+          },
+        ],
       });
 
-    expect(res.status).toBe(200);
-    expect(res.body.message).toBe('Maintenance request successful');
-    if (res.body.requestId) maintenanceRequestId = res.body.requestId;
+      const res = await request(app)
+        .post('/login')
+        .send(user);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toBe("Invalid credentials!");
+    });
   });
 
-  it('should request cleaning', async () => {
-    const res = await request(app)
-      .post('/request-cleaning')
-      .send({
-        guestId: guestData.username,
-        roomId: roomId,
-        requestType: 'Full cleaning',
+  // Test for Google Authentication
+  describe("GET /auth/google/callback", () => {
+    it("should redirect to the correct URL after successful Google login", async () => {
+      const mockProfile = {
+        emails: [{ value: 'testuser@example.com' }],
+        id: 'google_id',
+      };
+
+      const mockDone = jest.fn();
+      const mockPassportAuthenticate = jest.fn().mockImplementationOnce(() => mockDone(null, mockProfile));
+
+      app.use((req, res, next) => {
+        req.user = { email: 'testuser@example.com', userType: 'guest' }; // Mock user info
+        next();
       });
 
-    expect(res.status).toBe(200);
-    expect(res.body.message).toBe('Cleaning request successful');
-    if (res.body.requestId) cleaningRequestId = res.body.requestId;
+      const res = await request(app)
+        .get('/auth/google/callback')
+        .query({ success: 'true' });
+
+      expect(res.status).toBe(302);
+      expect(res.header.location).toContain('/guest_services.html');
+    });
   });
 
-  it('should check out guest', async () => {
-    const res = await request(app)
-      .post('/checkout')
-      .send({
-        guestId: guestData.username,
-        roomId: roomId,
-      });
+  // Test for Google Prediction API
+  describe("GET /api/guest-prediction", () => {
+    it("should return guest prediction data", async () => {
+      const mockPredictionData = { prediction: "high" };
+      axios.get = jest.fn().mockResolvedValueOnce({ data: mockPredictionData });
 
-    expect(res.status).toBe(200);
-    expect(res.body.message).toBe('Checkout successful');
+      const res = await request(app).get('/api/guest-prediction?date=2025-05-01');
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual(mockPredictionData);
+    });
+
+    it("should return an error for missing date parameter", async () => {
+      const res = await request(app).get('/api/guest-prediction');
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Date parameter is required (YYYY-MM-DD)');
+    });
+  });
+
+  // Test for Available Rooms
+  describe("GET /available-rooms", () => {
+    it("should return available rooms", async () => {
+      const mockRooms = [{ room_number: 101 }, { room_number: 102 }];
+      db.query.mockResolvedValueOnce({ rows: mockRooms });
+
+      const res = await request(app).get('/available-rooms');
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual(mockRooms);
+    });
+
+    it("should return a server error if database fails", async () => {
+      db.query.mockRejectedValueOnce(new Error("Database error"));
+
+      const res = await request(app).get('/available-rooms');
+
+      expect(res.status).toBe(500);
+      expect(res.body.success).toBe(false);
+    });
+  });
+
+  // Test for Check Guest's Order Status
+  describe("GET /check-order/:guestEmail", () => {
+    it("should return order status", async () => {
+      const guestEmail = 'testuser@example.com';
+      const mockOrders = [
+        { order_id: 1, status: 'Pending', item_name: 'Pizza', total_price: 20 },
+      ];
+      db.query.mockResolvedValueOnce({ rows: mockOrders });
+
+      const res = await request(app).get(`/check-order/${guestEmail}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual(mockOrders);
+    });
+
+    it("should return an error if no orders are found", async () => {
+      const guestEmail = 'nonexistent@example.com';
+      db.query.mockResolvedValueOnce({ rows: [] });
+
+      const res = await request(app).get(`/check-order/${guestEmail}`);
+
+      expect(res.status).toBe(404);
+      expect(res.body.message).toBe("No orders found for guest.");
+    });
+  });
+
+  // Test for Place Food Order
+  describe("POST /place-order", () => {
+    it("should place a food order", async () => {
+      const orderData = {
+        guestEmail: 'testuser@example.com',
+        orderItems: [{ name: 'Pizza', price: 20, quantity: 2 }],
+      };
+      db.query.mockResolvedValueOnce({});
+
+      const res = await request(app)
+        .post('/place-order')
+        .send(orderData);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.message).toBe("Order placed successfully!");
+    });
+
+    it("should return an error if no order items are provided", async () => {
+      const orderData = {
+        guestEmail: 'testuser@example.com',
+        orderItems: [],
+      };
+
+      const res = await request(app)
+        .post('/place-order')
+        .send(orderData);
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe("Invalid order request.");
+    });
   });
 });
 
-describe('Maintenance Staff Endpoints', () => {
-  it('should get maintenance requests', async () => {
-    const res = await request(app).get('/maintenance-requests');
+// Test for User Registration
+describe("POST /register", () => {
+  it("should register a new user", async () => {
+    const newUser = { email: 'testuser@example.com', password: 'password123', userType: 'guest' };
+    db.query.mockResolvedValueOnce({ rows: [] }); // No existing user
+    db.query.mockResolvedValueOnce({});
+    const res = await request(app).post('/register').send(newUser);
     expect(res.status).toBe(200);
-    expect(Array.isArray(res.body.requests)).toBe(true);
+    expect(res.body.success).toBe(true);
+    expect(res.body.message).toBe("User registered successfully!");
   });
 
-  it('should update maintenance request status', async () => {
-    const res = await request(app)
-      .post('/update-maintenance-status')
-      .send({
-        requestId: maintenanceRequestId || '1',
-        status: 'Completed',
-      });
-
+  it("should return error if user already exists", async () => {
+    const newUser = { email: 'existinguser@example.com', password: 'password123', userType: 'guest' };
+    db.query.mockResolvedValueOnce({ rows: [{ email: 'existinguser@example.com' }] }); // Existing user
+    const res = await request(app).post('/register').send(newUser);
     expect(res.status).toBe(200);
-    expect(res.body.message).toBe('Maintenance status updated');
-  });
-});
-
-describe('Cleaner Endpoints', () => {
-  it('should get cleaning requests', async () => {
-    const res = await request(app).get('/cleaning-requests');
-    expect(res.status).toBe(200);
-    expect(Array.isArray(res.body.requests)).toBe(true);
-  });
-
-  it('should update cleaning request status', async () => {
-    const res = await request(app)
-      .post('/update-cleaning-status')
-      .send({
-        requestId: cleaningRequestId || '1',
-        status: 'Completed',
-      });
-
-    expect(res.status).toBe(200);
-    expect(res.body.message).toBe('Cleaning status updated');
+    expect(res.body.success).toBe(false);
+    expect(res.body.message).toBe("User already exists!");
   });
 });
 
-describe('Cook Endpoints', () => {
-  it('should get cook orders', async () => {
-    const res = await request(app).get('/cook/orders');
+// Test for User Login
+describe("POST /login", () => {
+  it("should login an existing user", async () => {
+    const user = { email: 'testuser@example.com', password: 'password123', userType: 'guest' };
+    db.query.mockResolvedValueOnce({ rows: [{ email: 'testuser@example.com', password: 'hashedPassword', userType: 'guest' }] });
+    const res = await request(app).post('/login').send(user);
     expect(res.status).toBe(200);
-    expect(Array.isArray(res.body.orders)).toBe(true);
+    expect(res.body.success).toBe(true);
+    expect(res.body.message).toBe("Login successful!");
   });
 
-  it('should update cook order status', async () => {
-    const res = await request(app)
-      .post('/cook/update-order')
-      .send({
-        orderId: orderId || '1',
-        status: 'Completed',
-      });
-
+  it("should return error for invalid credentials", async () => {
+    const user = { email: 'testuser@example.com', password: 'wrongpassword', userType: 'guest' };
+    db.query.mockResolvedValueOnce({ rows: [{ email: 'testuser@example.com', password: 'hashedPassword', userType: 'guest' }] });
+    const res = await request(app).post('/login').send(user);
     expect(res.status).toBe(200);
-    expect(res.body.message).toBe('Order status updated');
+    expect(res.body.success).toBe(false);
+    expect(res.body.message).toBe("Invalid credentials!");
+  });
+});
+
+// Test for Google Authentication
+describe("GET /auth/google/callback", () => {
+  it("should redirect to the correct URL after successful Google login", async () => {
+    const mockProfile = { emails: [{ value: 'testuser@example.com' }], id: 'google_id' };
+    const mockDone = jest.fn();
+    const mockPassportAuthenticate = jest.fn().mockImplementationOnce(() => mockDone(null, mockProfile));
+    app.use((req, res, next) => { req.user = { email: 'testuser@example.com', userType: 'guest' }; next(); });
+    const res = await request(app).get('/auth/google/callback').query({ success: 'true' });
+    expect(res.status).toBe(302);
+    expect(res.header.location).toContain('/guest_services.html');
+  });
+});
+
+// Test for Google Prediction API
+describe("GET /api/guest-prediction", () => {
+  it("should return guest prediction data", async () => {
+    const mockPredictionData = { prediction: "high" };
+    axios.get = jest.fn().mockResolvedValueOnce({ data: mockPredictionData });
+    const res = await request(app).get('/api/guest-prediction?date=2025-05-01');
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual(mockPredictionData);
+  });
+
+  it("should return an error for missing date parameter", async () => {
+    const res = await request(app).get('/api/guest-prediction');
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('Date parameter is required (YYYY-MM-DD)');
+  });
+});
+
+// Test for Available Rooms
+describe("GET /available-rooms", () => {
+  it("should return available rooms", async () => {
+    const mockRooms = [{ room_number: 101 }, { room_number: 102 }];
+    db.query.mockResolvedValueOnce({ rows: mockRooms });
+    const res = await request(app).get('/available-rooms');
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual(mockRooms);
+  });
+
+  it("should return a server error if database fails", async () => {
+    db.query.mockRejectedValueOnce(new Error("Database error"));
+    const res = await request(app).get('/available-rooms');
+    expect(res.status).toBe(500);
+    expect(res.body.success).toBe(false);
+  });
+});
+
+// Test for Check Guest's Order Status
+describe("GET /check-order/:guestEmail", () => {
+  it("should return order status", async () => {
+    const guestEmail = 'testuser@example.com';
+    const mockOrders = [{ order_id: 1, status: 'Pending', item_name: 'Pizza', total_price: 20 }];
+    db.query.mockResolvedValueOnce({ rows: mockOrders });
+    const res = await request(app).get(`/check-order/${guestEmail}`);
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual(mockOrders);
+  });
+
+  it("should return an error if no orders are found", async () => {
+    const guestEmail = 'nonexistent@example.com';
+    db.query.mockResolvedValueOnce({ rows: [] });
+    const res = await request(app).get(`/check-order/${guestEmail}`);
+    expect(res.status).toBe(404);
+    expect(res.body.message).toBe("No orders found for guest.");
+  });
+});
+
+// Test for Place Food Order
+describe("POST /place-order", () => {
+  it("should place a food order", async () => {
+    const orderData = { guestEmail: 'testuser@example.com', orderItems: [{ name: 'Pizza', price: 20, quantity: 2 }] };
+    db.query.mockResolvedValueOnce({});
+    const res = await request(app).post('/place-order').send(orderData);
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.message).toBe("Order placed successfully!");
+  });
+
+  it("should return an error if no order items are provided", async () => {
+    const orderData = { guestEmail: 'testuser@example.com', orderItems: [] };
+    const res = await request(app).post('/place-order').send(orderData);
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe("Invalid order request.");
   });
 });
