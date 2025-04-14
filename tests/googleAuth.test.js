@@ -4,8 +4,9 @@ const request = require('supertest');
 const app = require('../app');  // Adjust the path as necessary to point to your Express app
 const db = require('../db');    // Mock DB module
 
-jest.mock('../db');  // Mocking the database module
-
+jest.mock('../db', () => ({
+  query: jest.fn().mockResolvedValue({}),
+}));
 let mockSession;
 beforeEach(() => {
     mockSession = {};
