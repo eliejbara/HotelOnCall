@@ -1,4 +1,5 @@
 // __tests__/googleAuth.test.js
+jest.mock('passport');
 
 const request = require('supertest');
 const app = require('../server');  // Adjust the path as necessary to point to your Express app
