@@ -55,14 +55,17 @@ const db = new Pool({
 
 
 // Connect to PostgreSQL
-db.connect((err) => {
-  if (err) {
-    console.error("❌ PostgreSQL Connection Failed:", err);
-    process.exit(1);
-  } else {
-    console.log("✅ PostgreSQL Connected to Neon Database");
-  }
-});
+if (process.env.NODE_ENV !== 'test') {
+  db.connect((err) => {
+    if (err) {
+      console.error("❌ PostgreSQL Connection Failed:", err);
+      process.exit(1);
+    } else {
+      console.log("✅ PostgreSQL Connected to Neon Database");
+    }
+  });
+}
+
 
 // ** Serve index.html as default page **
 app.get("/", (req, res) => {
@@ -71,19 +74,22 @@ app.get("/", (req, res) => {
 
 
 // Session Middleware
-app.use(session({
-  store: new pgSession({
-    pool: db, 
-    tableName: 'session'
-  }),
-  secret: process.env.SESSION_SECRET|| 'test-secret',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 30 * 24 * 60 * 60 * 1000
-  }
-}));
+if (process.env.NODE_ENV !== 'test') {
+  app.use(session({
+    store: new pgSession({
+      pool: db, 
+      tableName: 'session'
+    }),
+    secret: process.env.SESSION_SECRET || 'test-secret',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 30 * 24 * 60 * 60 * 1000
+    }
+  }));
+}
+
 
 
 
