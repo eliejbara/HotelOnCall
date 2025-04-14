@@ -1,5 +1,9 @@
 // __tests__/googleAuth.test.js
-jest.mock('passport');
+jest.mock('passport', () => ({
+    serializeUser: jest.fn(),
+    deserializeUser: jest.fn(),
+    authenticate: jest.fn().mockReturnValue((req, res, next) => next()),  // Mock the authenticate method
+}));
 
 const request = require('supertest');
 const app = require('../server');  // Adjust the path as necessary to point to your Express app
@@ -8,6 +12,7 @@ const db = require('../db');    // Mock DB module
 jest.mock('../db', () => ({
   query: jest.fn().mockResolvedValue({}),
 }));
+
 let mockSession;
 beforeEach(() => {
     mockSession = {};
