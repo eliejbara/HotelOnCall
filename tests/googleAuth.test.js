@@ -1,7 +1,7 @@
 // __tests__/googleAuth.test.js
 
 const request = require('supertest');
-const app = require('../app');  // Adjust the path as necessary to point to your Express app
+const app = require('../server');  // Adjust the path as necessary to point to your Express app
 const db = require('../db');    // Mock DB module
 
 jest.mock('../db', () => ({
