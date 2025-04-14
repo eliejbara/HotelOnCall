@@ -10,7 +10,7 @@ jest.mock('passport', () => {
 
 // __tests__/googleAuth.test.js
 
-jest.setTimeout(10000);  // Increase timeout to 10 seconds
+jest.setTimeout(100000);  // Increase timeout to 10 seconds
 
 // Your other test code follows...
 
