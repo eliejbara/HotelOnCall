@@ -61,44 +61,55 @@ describe('HotelOnCall Backend Routes', () => {
   // =========================
   // User Registration Tests
   // =========================
-  describe('POST /register', () => {
-    it('should register a new user', async () => {
-      const newUser = {
-        email: 'testuser@example.com',
-        password: 'password123',
-        userType: 'guest',
-      };
+describe('POST /register', () => {
+  it('should register a new user', async () => {
+    const newUser = {
+      email: 'testuser@example.com',
+      password: 'password123',
+      userType: 'guest',
+    };
 
-      db.query.mockResolvedValueOnce({ rows: [] }); // No existing user
-      db.query.mockResolvedValueOnce({});            // Insert new user
-
-      const res = await request(app)
-        .post('/register')
-        .send(newUser);
-
-      expect(res.status).toBe(200);
-      expect(res.body.success).toBe(true);
-      expect(res.body.message).toBe('User registered successfully!');
+    db.query.mockResolvedValueOnce({
+      rows: [], // No existing user
+      rowCount: 0, // Indicating no rows found
     });
 
-    it('should return error if user already exists', async () => {
-      const newUser = {
-        email: 'existinguser@example.com',
-        password: 'password123',
-        userType: 'guest',
-      };
+    db.query.mockResolvedValueOnce({
+      rows: [{ email: newUser.email }],
+      rowCount: 1,
+    }); // Simulating successful user creation
 
-      db.query.mockResolvedValueOnce({ rows: [{ email: 'existinguser@example.com' }] }); // Existing user
+    const res = await request(app)
+      .post('/register')
+      .send(newUser);
 
-      const res = await request(app)
-        .post('/register')
-        .send(newUser);
-
-      expect(res.status).toBe(200);
-      expect(res.body.success).toBe(false);
-      expect(res.body.message).toBe('User already exists!');
-    });
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.message).toBe('User registered successfully!');
   });
+
+  it('should return error if user already exists', async () => {
+    const existingUser = {
+      email: 'existinguser@example.com',
+      password: 'password123',
+      userType: 'guest',
+    };
+
+    db.query.mockResolvedValueOnce({
+      rows: [{ email: existingUser.email }],
+      rowCount: 1, // User already exists
+    });
+
+    const res = await request(app)
+      .post('/register')
+      .send(existingUser);
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(false);
+    expect(res.body.message).toBe('User already exists!');
+  });
+});
+
 
   // =========================
   // User Login Tests
