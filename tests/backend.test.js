@@ -1,5 +1,5 @@
 const request = require('supertest');
-const app = 'https://your-vercel-deployed-backend-url'; // Replace with your actual Vercel URL
+const app = 'https://hotel-on-call.vercel.app'; // Replace with your actual Vercel URL
 
 // Mock data for staff authentication
 const staff = {
