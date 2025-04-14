@@ -30,6 +30,5 @@ jobs:
       - name: Ensure Google OAuth package
         run: npm install passport-google-oauth20
 
-      # Step 4: Run tests
       - name: Run Tests
-        run: npm test
+        run: GOOGLE_CLIENT_ID=dummy GOOGLE_CLIENT_SECRET=dummy npm test
