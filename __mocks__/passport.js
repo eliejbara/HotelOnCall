@@ -6,6 +6,7 @@ const passport = {
       next();
     };
   }),
+  use: jest.fn(), // Mock `passport.use`
   initialize: jest.fn(() => (req, res, next) => next()),
   session: jest.fn(() => (req, res, next) => next())
 };
