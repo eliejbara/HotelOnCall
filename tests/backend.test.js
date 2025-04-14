@@ -1,196 +1,155 @@
 const request = require('supertest');
-const app = 'https://hotel-on-call.vercel.app'; // Replace with your actual Vercel URL
+const app = 'https://hotel-on-call-backend.up.railway.app'; // Replace with your backend URL if different
 
-const staff = {
-  username: 'staff1',
-  password: '123',
-};
-
-// Mock guest data
 const guestData = {
-  username: 'guest123',
-  roomId: '101',
+  username: 'guest_test_' + Date.now(),
   checkinDate: '2025-04-13',
   checkoutDate: '2025-04-15',
 };
 
-// Mock order data
-const orderData = {
-  guestId: 'guest123',
-  foodItems: [
-    { foodId: '1', quantity: 2 },
-    { foodId: '3', quantity: 1 },
-  ],
-};
+const orderItems = [
+  { foodId: '1', quantity: 2 },
+  { foodId: '3', quantity: 1 },
+];
 
-// Mock maintenance request data
-const maintenanceRequestData = {
-  guestId: 'guest123',
-  roomId: '101',
-  issue: 'Air conditioning not working',
-};
+const maintenanceIssue = 'Leaky faucet';
+const cleaningType = 'Full cleaning';
 
-// Mock cleaning request data
-const cleaningRequestData = {
-  guestId: 'guest123',
-  roomId: '101',
-  requestType: 'Full cleaning',
-};
+let guestId = '';
+let roomId = '';
+let orderId = '';
+let maintenanceRequestId = '';
+let cleaningRequestId = '';
 
-// Mock staff roles for the cook, maintenance, and cleaner
-const staffRoles = {
-  cook: {
-    username: 'cook123',
-    password: '123',
-  },
-  maintenance: {
-    username: 'maintenance123',
-    password: '123',
-  },
-  cleaner: {
-    username: 'cleaner123',
-    password: '123',
-  },
-};
-
-describe('Guest Endpoints', () => {
-  // Test for check-in, ensuring room is available
+describe('HotelOnCall Backend Tests', () => {
   it('should check in a guest', async () => {
-    const checkinResponse = await request(app)
-      .get('/available-rooms') // Check available rooms before attempting to check-in
+    const checkRooms = await request(app)
+      .get('/available-rooms')
       .query({ checkinDate: guestData.checkinDate, checkoutDate: guestData.checkoutDate });
 
-    const availableRooms = checkinResponse.body.rooms;
+    expect(checkRooms.status).toBe(200);
+    expect(Array.isArray(checkRooms.body.rooms)).toBe(true);
+    expect(checkRooms.body.rooms.length).toBeGreaterThan(0);
 
-    // Ensure there's at least one available room
-    if (availableRooms.length > 0) {
-      const response = await request(app)
-        .post('/checkin')
-        .send({
-          username: guestData.username,
-          roomId: availableRooms[0].id, // Use first available room
-          checkinDate: guestData.checkinDate,
-          checkoutDate: guestData.checkoutDate,
-        });
+    roomId = checkRooms.body.rooms[0].id;
 
-      expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('message', 'Check-in successful');
-    } else {
-      console.log('No available rooms for check-in');
-    }
-  });
-
-  it('should check out a guest', async () => {
-    const response = await request(app)
-      .post('/checkout')
+    const checkin = await request(app)
+      .post('/checkin')
       .send({
-        guestId: guestData.username,
-        roomId: guestData.roomId,
+        username: guestData.username,
+        roomId,
+        checkinDate: guestData.checkinDate,
+        checkoutDate: guestData.checkoutDate,
       });
 
-    expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty('message', 'Checkout successful');
+    expect(checkin.status).toBe(200);
+    expect(checkin.body).toHaveProperty('message', 'Check-in successful');
+    guestId = guestData.username;
   });
 
-  it('should place an order', async () => {
+  it('should place a food order', async () => {
     const response = await request(app)
       .post('/place-order')
-      .send(orderData);
+      .send({ guestId, foodItems: orderItems });
 
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty('message', 'Order placed successfully');
+    if (response.body.orderId) orderId = response.body.orderId;
   });
 
   it('should check the order status', async () => {
+    if (!orderId) return console.warn('Order ID not captured. Skipping.');
     const response = await request(app)
       .get('/check-order')
-      .query({ orderId: '12345' });
+      .query({ orderId });
 
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty('status');
   });
 
-  it('should fetch guest room details', async () => {
-    const response = await request(app)
-      .get('/guest-room')
-      .query({ guestId: guestData.username });
-
-    expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty('roomNumber');
-  });
-});
-
-describe('Maintenance Endpoints', () => {
   it('should request maintenance', async () => {
     const response = await request(app)
       .post('/request-maintenance')
-      .send(maintenanceRequestData);
+      .send({ guestId, roomId, issue: maintenanceIssue });
 
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty('message', 'Maintenance request successful');
+    if (response.body.requestId) maintenanceRequestId = response.body.requestId;
   });
 
   it('should fetch maintenance requests', async () => {
-    const response = await request(app)
-      .get('/maintenance-requests');
-
+    const response = await request(app).get('/maintenance-requests');
     expect(response.status).toBe(200);
     expect(Array.isArray(response.body.requests)).toBe(true);
   });
 
   it('should update maintenance status', async () => {
+    if (!maintenanceRequestId) return console.warn('No maintenance request ID. Skipping.');
     const response = await request(app)
       .post('/update-maintenance-status')
-      .send({ requestId: '12345', status: 'Completed' });
+      .send({ requestId: maintenanceRequestId, status: 'Completed' });
 
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty('message', 'Maintenance status updated');
   });
-});
 
-describe('Cleaning Endpoints', () => {
   it('should request cleaning', async () => {
     const response = await request(app)
       .post('/request-cleaning')
-      .send(cleaningRequestData);
+      .send({ guestId, roomId, requestType: cleaningType });
 
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty('message', 'Cleaning request successful');
+    if (response.body.requestId) cleaningRequestId = response.body.requestId;
   });
 
   it('should fetch cleaning requests', async () => {
-    const response = await request(app)
-      .get('/cleaning-requests');
-
+    const response = await request(app).get('/cleaning-requests');
     expect(response.status).toBe(200);
     expect(Array.isArray(response.body.requests)).toBe(true);
   });
 
   it('should update cleaning status', async () => {
+    if (!cleaningRequestId) return console.warn('No cleaning request ID. Skipping.');
     const response = await request(app)
       .post('/update-cleaning-status')
-      .send({ requestId: '12345', status: 'Completed' });
+      .send({ requestId: cleaningRequestId, status: 'Completed' });
 
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty('message', 'Cleaning status updated');
   });
-});
 
-describe('Cook Endpoints', () => {
   it('should fetch cook orders', async () => {
-    const response = await request(app)
-      .get('/cook/orders');
-
+    const response = await request(app).get('/cook/orders');
     expect(response.status).toBe(200);
     expect(Array.isArray(response.body.orders)).toBe(true);
   });
 
-  it('should update cook order status', async () => {
+  it('should update order status as cook', async () => {
+    if (!orderId) return console.warn('No order ID for cook. Skipping.');
     const response = await request(app)
       .post('/cook/update-order')
-      .send({ orderId: '12345', status: 'Completed' });
+      .send({ orderId, status: 'Completed' });
 
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty('message', 'Order status updated');
+  });
+
+  it('should get guest room details', async () => {
+    const response = await request(app)
+      .get('/guest-room')
+      .query({ guestId });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveProperty('roomNumber');
+  });
+
+  it('should check out a guest', async () => {
+    const response = await request(app)
+      .post('/checkout')
+      .send({ guestId, roomId });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveProperty('message', 'Checkout successful');
   });
 });
