@@ -1,7 +1,8 @@
-// __mocks__/passport.js
 module.exports = {
-  use: jest.fn(),
-  authenticate: jest.fn(),
-  serializeUser: jest.fn(),
-  deserializeUser: jest.fn(),
+  initialize: () => (req, res, next) => next(),
+  session: () => (req, res, next) => next(),
+  authenticate: () => (req, res, next) => next(),
+  use: () => {},
+  serializeUser: () => {},
+  deserializeUser: () => {},
 };
