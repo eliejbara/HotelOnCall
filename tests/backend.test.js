@@ -10,6 +10,10 @@ jest.mock('pg', () => ({
     connect: jest.fn(),
   })),
 }));
+jest.mock('passport-google-oauth20', () => ({
+  Strategy: jest.fn(),
+}));
+
 
 describe("HotelOnCall Backend Routes", () => {
   let db;
