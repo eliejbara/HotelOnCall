@@ -165,7 +165,7 @@ test('GET /maintenance-requests - should return pending maintenance requests', a
   });
 
   const res = await request(app).get('/maintenance-requests');
-  expect(res.statusCode).toBe(200);  // Ensure that a 200 status is returned
+  expect(res.statusCode).toBe(200);
   expect(res.body).toEqual([
     { id: 1, room_number: 101, issue_type: 'AC', guest_email: 'guest@example.com', status: 'pending' }
   ]);
@@ -185,16 +185,13 @@ test('GET /maintenance-requests - should return pending maintenance requests', a
   });
 
   // GET /guest-room
-  test('GET /guest-room - should return guest room info', async () => {
-    mockClient.query.mockResolvedValueOnce({
-      rows: [{ room_number: 101 }]
-    });
-
-    const res = await request(app)
-      .get('/guest-room')
-      .query({ guestEmail: 'john@example.com' });
-
-    expect(res.statusCode).toBe(200);
-    expect(res.body).toEqual({ room_number: 101 });
+ test('GET /guest-room - should return guest room info', async () => {
+  mockClient.query.mockResolvedValueOnce({
+    rows: [{ room_number: 101 }]
   });
+
+  const res = await request(app).get('/guest-room').query({ guestEmail: 'john@example.com' });
+  expect(res.statusCode).toBe(200);
+  expect(res.body).toEqual({ room_number: 101 });
 });
+
