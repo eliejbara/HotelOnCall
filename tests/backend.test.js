@@ -28,7 +28,6 @@ const request = require('supertest');
 const app = require('../server'); // Adjust path if needed
 const { Pool } = require('pg');
 
-
 describe('HotelOnCall Backend API', () => {
   let mockClient;
 
@@ -138,38 +137,37 @@ describe('HotelOnCall Backend API', () => {
 
     const res = await request(app)
       .post('/request-maintenance')
-      .send({ roomNumber: 101, issue: 'AC not working', guestEmail: 'guest@example.com' });
+      .send({ roomNumber: 101, issueType: 'AC', guestEmail: 'guest@example.com', details: 'Not working properly' });
 
     expect(res.statusCode).toBe(200);
-    expect(res.body).toEqual({ message: 'Maintenance request submitted successfully.' });
+    expect(res.body).toEqual({ success: true, message: 'Maintenance request submitted successfully!' });
   });
 
   // GET /guest-maintenance
   test('GET /guest-maintenance - should return maintenance requests for guest', async () => {
     mockClient.query.mockResolvedValueOnce({
-      rows: [{ id: 1, issue: 'AC not working', status: 'pending' }]
+      rows: [{ id: 1, issue_type: 'AC', status: 'pending' }]
     });
 
     const res = await request(app)
-      .get('/guest-maintenance')
-      .query({ guestEmail: 'guest@example.com' });
+      .get('/guest-maintenance/guest@example.com');
 
     expect(res.statusCode).toBe(200);
     expect(res.body).toEqual([
-      { id: 1, issue: 'AC not working', status: 'pending' }
+      { id: 1, issue_type: 'AC', status: 'pending' }
     ]);
   });
 
   // GET /maintenance-requests
   test('GET /maintenance-requests - should return pending maintenance requests', async () => {
     mockClient.query.mockResolvedValueOnce({
-      rows: [{ id: 1, room_number: 101, issue: 'AC', guest_email: 'guest@example.com' }]
+      rows: [{ id: 1, room_number: 101, issue_type: 'AC', guest_email: 'guest@example.com', status: 'pending' }]
     });
 
     const res = await request(app).get('/maintenance-requests');
     expect(res.statusCode).toBe(200);
     expect(res.body).toEqual([
-      { id: 1, room_number: 101, issue: 'AC', guest_email: 'guest@example.com' }
+      { id: 1, room_number: 101, issue_type: 'AC', guest_email: 'guest@example.com', status: 'pending' }
     ]);
   });
 
@@ -179,10 +177,10 @@ describe('HotelOnCall Backend API', () => {
 
     const res = await request(app)
       .post('/update-maintenance-status')
-      .send({ requestId: 1, status: 'completed', guestEmail: 'guest@example.com' });
+      .send({ requestId: 1, status: 'Resolved' });
 
     expect(res.statusCode).toBe(200);
-    expect(res.body).toEqual({ message: 'Maintenance status updated successfully.' });
+    expect(res.body).toEqual({ success: true, message: 'Request updated to Resolved' });
   });
 
   // GET /guest-room
