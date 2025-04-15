@@ -159,17 +159,18 @@ describe('HotelOnCall Backend API', () => {
   });
 
   // GET /maintenance-requests
-  test('GET /maintenance-requests - should return pending maintenance requests', async () => {
-    mockClient.query.mockResolvedValueOnce({
-      rows: [{ id: 1, room_number: 101, issue_type: 'AC', guest_email: 'guest@example.com', status: 'pending' }]
-    });
-
-    const res = await request(app).get('/maintenance-requests');
-    expect(res.statusCode).toBe(200);
-    expect(res.body).toEqual([
-      { id: 1, room_number: 101, issue_type: 'AC', guest_email: 'guest@example.com', status: 'pending' }
-    ]);
+test('GET /maintenance-requests - should return pending maintenance requests', async () => {
+  mockClient.query.mockResolvedValueOnce({
+    rows: [{ id: 1, room_number: 101, issue_type: 'AC', guest_email: 'guest@example.com', status: 'pending' }]
   });
+
+  const res = await request(app).get('/maintenance-requests');
+  expect(res.statusCode).toBe(200);  // Ensure that a 200 status is returned
+  expect(res.body).toEqual([
+    { id: 1, room_number: 101, issue_type: 'AC', guest_email: 'guest@example.com', status: 'pending' }
+  ]);
+});
+
 
   // POST /update-maintenance-status
   test('POST /update-maintenance-status - should update maintenance status', async () => {
