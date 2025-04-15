@@ -4,7 +4,8 @@ const session = require('express-session');
 const mockDb = require('../db'); // This is mocked below
 jest.mock('../db');
 
-const app = require('../server'); // Assuming your app is exported from server.js
+const passport = require('passport'); // Import passport to mock
+jest.mock('passport');
 
 // Mock Passport's GoogleStrategy
 jest.mock('passport-google-oauth20', () => {
@@ -20,6 +21,17 @@ jest.mock('passport-google-oauth20', () => {
 });
 
 describe('HotelOnCall Backend API', () => {
+  beforeAll(() => {
+    // Mock serializeUser and deserializeUser
+    passport.serializeUser = jest.fn().mockImplementation((user, done) => {
+      done(null, user.email); // Just mock storing email in the session
+    });
+
+    passport.deserializeUser = jest.fn().mockImplementation((email, done) => {
+      done(null, { email }); // Mock the deserialization by returning the email
+    });
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -76,6 +88,18 @@ describe('HotelOnCall Backend API', () => {
     return Promise.resolve({ rows: [] });
   });
 
+  it('POST /request-cleaning - should request cleaning', async () => {
+    const res = await request(app)
+      .post('/request-cleaning')
+      .send({
+        guestEmail: 'john@example.com',
+        date: '2025-04-20',
+        time: '10:00 AM'
+      });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.success).toBe(true);
+  });
   it('POST /request-cleaning - should request cleaning', async () => {
     const res = await request(app)
       .post('/request-cleaning')
