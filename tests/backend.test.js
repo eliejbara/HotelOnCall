@@ -1,34 +1,38 @@
 const request = require('supertest');
 const express = require('express');
 const session = require('express-session');
-const mockDb = require('../db'); // This is mocked below
-jest.mock('../db');
-
-const passport = require('passport'); // Import passport to mock
+const passport = require('passport');
 jest.mock('passport');
+const mockDb = require('../db'); // Assuming db module is being imported here
 
-// Mock Passport's GoogleStrategy
-jest.mock('passport-google-oauth20', () => {
+jest.mock('../db', () => {
   return {
-    Strategy: jest.fn().mockImplementation((options, verify) => {
-      return {
-        name: 'google',
-        authenticate: jest.fn(),
-        verify
-      };
-    })
+    query: jest.fn()
   };
 });
 
 describe('HotelOnCall Backend API', () => {
   beforeAll(() => {
-    // Mock serializeUser and deserializeUser
+    // Mock passport functions
     passport.serializeUser = jest.fn().mockImplementation((user, done) => {
-      done(null, user.email); // Just mock storing email in the session
+      done(null, user.email); // Mock storing email in session
     });
 
     passport.deserializeUser = jest.fn().mockImplementation((email, done) => {
-      done(null, { email }); // Mock the deserialization by returning the email
+      done(null, { email }); // Mock deserialization by returning the email
+    });
+
+    // Mock GoogleStrategy (optional, if you are using it in your tests)
+    jest.mock('passport-google-oauth20', () => {
+      return {
+        Strategy: jest.fn().mockImplementation((options, verify) => {
+          return {
+            name: 'google',
+            authenticate: jest.fn(),
+            verify
+          };
+        })
+      };
     });
   });
 
@@ -39,7 +43,7 @@ describe('HotelOnCall Backend API', () => {
   process.env.GOOGLE_CLIENT_ID = 'mock-client-id';
   process.env.GOOGLE_CLIENT_SECRET = 'mock-client-secret';
 
-  // Global DB mock
+  // Mock DB queries
   mockDb.query.mockImplementation((sql, params) => {
     if (sql.includes('SELECT * FROM guests WHERE email')) {
       return Promise.resolve({ rows: [{ room_number: 101 }] });
