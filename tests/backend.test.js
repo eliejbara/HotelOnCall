@@ -21,6 +21,15 @@ jest.mock('passport-google-oauth20', () => {
     })),
   };
 });
+jest.mock('passport', () => ({
+  initialize: jest.fn(() => (req, res, next) => next()),
+  session: jest.fn(() => (req, res, next) => next()),
+  authenticate: jest.fn(() => (req, res, next) => next()),
+  use: jest.fn(),
+  serializeUser: jest.fn(),
+  deserializeUser: jest.fn(),
+}));
+
 
 const app = require('../server'); // Import AFTER mocks
 
