@@ -1,41 +1,35 @@
 jest.mock('passport', () => {
   const passport = {
-    initialize: jest.fn(() => (req, res, next) => next()), // Mocking initialize
-    session: jest.fn(() => (req, res, next) => next()),    // Mocking session
-    authenticate: jest.fn(() => (req, res, next) => next()), // Mocking authenticate
-    use: jest.fn(), // Mocking passport.use()
+    initialize: jest.fn(() => (req, res, next) => next()),
+    session: jest.fn(() => (req, res, next) => next()),
+    authenticate: jest.fn(() => (req, res, next) => next()),
+    use: jest.fn(),
     serializeUser: jest.fn(),
     deserializeUser: jest.fn()
   };
-
-  passport.GoogleStrategy = jest.fn(); // Mock GoogleStrategy
-
+  passport.GoogleStrategy = jest.fn();
   return passport;
 });
 
+const mockClient = {
+  query: jest.fn(),
+  release: jest.fn()
+};
+
 jest.mock('pg', () => {
-  const mClient = {
-    query: jest.fn(),
-    release: jest.fn()
+  return {
+    Pool: jest.fn(() => ({
+      connect: jest.fn().mockResolvedValue(mockClient)
+    }))
   };
-  const mPool = {
-    connect: jest.fn(() => mClient)
-  };
-  return { Pool: jest.fn(() => mPool) };
 });
 
 const request = require('supertest');
-const app = require('../server'); // Adjust path if needed
+const app = require('../server');
 const { Pool } = require('pg');
 
 describe('HotelOnCall Backend API', () => {
-  let mockClient;
-
   beforeEach(() => {
-    mockClient = new Pool().connect();
-  });
-
-  afterEach(() => {
     jest.clearAllMocks();
   });
 
@@ -159,18 +153,17 @@ describe('HotelOnCall Backend API', () => {
   });
 
   // GET /maintenance-requests
-test('GET /maintenance-requests - should return pending maintenance requests', async () => {
-  mockClient.query.mockResolvedValueOnce({
-    rows: [{ id: 1, room_number: 101, issue_type: 'AC', guest_email: 'guest@example.com', status: 'pending' }]
+  test('GET /maintenance-requests - should return pending maintenance requests', async () => {
+    mockClient.query.mockResolvedValueOnce({
+      rows: [{ id: 1, room_number: 101, issue_type: 'AC', guest_email: 'guest@example.com', status: 'pending' }]
+    });
+
+    const res = await request(app).get('/maintenance-requests');
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual([
+      { id: 1, room_number: 101, issue_type: 'AC', guest_email: 'guest@example.com', status: 'pending' }
+    ]);
   });
-
-  const res = await request(app).get('/maintenance-requests');
-  expect(res.statusCode).toBe(200);
-  expect(res.body).toEqual([
-    { id: 1, room_number: 101, issue_type: 'AC', guest_email: 'guest@example.com', status: 'pending' }
-  ]);
-});
-
 
   // POST /update-maintenance-status
   test('POST /update-maintenance-status - should update maintenance status', async () => {
@@ -185,13 +178,13 @@ test('GET /maintenance-requests - should return pending maintenance requests', a
   });
 
   // GET /guest-room
- test('GET /guest-room - should return guest room info', async () => {
-  mockClient.query.mockResolvedValueOnce({
-    rows: [{ room_number: 101 }]
+  test('GET /guest-room - should return guest room info', async () => {
+    mockClient.query.mockResolvedValueOnce({
+      rows: [{ room_number: 101 }]
+    });
+
+    const res = await request(app).get('/guest-room').query({ guestEmail: 'john@example.com' });
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual({ room_number: 101 });
   });
-
-  const res = await request(app).get('/guest-room').query({ guestEmail: 'john@example.com' });
-  expect(res.statusCode).toBe(200);
-  expect(res.body).toEqual({ room_number: 101 });
 });
-
