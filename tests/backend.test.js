@@ -4,15 +4,33 @@ const session = require('express-session');
 const mockDb = require('../db'); // This is mocked below
 jest.mock('../db');
 
+jest.mock('passport-google-oauth20', () => {
+  return {
+    Strategy: jest.fn().mockImplementation((options, verify) => {
+      this.name = 'google';
+      this.authenticate = jest.fn();
+      this.verify = verify;
+    }),
+  };
+});
+
+beforeAll(() => {
+  process.env.GOOGLE_CLIENT_ID = 'mock-client-id';
+  process.env.GOOGLE_CLIENT_SECRET = 'mock-client-secret';
+});
+
+afterAll(() => {
+  delete process.env.GOOGLE_CLIENT_ID;
+  delete process.env.GOOGLE_CLIENT_SECRET;
+});
+
+beforeEach(() => {
+  jest.clearAllMocks();
+});
+
 const app = require('../server'); // Assuming your app is exported from server.js
 
 describe('HotelOnCall Backend API', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
-process.env.GOOGLE_CLIENT_ID = 'mock-client-id';
-process.env.GOOGLE_CLIENT_SECRET = 'mock-client-secret';
   // Global DB mock
   mockDb.query.mockImplementation((sql, params) => {
     if (sql.includes('SELECT * FROM guests WHERE email')) {
