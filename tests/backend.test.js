@@ -1,10 +1,17 @@
-jest.mock('passport', () => ({
-  initialize: () => (req, res, next) => next(),
-  session: () => (req, res, next) => next(),
-  authenticate: () => (req, res, next) => next(),
-  serializeUser: jest.fn(),
-  deserializeUser: jest.fn(),
-}));
+jest.mock('passport', () => {
+  const passport = jest.fn(() => ({
+    initialize: () => (req, res, next) => next(),
+    session: () => (req, res, next) => next(),
+    authenticate: () => (req, res, next) => next(),
+    use: jest.fn(), // Mocking passport.use()
+    serializeUser: jest.fn(),
+    deserializeUser: jest.fn()
+  }));
+
+  passport.GoogleStrategy = jest.fn(); // Mock GoogleStrategy
+
+  return passport;
+});
 
 jest.mock('pg', () => {
   const mClient = {
