@@ -23,6 +23,7 @@ jest.mock('pg', () => {
     }))
   };
 });
+
 jest.mock('passport-google-oauth20', () => {
   return {
     Strategy: jest.fn().mockImplementation(() => {
@@ -31,17 +32,14 @@ jest.mock('passport-google-oauth20', () => {
   };
 });
 
-
 const request = require('supertest');
 const app = require('../server');
-const { Pool } = require('pg');
 
 describe('HotelOnCall Backend API', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  // GET /cook/orders
   test('GET /cook/orders - should return list of orders', async () => {
     mockClient.query.mockResolvedValueOnce({
       rows: [{ id: 1, username: 'john', food_order: 'Pizza', status: 'pending' }]
@@ -54,7 +52,6 @@ describe('HotelOnCall Backend API', () => {
     ]);
   });
 
-  // POST /request-cleaning
   test('POST /request-cleaning - should submit cleaning request', async () => {
     mockClient.query
       .mockResolvedValueOnce({ rows: [{ id: 2 }] }) // get available slot
@@ -80,7 +77,6 @@ describe('HotelOnCall Backend API', () => {
     expect(res.body).toEqual({ error: 'No cleaning slots available' });
   });
 
-  // GET /available-rooms
   test('GET /available-rooms - should return list of available rooms', async () => {
     mockClient.query.mockResolvedValueOnce({
       rows: [{ id: 1, number: 101, status: 'available' }]
@@ -91,7 +87,6 @@ describe('HotelOnCall Backend API', () => {
     expect(res.body).toEqual([{ id: 1, number: 101, status: 'available' }]);
   });
 
-  // POST /checkin
   test('POST /checkin - should check in guest', async () => {
     mockClient.query
       .mockResolvedValueOnce({}) // insert guest
@@ -105,7 +100,6 @@ describe('HotelOnCall Backend API', () => {
     expect(res.body).toEqual({ message: 'Guest checked in successfully.' });
   });
 
-  // POST /place-order
   test('POST /place-order - should place food order', async () => {
     mockClient.query.mockResolvedValueOnce({}); // insert order
 
@@ -117,7 +111,6 @@ describe('HotelOnCall Backend API', () => {
     expect(res.body).toEqual({ message: 'Order placed successfully.' });
   });
 
-  // GET /check-order
   test('GET /check-order - should return food orders', async () => {
     mockClient.query.mockResolvedValueOnce({
       rows: [{ id: 1, food_order: 'Burger', status: 'pending' }]
@@ -133,7 +126,6 @@ describe('HotelOnCall Backend API', () => {
     ]);
   });
 
-  // POST /request-maintenance
   test('POST /request-maintenance - should submit maintenance request', async () => {
     mockClient.query.mockResolvedValueOnce({}); // insert request
 
@@ -145,7 +137,6 @@ describe('HotelOnCall Backend API', () => {
     expect(res.body).toEqual({ success: true, message: 'Maintenance request submitted successfully!' });
   });
 
-  // GET /guest-maintenance
   test('GET /guest-maintenance - should return maintenance requests for guest', async () => {
     mockClient.query.mockResolvedValueOnce({
       rows: [{ id: 1, issue_type: 'AC', status: 'pending' }]
@@ -160,10 +151,11 @@ describe('HotelOnCall Backend API', () => {
     ]);
   });
 
-  // GET /maintenance-requests
   test('GET /maintenance-requests - should return pending maintenance requests', async () => {
     mockClient.query.mockResolvedValueOnce({
-      rows: [{ id: 1, room_number: 101, issue_type: 'AC', guest_email: 'guest@example.com', status: 'pending' }]
+      rows: [
+        { id: 1, room_number: 101, issue_type: 'AC', guest_email: 'guest@example.com', status: 'pending' }
+      ]
     });
 
     const res = await request(app).get('/maintenance-requests');
@@ -173,9 +165,8 @@ describe('HotelOnCall Backend API', () => {
     ]);
   });
 
-  // POST /update-maintenance-status
   test('POST /update-maintenance-status - should update maintenance status', async () => {
-    mockClient.query.mockResolvedValueOnce({}); // update query
+    mockClient.query.mockResolvedValueOnce({ rowCount: 1 }); // simulate successful update
 
     const res = await request(app)
       .post('/update-maintenance-status')
@@ -185,7 +176,6 @@ describe('HotelOnCall Backend API', () => {
     expect(res.body).toEqual({ success: true, message: 'Request updated to Resolved' });
   });
 
-  // GET /guest-room
   test('GET /guest-room - should return guest room info', async () => {
     mockClient.query.mockResolvedValueOnce({
       rows: [{ room_number: 101 }]
