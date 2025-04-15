@@ -1,6 +1,10 @@
-const request = require('supertest');
-const app = require('../server'); // Adjust path if needed
-const { Pool } = require('pg');
+jest.mock('passport', () => ({
+  initialize: () => (req, res, next) => next(),
+  session: () => (req, res, next) => next(),
+  authenticate: () => (req, res, next) => next(),
+  serializeUser: jest.fn(),
+  deserializeUser: jest.fn(),
+}));
 
 jest.mock('pg', () => {
   const mClient = {
@@ -12,6 +16,11 @@ jest.mock('pg', () => {
   };
   return { Pool: jest.fn(() => mPool) };
 });
+
+const request = require('supertest');
+const app = require('../server'); // Adjust path if needed
+const { Pool } = require('pg');
+
 
 describe('HotelOnCall Backend API', () => {
   let mockClient;
