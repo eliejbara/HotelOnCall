@@ -151,22 +151,37 @@ describe('HotelOnCall Backend API', () => {
     ]);
   });
 
-  test('GET /maintenance-requests - should return pending maintenance requests', async () => {
+ describe('GET /maintenance-requests', () => {
+  test('should return pending maintenance requests', async () => {
     mockClient.query.mockResolvedValueOnce({
       rows: [
-        { id: 1, room_number: 101, issue_type: 'AC', guest_email: 'guest@example.com', status: 'pending' }
+        {
+          id: 1,
+          room_number: 101,
+          issue_type: 'AC',
+          guest_email: 'guest@example.com',
+          status: 'pending'
+        }
       ]
     });
 
     const res = await request(app).get('/maintenance-requests');
     expect(res.statusCode).toBe(200);
     expect(res.body).toEqual([
-      { id: 1, room_number: 101, issue_type: 'AC', guest_email: 'guest@example.com', status: 'pending' }
+      {
+        id: 1,
+        room_number: 101,
+        issue_type: 'AC',
+        guest_email: 'guest@example.com',
+        status: 'pending'
+      }
     ]);
   });
+});
 
-  test('POST /update-maintenance-status - should update maintenance status', async () => {
-    mockClient.query.mockResolvedValueOnce({ rowCount: 1 }); // simulate successful update
+ describe('POST /update-maintenance-status', () => {
+  test('should update maintenance status', async () => {
+    mockClient.query.mockResolvedValueOnce({ rowCount: 1 });
 
     const res = await request(app)
       .post('/update-maintenance-status')
@@ -175,8 +190,9 @@ describe('HotelOnCall Backend API', () => {
     expect(res.statusCode).toBe(200);
     expect(res.body).toEqual({ success: true, message: 'Request updated to Resolved' });
   });
-
-  test('GET /guest-room - should return guest room info', async () => {
+});
+ describe('GET /guest-room', () => {
+  test('should return guest room info', async () => {
     mockClient.query.mockResolvedValueOnce({
       rows: [{ room_number: 101 }]
     });
