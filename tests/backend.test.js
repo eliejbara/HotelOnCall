@@ -131,10 +131,18 @@ describe('HotelOnCall Backend API', () => {
 
     const res = await request(app)
       .post('/request-maintenance')
-      .send({ roomNumber: 101, issueType: 'AC', guestEmail: 'guest@example.com', details: 'Not working properly' });
+      .send({
+        roomNumber: 101,
+        issueType: 'AC',
+        guestEmail: 'guest@example.com',
+        details: 'Not working properly'
+      });
 
     expect(res.statusCode).toBe(200);
-    expect(res.body).toEqual({ success: true, message: 'Maintenance request submitted successfully!' });
+    expect(res.body).toEqual({
+      success: true,
+      message: 'Maintenance request submitted successfully!'
+    });
   });
 
   test('GET /guest-maintenance - should return maintenance requests for guest', async () => {
@@ -142,8 +150,7 @@ describe('HotelOnCall Backend API', () => {
       rows: [{ id: 1, issue_type: 'AC', status: 'pending' }]
     });
 
-    const res = await request(app)
-      .get('/guest-maintenance/guest@example.com');
+    const res = await request(app).get('/guest-maintenance/guest@example.com');
 
     expect(res.statusCode).toBe(200);
     expect(res.body).toEqual([
@@ -151,8 +158,7 @@ describe('HotelOnCall Backend API', () => {
     ]);
   });
 
- describe('GET /maintenance-requests', () => {
-  test('should return pending maintenance requests', async () => {
+  test('GET /maintenance-requests - should return pending maintenance requests', async () => {
     mockClient.query.mockResolvedValueOnce({
       rows: [
         {
@@ -177,10 +183,8 @@ describe('HotelOnCall Backend API', () => {
       }
     ]);
   });
-});
 
- describe('POST /update-maintenance-status', () => {
-  test('should update maintenance status', async () => {
+  test('POST /update-maintenance-status - should update maintenance status', async () => {
     mockClient.query.mockResolvedValueOnce({ rowCount: 1 });
 
     const res = await request(app)
@@ -190,14 +194,14 @@ describe('HotelOnCall Backend API', () => {
     expect(res.statusCode).toBe(200);
     expect(res.body).toEqual({ success: true, message: 'Request updated to Resolved' });
   });
-});
- describe('GET /guest-room', () => {
-  test('should return guest room info', async () => {
+
+  test('GET /guest-room - should return guest room info', async () => {
     mockClient.query.mockResolvedValueOnce({
       rows: [{ room_number: 101 }]
     });
 
     const res = await request(app).get('/guest-room').query({ guestEmail: 'john@example.com' });
+
     expect(res.statusCode).toBe(200);
     expect(res.body).toEqual({ room_number: 101 });
   });
