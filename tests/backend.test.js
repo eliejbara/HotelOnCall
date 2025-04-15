@@ -23,6 +23,14 @@ jest.mock('pg', () => {
     }))
   };
 });
+jest.mock('passport-google-oauth20', () => {
+  return {
+    Strategy: jest.fn().mockImplementation(() => {
+      return { name: 'mock-google' };
+    })
+  };
+});
+
 
 const request = require('supertest');
 const app = require('../server');
