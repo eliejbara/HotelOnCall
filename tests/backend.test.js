@@ -11,6 +11,8 @@ describe('HotelOnCall Backend API', () => {
     jest.clearAllMocks();
   });
 
+process.env.GOOGLE_CLIENT_ID = 'mock-client-id';
+process.env.GOOGLE_CLIENT_SECRET = 'mock-client-secret';
   // Global DB mock
   mockDb.query.mockImplementation((sql, params) => {
     if (sql.includes('SELECT * FROM guests WHERE email')) {
