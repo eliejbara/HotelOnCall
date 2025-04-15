@@ -23,12 +23,21 @@ jobs:
         with:
           node-version: '18'  # Use a version compatible with mongoose, mongodb, etc.
 
-     # Step 3: Install dependencies
+      # Step 3: Install dependencies
       - name: Install Dependencies
         run: npm install
 
+      # Step 4: Ensure Google OAuth package
       - name: Ensure Google OAuth package
         run: npm install passport-google-oauth20
 
+      # Step 5: Clear Jest Cache
+      - name: Clear Jest Cache
+        run: npx jest --clearCache
+
+      # Step 6: Run Tests
       - name: Run Tests
-        run: GOOGLE_CLIENT_ID=dummy GOOGLE_CLIENT_SECRET=dummy npm test
+        env:
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}  # Use GitHub secrets for sensitive data
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+        run: npm test
