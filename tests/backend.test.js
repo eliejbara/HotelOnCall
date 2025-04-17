@@ -1,278 +1,175 @@
 const request = require('supertest');
 
-// Replace with your actual deployed URL
-const appUrl = 'https://hotel-on-call.vercel.app';  // Adjust this with your Vercel deployment URL
+const app = process.env.BACKEND_URL;
+if (!app) throw new Error('BACKEND_URL is not defined in environment variables');
+jest.setTimeout(10000); // 10 seconds timeout for this test
 
 describe('HotelOnCall Backend API', () => {
+  let cleaningId;
+  let maintenanceId;
+  let orderId;
 
-  let testGuestEmail = 'john@example.com'; // example guest email for testing
-  let testRoomNumber = 101;  // example room number for testing
-  let testOrderId; // will store the test order ID for cleanup
-  let testMaintenanceRequestId; // will store test maintenance request ID for cleanup
-  let testCleaningRequestId; // will store test cleaning request ID for cleanup
-
-  beforeAll(async () => {
-    // Setup for the tests
-    console.log('Setting up before all tests');
-
-    // Create a guest for testing (you can customize this based on your API)
-    const checkinResponse = await request(appUrl)
-      .post('/checkin')
-      .send({
-        guestEmail: testGuestEmail,
-        roomNumber: testRoomNumber,
-      });
-    
-    expect(checkinResponse.statusCode).toBe(200);
-    expect(checkinResponse.body.success).toBe(true);
-
-    // Create an order for the guest to test order-related functionality
-    const orderResponse = await request(appUrl)
-      .post('/place-order')
-      .send({
-        guestEmail: testGuestEmail,
-        foodItem: 'Burger',
-        quantity: 1,
-      });
-
-    expect(orderResponse.statusCode).toBe(200);
-    expect(orderResponse.body.success).toBe(true);
-    testOrderId = orderResponse.body.orderId;
-
-    // Create a cleaning request for the guest (if applicable)
-    const cleaningResponse = await request(appUrl)
-      .post('/request-cleaning')
-      .send({
-        guestEmail: testGuestEmail,
-        roomNumber: testRoomNumber,
-        time: '10:00 AM',
-      });
-
-    expect(cleaningResponse.statusCode).toBe(200);
-    expect(cleaningResponse.body.success).toBe(true);
-    testCleaningRequestId = cleaningResponse.body.requestId;
-
-    // Create a maintenance request for the guest (if applicable)
-    const maintenanceResponse = await request(appUrl)
-      .post('/request-maintenance')
-      .send({
-        guestEmail: testGuestEmail,
-        roomNumber: testRoomNumber,
-        issue: 'Air conditioner broken',
-      });
-
-    expect(maintenanceResponse.statusCode).toBe(200);
-    expect(maintenanceResponse.body.success).toBe(true);
-    testMaintenanceRequestId = maintenanceResponse.body.requestId;
-
-    // You can add other setup calls if needed (like authenticating users)
-  });
-
-  afterAll(async () => {
-    // Cleanup after tests
-    console.log('Cleaning up after all tests');
-
-    // Delete the created test data (e.g., checkout the guest, delete orders, cleaning, and maintenance requests)
-
-    const checkoutResponse = await request(appUrl)
-      .post('/checkout')
-      .send({
-        guestEmail: testGuestEmail,
-      });
-
-    expect(checkoutResponse.statusCode).toBe(200);
-    expect(checkoutResponse.body.success).toBe(true);
-
-    // Optionally, delete or update test data as necessary
-    if (testOrderId) {
-      const cancelOrderResponse = await request(appUrl)
-        .post('/update-order-status')
-        .send({
-          orderId: testOrderId,
-          status: 'Cancelled',
-        });
-
-      expect(cancelOrderResponse.statusCode).toBe(200);
-      expect(cancelOrderResponse.body.success).toBe(true);
-    }
-
-    if (testCleaningRequestId) {
-      const updateCleaningResponse = await request(appUrl)
-        .post('/update-cleaning-status')
-        .send({
-          requestId: testCleaningRequestId,
-          status: 'Cancelled',
-        });
-
-      expect(updateCleaningResponse.statusCode).toBe(200);
-      expect(updateCleaningResponse.body.success).toBe(true);
-    }
-
-    if (testMaintenanceRequestId) {
-      const updateMaintenanceResponse = await request(appUrl)
-        .post('/update-maintenance-status')
-        .send({
-          requestId: testMaintenanceRequestId,
-          status: 'Resolved',
-        });
-
-      expect(updateMaintenanceResponse.statusCode).toBe(200);
-      expect(updateMaintenanceResponse.body.success).toBe(true);
-    }
-
-    // Additional cleanup can be done if necessary
-  });
-
+  // Test for checking in a guest
   it('POST /checkin should check in a guest', async () => {
-    const res = await request(appUrl)
-      .post('/checkin')
-      .send({
-        guestEmail: testGuestEmail,
-        roomNumber: testRoomNumber,
-      });
-
+    const res = await request(app).post('/checkin').send({
+      guestEmail: 'john@example.com',
+      roomNumber: 101
+    });
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
-    expect(res.body.roomNumber).toBe(testRoomNumber);
+    expect(res.body.roomNumber).toBe(101);
   });
 
+  // Test for placing a food order
   it('POST /place-order should create a food order', async () => {
-    const res = await request(appUrl)
-      .post('/place-order')
-      .send({
-        guestEmail: testGuestEmail,
-        foodItem: 'Burger',
-        quantity: 1,
-      });
-
+    const res = await request(app).post('/place-order').send({
+      guestEmail: 'john@example.com',
+      foodItem: 'Pizza',
+      quantity: 1
+    });
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.orderId).toBeDefined();
+    orderId = res.body.orderId; // Store orderId for future use
   });
 
+  // Test for fetching cook orders
+  it('GET /cook/orders should return a list of orders for cooks', async () => {
+    const res = await request(app).get('/cook/orders');
+    expect(res.statusCode).toBe(200);
+    expect(Array.isArray(res.body)).toBe(true);
+    expect(res.body.length).toBeGreaterThan(0);
+  });
+
+  // Test for updating the status of an order
   it('POST /update-order-status should update the status of an order', async () => {
-    const orderId = testOrderId;
-
-    const res = await request(appUrl)
-      .post('/update-order-status')
-      .send({
-        orderId: orderId,
-        status: 'Completed',
-      });
-
+    const res = await request(app).post('/update-order-status').send({
+      orderId,
+      status: 'Completed'
+    });
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
   });
 
+  // Test for fetching guest room details
   it('GET /guest-room/:guestEmail should return guest room details', async () => {
-    const res = await request(appUrl).get(`/guest-room/${testGuestEmail}`);
-
+    const res = await request(app).get('/guest-room/john@example.com');
     expect(res.statusCode).toBe(200);
-    expect(res.body.roomNumber).toBe(testRoomNumber);
+    expect(res.body.roomNumber).toBe(101);
   });
 
+  // Test for fetching available cleaning slots for a room
+  it('GET /available-cleaning-slots should return available cleaning slots for a room', async () => {
+    const res = await request(app).get('/available-cleaning-slots').query({ room_number: 101 });
+    expect(res.statusCode).toBe(200);
+    expect(Array.isArray(res.body)).toBe(true);
+    expect(res.body.length).toBeGreaterThan(0);
+  });
+
+  // Test for requesting cleaning
   it('POST /request-cleaning should request cleaning for a room', async () => {
-    const res = await request(appUrl)
-      .post('/request-cleaning')
-      .send({
-        guestEmail: testGuestEmail,
-        roomNumber: testRoomNumber,
-        time: '10:00 AM',
-      });
-
+    const res = await request(app).post('/request-cleaning').send({
+      guestEmail: 'john@example.com',
+      date: '2025-04-20',
+      time: '10:00 AM'
+    });
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
   });
 
+  // Test for fetching guest cleaning requests
   it('GET /guest-cleaning/:guestEmail should return guest cleaning requests', async () => {
-    const res = await request(appUrl).get(`/guest-cleaning/${testGuestEmail}`);
-
+    const res = await request(app).get('/guest-cleaning/john@example.com');
     expect(res.statusCode).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
-    expect(res.body.length).toBeGreaterThan(0); // assuming a cleaning request exists
+    expect(res.body.length).toBeGreaterThan(0);
+    cleaningId = res.body[0].id; // Store cleaningId for future use
   });
 
+  // Test for updating the cleaning status
   it('POST /update-cleaning-status should update the cleaning status', async () => {
-    const res = await request(appUrl)
-      .post('/update-cleaning-status')
-      .send({
-        roomNumber: testRoomNumber,
-        status: 'Completed',
-      });
-
+    const res = await request(app).post('/update-cleaning-status').send({
+      id: cleaningId,
+      status: 'Resolved',
+      room_number: 101
+    });
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
   });
 
-  it('POST /request-maintenance should request maintenance for a room', async () => {
-    const res = await request(appUrl)
-      .post('/request-maintenance')
-      .send({
-        guestEmail: testGuestEmail,
-        roomNumber: testRoomNumber,
-        issue: 'Air conditioner broken',
-      });
-
-    expect(res.statusCode).toBe(200);
-    expect(res.body.success).toBe(true);
-  });
-
-  it('GET /guest-maintenance/:guestEmail should return guest maintenance requests', async () => {
-    const res = await request(appUrl).get(`/guest-maintenance/${testGuestEmail}`);
-
+  // Test for fetching all cleaning requests
+  it('GET /cleaning-requests should return a list of cleaning requests', async () => {
+    const res = await request(app).get('/cleaning-requests');
     expect(res.statusCode).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
-    expect(res.body.length).toBeGreaterThan(0); // assuming a maintenance request exists
   });
 
-  it('POST /update-maintenance-status should update the maintenance status', async () => {
-    const res = await request(appUrl)
-      .post('/update-maintenance-status')
-      .send({
-        roomNumber: testRoomNumber,
-        status: 'Resolved',
-      });
-
+  // Test for requesting maintenance
+  it('POST /request-maintenance should request maintenance for a room', async () => {
+    const res = await request(app).post('/request-maintenance').send({
+      guestEmail: 'john@example.com',
+      issue: 'Air conditioner broken'
+    });
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
   });
 
-  it('GET /calculate-bill/:roomNumber should return the total bill for a room', async () => {
-    const res = await request(appUrl).get(`/calculate-bill/${testRoomNumber}`);
+  // Test for fetching guest maintenance requests
+  it('GET /guest-maintenance/:guestEmail should return guest maintenance requests', async () => {
+    const res = await request(app).get('/guest-maintenance/john@example.com');
+    expect(res.statusCode).toBe(200);
+    expect(Array.isArray(res.body)).toBe(true);
+    expect(res.body.length).toBeGreaterThan(0);
+    maintenanceId = res.body[0].id; // Store maintenanceId for future use
+  });
 
+  // Test for fetching all maintenance requests
+  it('GET /maintenance-requests should return a list of maintenance requests', async () => {
+    const res = await request(app).get('/maintenance-requests');
+    expect(res.statusCode).toBe(200);
+    expect(Array.isArray(res.body)).toBe(true);
+  });
+
+  // Test for updating the maintenance status
+  it('POST /update-maintenance-status should update the maintenance status', async () => {
+    const res = await request(app).post('/update-maintenance-status').send({
+      id: maintenanceId,
+      status: 'Resolved'
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.success).toBe(true);
+  });
+
+  // Test for calculating the room bill
+  it('GET /calculate-bill/:roomNumber should return the total bill for a room', async () => {
+    const res = await request(app).get('/calculate-bill/101');
     expect(res.statusCode).toBe(200);
     expect(res.body.totalBill).toBeDefined();
   });
 
+  // Test for creating a checkout session
   it('POST /create-checkout-session should create a checkout session', async () => {
-    const res = await request(appUrl)
-      .post('/create-checkout-session')
-      .send({
-        roomNumber: testRoomNumber,
-      });
-
+    const res = await request(app).post('/create-checkout-session').send({
+      roomNumber: 101
+    });
     expect(res.statusCode).toBe(200);
     expect(res.body.url).toBeDefined();
   });
 
+  // Test for finalizing the checkout
   it('POST /finalize-checkout should finalize the checkout process', async () => {
-    const res = await request(appUrl)
-      .post('/finalize-checkout')
-      .send({
-        guestEmail: testGuestEmail,
-      });
-
+    const res = await request(app).post('/finalize-checkout').send({
+      guestEmail: 'john@example.com'
+    });
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
   });
 
+  // Test for completing the checkout
   it('POST /checkout should complete checkout', async () => {
-    const res = await request(appUrl)
-      .post('/checkout')
-      .send({
-        guestEmail: testGuestEmail,
-      });
-
+    const res = await request(app).post('/checkout').send({
+      guestEmail: 'john@example.com'
+    });
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
   });
