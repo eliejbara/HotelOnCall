@@ -1,116 +1,9 @@
-jest.mock('passport', () => ({
-  serializeUser: jest.fn(),
-  deserializeUser: jest.fn(),
-  initialize: jest.fn(() => (req, res, next) => next()),
-  session: jest.fn(() => (req, res, next) => next()),
-  authenticate: jest.fn(() => (req, res, next) => next()),
-  use: jest.fn(),
-  Strategy: function () {}
-}));
-
-jest.mock('../db', () => ({
-  query: jest.fn()
-}));
-
-jest.mock('passport-google-oauth20', () => ({
-  Strategy: function () {}
-}));
-
 const request = require('supertest');
-const mockDb = require('../db');
-const app = require('../server');
 
-process.env.GOOGLE_CLIENT_ID = 'mock-client-id';
-process.env.GOOGLE_CLIENT_SECRET = 'mock-client-secret';
+// Live URL for your Vercel deployment
+const app = 'https://hotel-on-call.vercel.app';
 
 describe('HotelOnCall Backend API', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-
-    mockDb.query.mockImplementation((sql, params) => {
-      if (sql.includes('SELECT * FROM guests WHERE email')) {
-        return Promise.resolve({ rows: [{ room_number: 101 }] });
-      }
-      if (sql.includes('SELECT * FROM guests WHERE room_number')) {
-        return Promise.resolve({ rows: [{ email: 'john@example.com' }] });
-      }
-      if (sql.includes('INSERT INTO guests')) {
-        return Promise.resolve({ rowCount: 1 });
-      }
-      if (sql.includes('DELETE FROM orders')) {
-        return Promise.resolve({ rowCount: 1 });
-      }
-      if (sql.includes('DELETE FROM cleaning_requests')) {
-        return Promise.resolve({ rowCount: 1 });
-      }
-      if (sql.includes('DELETE FROM maintenance_requests')) {
-        return Promise.resolve({ rowCount: 1 });
-      }
-      if (sql.includes('DELETE FROM guests')) {
-        return Promise.resolve({ rowCount: 1 });
-      }
-      if (sql.includes('SELECT * FROM cleaning_slots WHERE room_number')) {
-        return Promise.resolve({
-          rows: [{ id: 1, room_number: 101, date: '2025-04-20', time: '10:00 AM', available: true }]
-        });
-      }
-      if (sql.includes('UPDATE cleaning_slots SET available = false')) {
-        return Promise.resolve({ rowCount: 1 });
-      }
-      if (sql.includes('INSERT INTO cleaning_requests')) {
-        return Promise.resolve({ rowCount: 1 });
-      }
-      if (sql.includes('UPDATE cleaning_requests SET status')) {
-        return Promise.resolve({ rowCount: 1 });
-      }
-      if (sql.includes('SELECT * FROM cleaning_requests WHERE guest_email')) {
-        return Promise.resolve({ rows: [{ id: 1, guest_email: 'john@example.com', status: 'Pending' }] });
-      }
-      if (sql.includes('SELECT * FROM cleaning_requests WHERE status')) {
-        return Promise.resolve({
-          rows: [{ id: 1, room_number: 101, date: '2025-04-20', time: '10:00 AM', status: 'Pending' }]
-        });
-      }
-      if (sql.includes('INSERT INTO orders')) {
-        return Promise.resolve({ rowCount: 1 });
-      }
-      if (sql.includes('SELECT * FROM orders')) {
-        return Promise.resolve({
-          rows: [{ order_id: 1, username: 'john@example.com', food_item: 'Pizza', status: 'Pending' }]
-        });
-      }
-      if (sql.includes('UPDATE orders SET status')) {
-        return Promise.resolve({ rowCount: 1 });
-      }
-      if (sql.includes('SELECT * FROM maintenance_requests')) {
-        return Promise.resolve({
-          rows: [{ id: 1, guest_email: 'john@example.com', issue: 'Air conditioner broken', status: 'Pending' }]
-        });
-      }
-      if (sql.includes('INSERT INTO maintenance_requests')) {
-        return Promise.resolve({ rowCount: 1 });
-      }
-      if (sql.includes('UPDATE maintenance_requests')) {
-        return Promise.resolve({ rowCount: 1 });
-      }
-      if (sql.includes('SELECT feedback_text FROM feedback')) {
-        return Promise.resolve({ rows: [{ feedback_text: 'Great stay!' }] });
-      }
-      if (sql.includes('SELECT status, COUNT(*) as count FROM cleaning_requests')) {
-        return Promise.resolve({ rows: [{ status: 'Resolved', count: 5 }, { status: 'Pending', count: 3 }] });
-      }
-      if (sql.includes('SELECT room_number FROM guests WHERE email')) {
-        return Promise.resolve({ rows: [{ room_number: 101 }] });
-      }
-      if (sql.includes('SELECT price_per_night FROM rooms')) {
-        return Promise.resolve({ rows: [{ price_per_night: 100 }] });
-      }
-      if (sql.includes('SELECT checkin_time FROM guests WHERE email')) {
-        return Promise.resolve({ rows: [{ checkin_time: new Date(Date.now() - 86400000) }] }); // 1 day ago
-      }
-      return Promise.resolve({ rows: [] });
-    });
-  });
 
   it('POST /checkin', async () => {
     const res = await request(app).post('/checkin').send({
@@ -227,4 +120,5 @@ describe('HotelOnCall Backend API', () => {
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
   });
+
 });
