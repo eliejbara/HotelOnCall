@@ -114,8 +114,8 @@ describe('HotelOnCall Backend API', () => {
 
   it('POST /update-maintenance-status', async () => {
     const res = await request(app).post('/update-maintenance-status').send({
-      id: 1,
-      status: 'Resolved'
+      id: 1, // Ensure this ID exists in the database
+      status: 'Resolved' // Ensure this is a valid status
     });
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
