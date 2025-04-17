@@ -12,17 +12,6 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:13
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: password
-          POSTGRES_DB: hoteloncall_test
-        ports:
-          - 5432:5432
-        options: --health-cmd="pg_isready -U postgres" --health-interval=10s --health-timeout=5s --health-retries=5
-
     steps:
       # Step 1: Checkout the code
       - name: Checkout Code
@@ -42,18 +31,13 @@ jobs:
       - name: Clear Jest Cache
         run: npx jest --clearCache
 
-      # Step 5: Set up Database Connection in Environment Variables
+      # Step 5: Set up the Vercel backend URL and other environment variables
       - name: Set up environment variables
         run: |
-          echo "PGUSER=postgres" >> $GITHUB_ENV
-          echo "PGHOST=localhost" >> $GITHUB_ENV
-          echo "PGDATABASE=hoteloncall_test" >> $GITHUB_ENV
-          echo "PGPASSWORD=password" >> $GITHUB_ENV
-          echo "PGPORT=5432" >> $GITHUB_ENV
+          echo "BACKEND_URL=https://hotel-on-call.vercel.app" >> $GITHUB_ENV
+          echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> $GITHUB_ENV
+          echo "GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}" >> $GITHUB_ENV
 
       # Step 6: Run Tests
       - name: Run Tests
-        env:
-          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
         run: npm test
