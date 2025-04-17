@@ -1,5 +1,31 @@
-const request = require('supertest')('https://hotel-on-call.vercel.app');
+const request beforeAll(async () => {
+  await request.post('/checkin').send({
+    name: 'John',
+    email: 'john@example.com',
+    roomNumber: 101
+  });
+
+  await request.post('/place-order').send({
+    guestEmail: 'john@example.com',
+    item_id: 1,
+    quantity: 1
+  });
+
+  await request.post('/request-cleaning').send({
+    room_number: 101,
+    time: '10:00 AM'
+  });
+
+  await request.post('/request-maintenance').send({
+    guestEmail: 'john@example.com',
+    issue: 'Air conditioner broken'
+  });
+ require('supertest')('https://hotel-on-call.vercel.app');
 let orderId, cleaningId, maintenanceId;
+
+
+
+
 
 describe('HotelOnCall Backend API', () => {
   beforeAll(async () => {
