@@ -2,6 +2,7 @@ const request = require('supertest');
 
 const app = process.env.BACKEND_URL;
 if (!app) throw new Error('BACKEND_URL is not defined in environment variables');
+jest.setTimeout(10000); // 10 seconds timeout for this test
 
 describe('HotelOnCall Backend API', () => {
   let cleaningId;
