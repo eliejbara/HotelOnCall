@@ -1,4 +1,3 @@
-
 jest.mock('passport', () => ({
   serializeUser: jest.fn(),
   deserializeUser: jest.fn(),
@@ -12,6 +11,7 @@ jest.mock('passport', () => ({
 jest.mock('../db', () => ({
   query: jest.fn()
 }));
+
 jest.mock('passport-google-oauth20', () => ({
   Strategy: function () {}
 }));
