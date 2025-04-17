@@ -34,14 +34,15 @@ jobs:
         with:
           node-version: '18'
 
-      # Step 3: Cache node modules to speed up builds
-      - name: Cache node_modules
-        uses: actions/cache@v2
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-modules-
+   # Step 3: Cache node modules to speed up builds
+   - name: Cache node_modules
+    uses: actions/cache@v3
+    with:
+    path: node_modules
+    key: ${{ runner.os }}-node-modules-${{ hashFiles('**/package-lock.json') }}
+    restore-keys: |
+      ${{ runner.os }}-node-modules-
+
 
       # Step 4: Install dependencies
       - name: Install Dependencies
