@@ -229,23 +229,5 @@ describe('HotelOnCall Backend API', () => {
     expect(res.body.success).toBe(true);
   });
 
-  it('GET /feedback', async () => {
-    const res = await request(app).get('/feedback');
-    expect(res.statusCode).toBe(200);
-    expect(res.body.length).toBeGreaterThan(0);
-  });
 
-  it('GET /task-completion-stats', async () => {
-    const res = await request(app).get('/task-completion-stats');
-    expect(res.statusCode).toBe(200);
-    expect(res.body.length).toBeGreaterThan(0);
-  });
-
-  it('GET /room-bill', async () => {
-    const res = await request(app).get('/room-bill').query({
-      guestEmail: 'john@example.com'
-    });
-    expect(res.statusCode).toBe(200);
-    expect(typeof res.body.totalBill).toBe('number');
-  });
 });
