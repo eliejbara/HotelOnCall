@@ -1,16 +1,34 @@
+process.env.NODE_ENV = 'test';
+process.env.GOOGLE_CLIENT_ID = 'mock-client-id';
+process.env.GOOGLE_CLIENT_SECRET = 'mock-client-secret';
+
 const request = require('supertest');
 const express = require('express');
 const session = require('express-session');
 const passport = require('passport');
-const app = require('../server'); // <-- Import your Express app
-const mockDb = require('../db'); // Assuming db module is being imported here
-
 jest.mock('passport');
+const mockDb = require('../db');
+
+// Mock GoogleStrategy before importing the server
+jest.mock('passport-google-oauth20', () => {
+  return {
+    Strategy: jest.fn().mockImplementation((options, verify) => {
+      return {
+        name: 'google',
+        authenticate: jest.fn(),
+        verify
+      };
+    })
+  };
+});
+
 jest.mock('../db', () => {
   return {
     query: jest.fn()
   };
 });
+
+const app = require('../server'); // Import after setting NODE_ENV and env vars
 
 describe('HotelOnCall Backend API', () => {
   beforeAll(() => {
@@ -22,27 +40,11 @@ describe('HotelOnCall Backend API', () => {
     passport.deserializeUser = jest.fn().mockImplementation((email, done) => {
       done(null, { email });
     });
-
-    // Mock GoogleStrategy (optional, if using)
-    jest.mock('passport-google-oauth20', () => {
-      return {
-        Strategy: jest.fn().mockImplementation((options, verify) => {
-          return {
-            name: 'google',
-            authenticate: jest.fn(),
-            verify
-          };
-        })
-      };
-    });
   });
 
   beforeEach(() => {
     jest.clearAllMocks();
   });
-
-  process.env.GOOGLE_CLIENT_ID = 'mock-client-id';
-  process.env.GOOGLE_CLIENT_SECRET = 'mock-client-secret';
 
   // Mock DB queries
   mockDb.query.mockImplementation((sql, params) => {
@@ -51,13 +53,7 @@ describe('HotelOnCall Backend API', () => {
     }
     if (sql.includes('SELECT * FROM cleaning_slots WHERE room_number')) {
       return Promise.resolve({
-        rows: [{
-          id: 1,
-          room_number: 101,
-          date: '2025-04-20',
-          time: '10:00 AM',
-          available: true
-        }]
+        rows: [{ id: 1, room_number: 101, date: '2025-04-20', time: '10:00 AM', available: true }]
       });
     }
     if (sql.includes('INSERT INTO cleaning_requests')) {
@@ -90,17 +86,19 @@ describe('HotelOnCall Backend API', () => {
     if (sql.includes('SELECT * FROM maintenance_requests')) {
       return Promise.resolve({ rows: [{ id: 1, guest_email: 'john@example.com', status: 'Pending' }] });
     }
+    if (sql.includes('INSERT INTO maintenance_requests')) {
+      return Promise.resolve({ rowCount: 1 });
+    }
+    if (sql.includes('UPDATE maintenance_requests')) {
+      return Promise.resolve({ rowCount: 1 });
+    }
     return Promise.resolve({ rows: [] });
   });
 
   it('POST /request-cleaning - should request cleaning', async () => {
     const res = await request(app)
       .post('/request-cleaning')
-      .send({
-        guestEmail: 'john@example.com',
-        date: '2025-04-20',
-        time: '10:00 AM'
-      });
+      .send({ guestEmail: 'john@example.com', date: '2025-04-20', time: '10:00 AM' });
 
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
@@ -109,25 +107,16 @@ describe('HotelOnCall Backend API', () => {
   it('POST /update-cleaning-status - should update status and send email', async () => {
     const res = await request(app)
       .post('/update-cleaning-status')
-      .send({
-        id: 1,
-        status: 'Resolved',
-        room_number: 101
-      });
+      .send({ id: 1, status: 'Resolved', room_number: 101 });
 
     expect(res.statusCode).toBe(200);
-    expect(res.body).toEqual({
-      success: true,
-      message: 'Request updated to Resolved'
-    });
+    expect(res.body).toEqual({ success: true, message: 'Request updated to Resolved' });
   });
 
   it('GET /guest-room - should return guest room info', async () => {
     const res = await request(app)
       .get('/guest-room')
-      .query({
-        guestEmail: 'john@example.com'
-      });
+      .query({ guestEmail: 'john@example.com' });
 
     expect(res.statusCode).toBe(200);
     expect(res.body).toEqual({ room_number: 101 });
@@ -143,8 +132,7 @@ describe('HotelOnCall Backend API', () => {
   });
 
   it('GET /cleaning-requests - should return all pending cleaning requests', async () => {
-    const res = await request(app)
-      .get('/cleaning-requests');
+    const res = await request(app).get('/cleaning-requests');
 
     expect(res.statusCode).toBe(200);
     expect(res.body.length).toBeGreaterThan(0);
@@ -153,19 +141,14 @@ describe('HotelOnCall Backend API', () => {
   it('POST /place-order - should place an order', async () => {
     const res = await request(app)
       .post('/place-order')
-      .send({
-        guestEmail: 'john@example.com',
-        foodItem: 'Pizza',
-        quantity: 1
-      });
+      .send({ guestEmail: 'john@example.com', foodItem: 'Pizza', quantity: 1 });
 
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
   });
 
   it('GET /cook/orders - should get all cook orders', async () => {
-    const res = await request(app)
-      .get('/cook/orders');
+    const res = await request(app).get('/cook/orders');
 
     expect(res.statusCode).toBe(200);
     expect(res.body.length).toBeGreaterThan(0);
@@ -174,18 +157,14 @@ describe('HotelOnCall Backend API', () => {
   it('POST /cook/update-order - should update order status', async () => {
     const res = await request(app)
       .post('/cook/update-order')
-      .send({
-        orderId: 1,
-        status: 'Completed'
-      });
+      .send({ orderId: 1, status: 'Completed' });
 
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
   });
 
   it('GET /maintenance-requests - should get all maintenance requests', async () => {
-    const res = await request(app)
-      .get('/maintenance-requests');
+    const res = await request(app).get('/maintenance-requests');
 
     expect(res.statusCode).toBe(200);
     expect(res.body.length).toBeGreaterThan(0);
@@ -194,10 +173,7 @@ describe('HotelOnCall Backend API', () => {
   it('POST /maintenance-requests - should request maintenance', async () => {
     const res = await request(app)
       .post('/maintenance-requests')
-      .send({
-        guestEmail: 'john@example.com',
-        issue: 'Air conditioner broken'
-      });
+      .send({ guestEmail: 'john@example.com', issue: 'Air conditioner broken' });
 
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
@@ -206,10 +182,7 @@ describe('HotelOnCall Backend API', () => {
   it('POST /update-maintenance-status - should update maintenance status', async () => {
     const res = await request(app)
       .post('/update-maintenance-status')
-      .send({
-        id: 1,
-        status: 'Resolved'
-      });
+      .send({ id: 1, status: 'Resolved' });
 
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
@@ -218,10 +191,7 @@ describe('HotelOnCall Backend API', () => {
   it('POST /checkin - should check in a guest', async () => {
     const res = await request(app)
       .post('/checkin')
-      .send({
-        guestEmail: 'john@example.com',
-        roomNumber: 101
-      });
+      .send({ guestEmail: 'john@example.com', roomNumber: 101 });
 
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
@@ -230,9 +200,7 @@ describe('HotelOnCall Backend API', () => {
   it('POST /checkout - should check out a guest and clear data', async () => {
     const res = await request(app)
       .post('/checkout')
-      .send({
-        guestEmail: 'john@example.com'
-      });
+      .send({ guestEmail: 'john@example.com' });
 
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
