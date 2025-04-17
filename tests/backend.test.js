@@ -9,6 +9,14 @@ describe('HotelOnCall Backend API', () => {
   let maintenanceId;
   let orderId;
 
+  beforeAll(async () => {
+    // You can use this to mock data setup or ensure that the environment is ready before tests
+  });
+
+  afterAll(async () => {
+    // You can use this to clean up any data or mock services after tests
+  });
+
   it('POST /checkin', async () => {
     const res = await request(app).post('/checkin').send({
       guestEmail: 'john@example.com',
