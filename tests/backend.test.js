@@ -1,7 +1,7 @@
 const request = require('supertest');
 
 // Live URL for your Vercel deployment
-const app = 'https://hotel-on-call.vercel.app';
+const app = process.env.BACKEND_URL;
 
 describe('HotelOnCall Backend API', () => {
 
