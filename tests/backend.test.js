@@ -2,9 +2,10 @@ const request = require('supertest');
 const express = require('express');
 const session = require('express-session');
 const passport = require('passport');
-jest.mock('passport');
+const app = require('../server'); // <-- Import your Express app
 const mockDb = require('../db'); // Assuming db module is being imported here
 
+jest.mock('passport');
 jest.mock('../db', () => {
   return {
     query: jest.fn()
@@ -15,14 +16,14 @@ describe('HotelOnCall Backend API', () => {
   beforeAll(() => {
     // Mock passport functions
     passport.serializeUser = jest.fn().mockImplementation((user, done) => {
-      done(null, user.email); // Mock storing email in session
+      done(null, user.email);
     });
 
     passport.deserializeUser = jest.fn().mockImplementation((email, done) => {
-      done(null, { email }); // Mock deserialization by returning the email
+      done(null, { email });
     });
 
-    // Mock GoogleStrategy (optional, if you are using it in your tests)
+    // Mock GoogleStrategy (optional, if using)
     jest.mock('passport-google-oauth20', () => {
       return {
         Strategy: jest.fn().mockImplementation((options, verify) => {
@@ -92,18 +93,6 @@ describe('HotelOnCall Backend API', () => {
     return Promise.resolve({ rows: [] });
   });
 
-  it('POST /request-cleaning - should request cleaning', async () => {
-    const res = await request(app)
-      .post('/request-cleaning')
-      .send({
-        guestEmail: 'john@example.com',
-        date: '2025-04-20',
-        time: '10:00 AM'
-      });
-
-    expect(res.statusCode).toBe(200);
-    expect(res.body.success).toBe(true);
-  });
   it('POST /request-cleaning - should request cleaning', async () => {
     const res = await request(app)
       .post('/request-cleaning')
