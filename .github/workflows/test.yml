@@ -12,6 +12,17 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_DB: hoteloncall_test
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: password
+        ports:
+          - 5432:5432
+        options: --health-cmd="pg_isready -U user" --health-interval=10s --health-timeout=5s --health-retries=5
+
     steps:
       # Step 1: Checkout the code
       - name: Checkout Code
@@ -21,23 +32,33 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: '18'  # Use a version compatible with mongoose, mongodb, etc.
+          node-version: '18'
 
-      # Step 3: Install dependencies
+      # Step 3: Cache node modules to speed up builds
+      - name: Cache node_modules
+        uses: actions/cache@v2
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-
+
+      # Step 4: Install dependencies
       - name: Install Dependencies
         run: npm install
 
-      # Step 4: Ensure Google OAuth package
+      # Step 5: Ensure Google OAuth package
       - name: Ensure Google OAuth package
         run: npm install passport-google-oauth20
 
-      # Step 5: Clear Jest Cache
+      # Step 6: Clear Jest Cache
       - name: Clear Jest Cache
         run: npx jest --clearCache
 
-      # Step 6: Run Tests
+      # Step 7: Run Tests
       - name: Run Tests
         env:
-          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}  # Use GitHub secrets for sensitive data
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          DATABASE_URL: postgres://user:password@localhost:5432/hoteloncall_test  # Set your database URL for testing
         run: npm test
