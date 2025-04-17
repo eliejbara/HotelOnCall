@@ -1,3 +1,4 @@
+
 jest.mock('passport', () => ({
   serializeUser: jest.fn(),
   deserializeUser: jest.fn(),
