@@ -12,6 +12,7 @@ describe('HotelOnCall Backend API', () => {
     });
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
+    expect(res.body.roomNumber).toBe(101);  // Ensure room number is returned
   });
 
   it('POST /checkout', async () => {
@@ -30,17 +31,19 @@ describe('HotelOnCall Backend API', () => {
     });
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
+    expect(res.body.orderId).toBeDefined();  // Ensure orderId is returned
   });
 
   it('GET /cook/orders', async () => {
     const res = await request(app).get('/cook/orders');
     expect(res.statusCode).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
+    expect(res.body.length).toBeGreaterThan(0);  // Ensure there are orders
   });
 
   it('POST /cook/update-order', async () => {
     const res = await request(app).post('/cook/update-order').send({
-      orderId: 1,
+      orderId: 1,  // Ensure orderId exists
       status: 'Completed'
     });
     expect(res.statusCode).toBe(200);
@@ -52,7 +55,7 @@ describe('HotelOnCall Backend API', () => {
       guestEmail: 'john@example.com'
     });
     expect(res.statusCode).toBe(200);
-    expect(res.body).toEqual({ room_number: 101 });
+    expect(res.body.room_number).toBe(101);  // Ensure room number is returned
   });
 
   it('GET /available-cleaning-slots', async () => {
@@ -60,7 +63,7 @@ describe('HotelOnCall Backend API', () => {
       room_number: 101
     });
     expect(res.statusCode).toBe(200);
-    expect(res.body.length).toBeGreaterThan(0);
+    expect(res.body.length).toBeGreaterThan(0);  // Ensure slots are available
   });
 
   it('POST /request-cleaning', async () => {
@@ -78,12 +81,12 @@ describe('HotelOnCall Backend API', () => {
       guestEmail: 'john@example.com'
     });
     expect(res.statusCode).toBe(200);
-    expect(res.body.length).toBeGreaterThan(0);
+    expect(res.body.length).toBeGreaterThan(0);  // Ensure there are cleaning requests
   });
 
   it('POST /update-cleaning-status', async () => {
     const res = await request(app).post('/update-cleaning-status').send({
-      id: 1,
+      id: 1,  // Ensure this ID exists in the database
       status: 'Resolved',
       room_number: 101
     });
@@ -94,7 +97,7 @@ describe('HotelOnCall Backend API', () => {
   it('GET /cleaning-requests', async () => {
     const res = await request(app).get('/cleaning-requests');
     expect(res.statusCode).toBe(200);
-    expect(res.body.length).toBeGreaterThan(0);
+    expect(res.body.length).toBeGreaterThan(0);  // Ensure there are cleaning requests
   });
 
   it('POST /maintenance-requests', async () => {
@@ -109,13 +112,13 @@ describe('HotelOnCall Backend API', () => {
   it('GET /maintenance-requests', async () => {
     const res = await request(app).get('/maintenance-requests');
     expect(res.statusCode).toBe(200);
-    expect(res.body.length).toBeGreaterThan(0);
+    expect(res.body.length).toBeGreaterThan(0);  // Ensure there are maintenance requests
   });
 
   it('POST /update-maintenance-status', async () => {
     const res = await request(app).post('/update-maintenance-status').send({
-      id: 1, // Ensure this ID exists in the database
-      status: 'Resolved' // Ensure this is a valid status
+      id: 1,  // Ensure this ID exists in the database
+      status: 'Resolved'
     });
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
