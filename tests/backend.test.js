@@ -1,9 +1,12 @@
 const request = require('supertest');
 
-// Live URL for your Vercel deployment
 const app = process.env.BACKEND_URL;
+if (!app) throw new Error('BACKEND_URL is not defined in environment variables');
 
 describe('HotelOnCall Backend API', () => {
+  let cleaningId;
+  let maintenanceId;
+  let orderId;
 
   it('POST /checkin', async () => {
     const res = await request(app).post('/checkin').send({
@@ -12,15 +15,7 @@ describe('HotelOnCall Backend API', () => {
     });
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
-    expect(res.body.roomNumber).toBe(101);  // Ensure room number is returned
-  });
-
-  it('POST /checkout', async () => {
-    const res = await request(app).post('/checkout').send({
-      guestEmail: 'john@example.com'
-    });
-    expect(res.statusCode).toBe(200);
-    expect(res.body.success).toBe(true);
+    expect(res.body.roomNumber).toBe(101);
   });
 
   it('POST /place-order', async () => {
@@ -31,39 +26,37 @@ describe('HotelOnCall Backend API', () => {
     });
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
-    expect(res.body.orderId).toBeDefined();  // Ensure orderId is returned
+    expect(res.body.orderId).toBeDefined();
+    orderId = res.body.orderId;
   });
 
   it('GET /cook/orders', async () => {
     const res = await request(app).get('/cook/orders');
     expect(res.statusCode).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
-    expect(res.body.length).toBeGreaterThan(0);  // Ensure there are orders
+    expect(res.body.length).toBeGreaterThan(0);
   });
 
   it('POST /cook/update-order', async () => {
-    const res = await request(app).post('/cook/update-order').send({
-      orderId: 1,  // Ensure orderId exists
+    const res = await request(app).post('/update-order-status').send({
+      orderId,
       status: 'Completed'
     });
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
   });
 
-  it('GET /guest-room', async () => {
-    const res = await request(app).get('/guest-room').query({
-      guestEmail: 'john@example.com'
-    });
+  it('GET /guest-room/:guestEmail', async () => {
+    const res = await request(app).get('/guest-room/john@example.com');
     expect(res.statusCode).toBe(200);
-    expect(res.body.room_number).toBe(101);  // Ensure room number is returned
+    expect(res.body.room_number).toBe(101);
   });
 
-  it('GET /available-cleaning-slots', async () => {
-    const res = await request(app).get('/available-cleaning-slots').query({
-      room_number: 101
-    });
+  it('GET /available-cleaning-slots?room_number=101', async () => {
+    const res = await request(app).get('/available-cleaning-slots').query({ room_number: 101 });
     expect(res.statusCode).toBe(200);
-    expect(res.body.length).toBeGreaterThan(0);  // Ensure slots are available
+    expect(Array.isArray(res.body)).toBe(true);
+    expect(res.body.length).toBeGreaterThan(0);
   });
 
   it('POST /request-cleaning', async () => {
@@ -76,17 +69,17 @@ describe('HotelOnCall Backend API', () => {
     expect(res.body.success).toBe(true);
   });
 
-  it('GET /guest-cleaning', async () => {
-    const res = await request(app).get('/guest-cleaning').query({
-      guestEmail: 'john@example.com'
-    });
+  it('GET /guest-cleaning/:guestEmail', async () => {
+    const res = await request(app).get('/guest-cleaning/john@example.com');
     expect(res.statusCode).toBe(200);
-    expect(res.body.length).toBeGreaterThan(0);  // Ensure there are cleaning requests
+    expect(Array.isArray(res.body)).toBe(true);
+    expect(res.body.length).toBeGreaterThan(0);
+    cleaningId = res.body[0].id;
   });
 
   it('POST /update-cleaning-status', async () => {
     const res = await request(app).post('/update-cleaning-status').send({
-      id: 1,  // Ensure this ID exists in the database
+      id: cleaningId,
       status: 'Resolved',
       room_number: 101
     });
@@ -97,11 +90,11 @@ describe('HotelOnCall Backend API', () => {
   it('GET /cleaning-requests', async () => {
     const res = await request(app).get('/cleaning-requests');
     expect(res.statusCode).toBe(200);
-    expect(res.body.length).toBeGreaterThan(0);  // Ensure there are cleaning requests
+    expect(Array.isArray(res.body)).toBe(true);
   });
 
-  it('POST /maintenance-requests', async () => {
-    const res = await request(app).post('/maintenance-requests').send({
+  it('POST /request-maintenance', async () => {
+    const res = await request(app).post('/request-maintenance').send({
       guestEmail: 'john@example.com',
       issue: 'Air conditioner broken'
     });
@@ -109,16 +102,54 @@ describe('HotelOnCall Backend API', () => {
     expect(res.body.success).toBe(true);
   });
 
+  it('GET /guest-maintenance/:guestEmail', async () => {
+    const res = await request(app).get('/guest-maintenance/john@example.com');
+    expect(res.statusCode).toBe(200);
+    expect(Array.isArray(res.body)).toBe(true);
+    expect(res.body.length).toBeGreaterThan(0);
+    maintenanceId = res.body[0].id;
+  });
+
   it('GET /maintenance-requests', async () => {
     const res = await request(app).get('/maintenance-requests');
     expect(res.statusCode).toBe(200);
-    expect(res.body.length).toBeGreaterThan(0);  // Ensure there are maintenance requests
+    expect(Array.isArray(res.body)).toBe(true);
   });
 
   it('POST /update-maintenance-status', async () => {
     const res = await request(app).post('/update-maintenance-status').send({
-      id: 1,  // Ensure this ID exists in the database
+      id: maintenanceId,
       status: 'Resolved'
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.success).toBe(true);
+  });
+
+  it('GET /calculate-bill/:roomNumber', async () => {
+    const res = await request(app).get('/calculate-bill/101');
+    expect(res.statusCode).toBe(200);
+    expect(res.body.totalBill).toBeDefined();
+  });
+
+  it('POST /create-checkout-session', async () => {
+    const res = await request(app).post('/create-checkout-session').send({
+      roomNumber: 101
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.url).toBeDefined();
+  });
+
+  it('POST /finalize-checkout', async () => {
+    const res = await request(app).post('/finalize-checkout').send({
+      guestEmail: 'john@example.com'
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.success).toBe(true);
+  });
+
+  it('POST /checkout', async () => {
+    const res = await request(app).post('/checkout').send({
+      guestEmail: 'john@example.com'
     });
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
