@@ -7,23 +7,20 @@ describe('HotelOnCall Backend API', () => {
   let cleaningId;
   let maintenanceId;
   let orderId;
-  const guestEmail = 'john@example.com';
-  const roomNumber = 101;
-  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
 
   it('POST /checkin', async () => {
     const res = await request(app).post('/checkin').send({
-      guestEmail,
-      roomNumber
+      guestEmail: 'john@example.com',
+      roomNumber: 101
     });
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
-    expect(res.body.roomNumber).toBe(roomNumber);
+    expect(res.body.roomNumber).toBe(101);
   });
 
   it('POST /place-order', async () => {
     const res = await request(app).post('/place-order').send({
-      guestEmail,
+      guestEmail: 'john@example.com',
       foodItem: 'Pizza',
       quantity: 1
     });
@@ -50,15 +47,13 @@ describe('HotelOnCall Backend API', () => {
   });
 
   it('GET /guest-room/:guestEmail', async () => {
-    const res = await request(app).get(`/guest-room/${guestEmail}`);
+    const res = await request(app).get('/guest-room/john@example.com');
     expect(res.statusCode).toBe(200);
-    expect(res.body.room_number).toBe(roomNumber);
+    expect(res.body.room_number).toBe(101);
   });
 
-  it('GET /available-cleaning-slots', async () => {
-    const res = await request(app)
-      .get('/available-cleaning-slots')
-      .query({ room_number: roomNumber });
+  it('GET /available-cleaning-slots?room_number=101', async () => {
+    const res = await request(app).get('/available-cleaning-slots').query({ room_number: 101 });
     expect(res.statusCode).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
     expect(res.body.length).toBeGreaterThan(0);
@@ -66,8 +61,8 @@ describe('HotelOnCall Backend API', () => {
 
   it('POST /request-cleaning', async () => {
     const res = await request(app).post('/request-cleaning').send({
-      guestEmail,
-      date: today,
+      guestEmail: 'john@example.com',
+      date: '2025-04-20',
       time: '10:00 AM'
     });
     expect(res.statusCode).toBe(200);
@@ -75,7 +70,7 @@ describe('HotelOnCall Backend API', () => {
   });
 
   it('GET /guest-cleaning/:guestEmail', async () => {
-    const res = await request(app).get(`/guest-cleaning/${guestEmail}`);
+    const res = await request(app).get('/guest-cleaning/john@example.com');
     expect(res.statusCode).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
     expect(res.body.length).toBeGreaterThan(0);
@@ -86,7 +81,7 @@ describe('HotelOnCall Backend API', () => {
     const res = await request(app).post('/update-cleaning-status').send({
       id: cleaningId,
       status: 'Resolved',
-      room_number: roomNumber
+      room_number: 101
     });
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
@@ -100,7 +95,7 @@ describe('HotelOnCall Backend API', () => {
 
   it('POST /request-maintenance', async () => {
     const res = await request(app).post('/request-maintenance').send({
-      guestEmail,
+      guestEmail: 'john@example.com',
       issue: 'Air conditioner broken'
     });
     expect(res.statusCode).toBe(200);
@@ -108,7 +103,7 @@ describe('HotelOnCall Backend API', () => {
   });
 
   it('GET /guest-maintenance/:guestEmail', async () => {
-    const res = await request(app).get(`/guest-maintenance/${guestEmail}`);
+    const res = await request(app).get('/guest-maintenance/john@example.com');
     expect(res.statusCode).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
     expect(res.body.length).toBeGreaterThan(0);
@@ -131,14 +126,14 @@ describe('HotelOnCall Backend API', () => {
   });
 
   it('GET /calculate-bill/:roomNumber', async () => {
-    const res = await request(app).get(`/calculate-bill/${roomNumber}`);
+    const res = await request(app).get('/calculate-bill/101');
     expect(res.statusCode).toBe(200);
     expect(res.body.totalBill).toBeDefined();
   });
 
   it('POST /create-checkout-session', async () => {
     const res = await request(app).post('/create-checkout-session').send({
-      roomNumber
+      roomNumber: 101
     });
     expect(res.statusCode).toBe(200);
     expect(res.body.url).toBeDefined();
@@ -146,7 +141,7 @@ describe('HotelOnCall Backend API', () => {
 
   it('POST /finalize-checkout', async () => {
     const res = await request(app).post('/finalize-checkout').send({
-      guestEmail
+      guestEmail: 'john@example.com'
     });
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
@@ -154,9 +149,10 @@ describe('HotelOnCall Backend API', () => {
 
   it('POST /checkout', async () => {
     const res = await request(app).post('/checkout').send({
-      guestEmail
+      guestEmail: 'john@example.com'
     });
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
   });
+
 });
