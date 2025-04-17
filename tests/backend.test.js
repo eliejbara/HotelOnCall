@@ -1,5 +1,3 @@
-// tests/backend.test.js
-
 jest.mock('passport', () => ({
   serializeUser: jest.fn(),
   deserializeUser: jest.fn(),
@@ -84,6 +82,7 @@ describe('HotelOnCall Backend API', () => {
         return Promise.resolve({ rowCount: 1 });
       }
       if (sql.includes('SELECT * FROM maintenance_requests')) {
+        // Simulating a response for GET /maintenance-requests
         return Promise.resolve({
           rows: [{ id: 1, guest_email: 'john@example.com', issue: 'Air conditioner broken', status: 'Pending' }]
         });
@@ -92,6 +91,7 @@ describe('HotelOnCall Backend API', () => {
         return Promise.resolve({ rowCount: 1 });
       }
       if (sql.includes('UPDATE maintenance_requests')) {
+        // Simulating a successful update for POST /update-maintenance-status
         return Promise.resolve({ rowCount: 1 });
       }
       if (sql.includes('SELECT feedback_text FROM feedback')) {
@@ -228,6 +228,4 @@ describe('HotelOnCall Backend API', () => {
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
   });
-
-
 });
