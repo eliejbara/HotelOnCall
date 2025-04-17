@@ -5,11 +5,16 @@ jest.mock('passport', () => ({
   deserializeUser: jest.fn(),
   initialize: jest.fn(() => (req, res, next) => next()),
   session: jest.fn(() => (req, res, next) => next()),
-  authenticate: jest.fn(() => (req, res, next) => next())
+  authenticate: jest.fn(() => (req, res, next) => next()),
+  use: jest.fn(), // <-- add this
+  Strategy: function () {} // <-- mock for GoogleStrategy constructor
 }));
 
 jest.mock('../db', () => ({
   query: jest.fn()
+}));
+jest.mock('passport-google-oauth20', () => ({
+  Strategy: function () {}
 }));
 
 const request = require('supertest');
